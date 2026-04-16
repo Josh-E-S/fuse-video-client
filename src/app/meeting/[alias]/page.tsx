@@ -768,101 +768,66 @@ export default function MeetingPage() {
         <main
           ref={mainVideoRef}
           className={`relative min-h-0 flex-1 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] ${
-            presentationStream && !presentationPopped
-              ? layout === 'focus'
-                ? 'flex flex-col justify-center'
-                : layout === 'gallery'
-                  ? 'flex flex-col gap-3'
-                  : 'flex flex-col md:flex-row gap-4 justify-center'
-              : layout === 'focus'
-                ? 'flex flex-col justify-center'
-                : layout === 'gallery'
-                  ? 'flex flex-col gap-3'
-                  : 'grid grid-cols-1 md:grid-cols-2 grid-rows-2 md:grid-rows-1 gap-4 md:gap-6'
+            layout === 'focus'
+              ? 'flex flex-col justify-center'
+              : layout === 'gallery'
+                ? 'flex flex-col gap-3'
+                : 'flex flex-row gap-4'
           }`}
         >
-          {presentationStream && !presentationPopped ? (
-            <>
-              {/* Presentation content */}
-              <GlassPanel
-                className={`relative flex items-center justify-center bg-black/50 ${
-                  layout === 'focus'
-                    ? 'h-full'
-                    : layout === 'gallery'
-                      ? 'flex-[2] min-h-0 w-full'
-                      : 'flex-[2] md:h-full min-h-[300px]'
-                }`}
-                hoverEffect={false}
-              >
+          {/* Content tile — only in expanded gallery/side-by-side when presentation stream is separate */}
+          {isExpanded && presentationStream && !presentationPopped && layout !== 'focus' && (
+            <GlassPanel
+              className={`relative flex items-center justify-center bg-black/50 ${
+                layout === 'gallery' ? 'flex-1 min-h-0 w-full' : 'flex-[2] h-full'
+              }`}
+              hoverEffect={false}
+            >
+              <video
+                ref={setPresentationVideoRef}
+                autoPlay
+                playsInline
+                muted
+                className="absolute inset-0 w-full h-full object-contain rounded-2xl"
+              />
+            </GlassPanel>
+          )}
+
+          {/* Far-side (remote) video */}
+          {layout === 'focus' ? (
+            <GlassPanel className="relative h-full w-full" hoverEffect={false}>
+              {remoteStream ? (
                 <video
-                  ref={setPresentationVideoRef}
+                  ref={setRemoteVideoRef}
                   autoPlay
                   playsInline
-                  muted
-                  className="absolute inset-0 w-full h-full object-contain rounded-2xl"
+                  className="w-full h-full object-cover rounded-2xl"
                 />
-              </GlassPanel>
-
-              {/* Focus: remote bottom-left, self bottom-right */}
-              {layout === 'focus' && (
-                <>
-                  <div
-                    className="absolute bottom-4 left-4 rounded-2xl overflow-hidden border border-white/10 shadow-2xl z-20 bg-black/80"
-                    style={{ width: 160, height: 90 }}
-                  >
-                    {remoteStream ? (
-                      <video
-                        ref={setRemoteVideoRef}
-                        autoPlay
-                        playsInline
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-white/20">
-                        <VideoOff size={16} strokeWidth={1.5} />
-                      </div>
-                    )}
-                  </div>
-                  <div
-                    className="absolute bottom-4 right-4 rounded-2xl overflow-hidden border border-white/10 shadow-2xl z-20 bg-black/80"
-                    style={{ width: 160, height: 90 }}
-                  >
-                    {localStream && !isVideoMuted ? (
-                      <video
-                        ref={setLocalVideoRef}
-                        autoPlay
-                        playsInline
-                        muted
-                        className="w-full h-full object-cover"
-                        style={{ transform: 'scaleX(-1)' }}
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-white/30">
-                        <VideoOff size={16} strokeWidth={1.5} />
-                      </div>
-                    )}
-                  </div>
-                </>
+              ) : (
+                <div className="absolute inset-0 flex items-center justify-center text-white/20 text-sm">
+                  Waiting for conference feed...
+                </div>
               )}
-
-              {/* Gallery: remote + self side-by-side below content */}
-              {layout === 'gallery' && (
-                <div className="flex-1 flex flex-row gap-3 min-h-0">
-                  <GlassPanel className="relative flex-1 min-h-0" hoverEffect={false}>
-                    {remoteStream ? (
-                      <video
-                        ref={setRemoteVideoRef}
-                        autoPlay
-                        playsInline
-                        className="absolute inset-0 w-full h-full object-cover rounded-2xl"
-                      />
-                    ) : (
-                      <div className="absolute inset-0 flex items-center justify-center text-white/20 text-sm">
-                        Waiting...
-                      </div>
-                    )}
-                  </GlassPanel>
-                  <GlassPanel className="relative flex-1 min-h-0" hoverEffect={false}>
+            </GlassPanel>
+          ) : layout === 'gallery' ? (
+            isExpanded && presentationStream && !presentationPopped ? (
+              <div className="flex-1 flex flex-row gap-3 min-h-0">
+                <GlassPanel className="relative flex-1 min-h-0" hoverEffect={false}>
+                  {remoteStream ? (
+                    <video
+                      ref={setRemoteVideoRef}
+                      autoPlay
+                      playsInline
+                      className="absolute inset-0 w-full h-full object-cover rounded-2xl"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center text-white/20 text-sm">
+                      Waiting for conference feed...
+                    </div>
+                  )}
+                </GlassPanel>
+                {selfViewVisible && (
+                  <GlassPanel className="relative flex-1 min-h-0" isActive={isBroadcasting} isAudioOnly={isAudioOnly} hoverEffect={false}>
                     {localStream && !isVideoMuted ? (
                       <video
                         ref={setLocalVideoRef}
@@ -878,31 +843,29 @@ export default function MeetingPage() {
                       </div>
                     )}
                   </GlassPanel>
-                </div>
-              )}
-
-              {/* Side-by-side: side strip for remote/local */}
-              {layout === 'side-by-side' && (
-                <div className="flex-1 flex flex-row md:flex-col gap-4 md:w-80 md:min-w-[320px] md:max-w-xs shrink-0 overflow-x-auto md:overflow-y-auto w-full md:h-full no-scrollbar">
+                )}
+              </div>
+            ) : (
+              <>
+                <GlassPanel className="relative flex-1 min-h-0 w-full" hoverEffect={false}>
+                  {remoteStream ? (
+                    <video
+                      ref={setRemoteVideoRef}
+                      autoPlay
+                      playsInline
+                      className="absolute inset-0 w-full h-full object-cover rounded-2xl"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center text-white/20 text-sm">
+                      Waiting for conference feed...
+                    </div>
+                  )}
+                </GlassPanel>
+                {selfViewVisible && (
                   <GlassPanel
-                    className="relative flex-1 min-w-[200px] md:w-full md:min-h-[200px]"
-                    hoverEffect={false}
-                  >
-                    {remoteStream ? (
-                      <video
-                        ref={setRemoteVideoRef}
-                        autoPlay
-                        playsInline
-                        className="absolute inset-0 w-full h-full object-cover rounded-2xl"
-                      />
-                    ) : (
-                      <div className="absolute inset-0 flex items-center justify-center text-white/20 text-sm">
-                        Waiting for conference feed...
-                      </div>
-                    )}
-                  </GlassPanel>
-                  <GlassPanel
-                    className="relative flex-1 min-w-[140px] md:w-full md:min-h-[200px]"
+                    className="relative flex-1 min-h-0 w-full"
+                    isActive={isBroadcasting}
+                    isAudioOnly={isAudioOnly}
                     hoverEffect={false}
                   >
                     {localStream && !isVideoMuted ? (
@@ -916,121 +879,128 @@ export default function MeetingPage() {
                       />
                     ) : (
                       <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-white/30">
-                        <VideoOff size={24} strokeWidth={1.5} />
-                        <span className="text-[10px] uppercase tracking-widest hidden md:block">
-                          Camera off
-                        </span>
+                        <div className="w-20 h-20 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center">
+                          <VideoOff size={32} strokeWidth={1.5} />
+                        </div>
+                        <span className="text-xs uppercase tracking-widest">Camera off</span>
                       </div>
                     )}
                   </GlassPanel>
-                </div>
-              )}
-            </>
-          ) : (
-            <>
-              {/* Remote video */}
-              <GlassPanel
-                className={`relative ${
-                  layout === 'focus'
-                    ? 'h-full'
-                    : layout === 'gallery'
-                      ? 'flex-[2] min-h-0 w-full'
-                      : 'min-h-0 h-full w-full flex items-center justify-center'
-                }`}
-                hoverEffect={false}
-              >
-                {remoteStream ? (
-                  <video
-                    ref={setRemoteVideoRef}
-                    autoPlay
-                    playsInline
-                    className="w-full h-full object-cover rounded-2xl"
-                  />
-                ) : (
-                  <div className="absolute inset-0 flex items-center justify-center text-white/20 text-sm">
-                    Waiting for conference feed...
-                  </div>
                 )}
-              </GlassPanel>
-
-              {/* Local self-view (toggle controlled, local-only, draggable in spotlight) */}
-              {selfViewVisible && (layout === 'focus' ? (
-                <motion.div
-                  drag
-                  dragConstraints={mainVideoRef}
-                  dragElastic={0.1}
-                  dragMomentum={false}
-                  style={{
-                    x: pipX,
-                    y: pipY,
-                    ...(targetAspectRatio === '16:9'
-                      ? { width: 200, height: 112 }
-                      : { width: 112, height: 200 }),
-                  }}
-                  whileDrag={{ scale: 1.05, boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }}
-                  className="absolute bottom-4 right-4 rounded-2xl overflow-hidden border border-white/10 shadow-2xl z-20 bg-black/80 cursor-grab active:cursor-grabbing"
-                >
-                  {localStream && !isVideoMuted ? (
+              </>
+            )
+          ) : (
+            isExpanded && presentationStream && !presentationPopped ? (
+              <div className="flex-1 flex flex-col gap-3">
+                <GlassPanel className="relative flex-1 min-h-0" hoverEffect={false}>
+                  {remoteStream ? (
                     <video
-                      ref={setLocalVideoRef}
+                      ref={setRemoteVideoRef}
                       autoPlay
                       playsInline
-                      muted
-                      className="w-full h-full object-cover pointer-events-none"
-                      style={{ transform: 'scaleX(-1)' }}
+                      className="absolute inset-0 w-full h-full object-cover rounded-2xl"
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <VideoOff size={20} strokeWidth={1.5} className="text-white/30" />
-                    </div>
-                  )}
-                </motion.div>
-              ) : (
-                <GlassPanel
-                  className={`relative min-h-0 w-full flex items-center justify-center ${
-                    layout === 'gallery' ? 'flex-1' : 'h-full'
-                  }`}
-                  isActive={isBroadcasting}
-                  isAudioOnly={isAudioOnly}
-                  hoverEffect={false}
-                >
-                  {localStream && !isVideoMuted ? (
-                    <video
-                      ref={setLocalVideoRef}
-                      autoPlay
-                      playsInline
-                      muted
-                      className="w-full h-full object-cover rounded-2xl"
-                      style={{ transform: 'scaleX(-1)' }}
-                    />
-                  ) : (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-white/30">
-                      <div className="w-20 h-20 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center">
-                        <VideoOff size={32} strokeWidth={1.5} />
-                      </div>
-                      <span className="text-xs uppercase tracking-widest">Camera off</span>
+                    <div className="absolute inset-0 flex items-center justify-center text-white/20 text-sm">
+                      Waiting for conference feed...
                     </div>
                   )}
                 </GlassPanel>
-              ))}
-            </>
+                {selfViewVisible && (
+                  <GlassPanel className="relative flex-1 min-h-0" isActive={isBroadcasting} isAudioOnly={isAudioOnly} hoverEffect={false}>
+                    {localStream && !isVideoMuted ? (
+                      <video
+                        ref={setLocalVideoRef}
+                        autoPlay
+                        playsInline
+                        muted
+                        className="absolute inset-0 w-full h-full object-cover rounded-2xl"
+                        style={{ transform: 'scaleX(-1)' }}
+                      />
+                    ) : (
+                      <div className="absolute inset-0 flex items-center justify-center text-white/30">
+                        <VideoOff size={20} strokeWidth={1.5} />
+                      </div>
+                    )}
+                  </GlassPanel>
+                )}
+              </div>
+            ) : (
+              <>
+                <GlassPanel className="relative flex-1 h-full" hoverEffect={false}>
+                  {remoteStream ? (
+                    <video
+                      ref={setRemoteVideoRef}
+                      autoPlay
+                      playsInline
+                      className="absolute inset-0 w-full h-full object-cover rounded-2xl"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center text-white/20 text-sm">
+                      Waiting for conference feed...
+                    </div>
+                  )}
+                </GlassPanel>
+                {selfViewVisible && (
+                  <GlassPanel
+                    className="relative flex-1 h-full"
+                    isActive={isBroadcasting}
+                    isAudioOnly={isAudioOnly}
+                    hoverEffect={false}
+                  >
+                    {localStream && !isVideoMuted ? (
+                      <video
+                        ref={setLocalVideoRef}
+                        autoPlay
+                        playsInline
+                        muted
+                        className="absolute inset-0 w-full h-full object-cover rounded-2xl"
+                        style={{ transform: 'scaleX(-1)' }}
+                      />
+                    ) : (
+                      <div className="absolute inset-0 flex items-center justify-center text-white/30">
+                        <VideoOff size={20} strokeWidth={1.5} />
+                      </div>
+                    )}
+                  </GlassPanel>
+                )}
+              </>
+            )
           )}
 
-          {/* Mute reminder overlay */}
-          <AnimatePresence>
-            {muteReminderVisible && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.6 }}
-                className="absolute top-4 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 px-4 py-2 rounded-xl bg-black/70 backdrop-blur-xl border border-white/6"
-              >
-                <MicOff size={14} className="text-rose-400" />
-                <span className="text-[13px] text-white/70">Your microphone is muted</span>
-              </motion.div>
-            )}
-          </AnimatePresence>
+          {/* Self-view PIP — Focus mode only */}
+          {layout === 'focus' && selfViewVisible && (
+            <motion.div
+              drag
+              dragConstraints={mainVideoRef}
+              dragElastic={0.1}
+              dragMomentum={false}
+              style={{
+                x: pipX,
+                y: pipY,
+                ...(targetAspectRatio === '16:9'
+                  ? { width: 200, height: 112 }
+                  : { width: 112, height: 200 }),
+              }}
+              whileDrag={{ scale: 1.05, boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }}
+              className="absolute bottom-4 right-4 rounded-2xl overflow-hidden border border-white/10 shadow-2xl z-20 bg-black/80 cursor-grab active:cursor-grabbing"
+            >
+              {localStream && !isVideoMuted ? (
+                <video
+                  ref={setLocalVideoRef}
+                  autoPlay
+                  playsInline
+                  muted
+                  className="w-full h-full object-cover pointer-events-none"
+                  style={{ transform: 'scaleX(-1)' }}
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center">
+                  <VideoOff size={20} strokeWidth={1.5} className="text-white/30" />
+                </div>
+              )}
+            </motion.div>
+          )}
         </main>
 
         {/* Subtitle Bar */}
