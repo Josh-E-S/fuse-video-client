@@ -310,10 +310,10 @@ export function SetupWizard({ open, onComplete, onRegister }: SetupWizardProps) 
             animate={{ scale: 1, y: 0, opacity: 1, filter: 'blur(0px)' }}
             exit={{ scale: 0.95, y: 10, opacity: 0, filter: 'blur(4px)' }}
             transition={{ type: 'spring', damping: 28, stiffness: 260 }}
-            className="relative w-full max-w-md rounded-2xl bg-white/4 border border-white/10 backdrop-blur-3xl shadow-2xl p-8 overflow-hidden"
+            className="relative w-full max-w-md h-[520px] flex flex-col rounded-2xl bg-white/4 border border-white/10 backdrop-blur-3xl shadow-2xl p-8 overflow-hidden"
           >
             {/* Progress dots */}
-            <div className="flex items-center justify-center gap-2 mb-8">
+            <div className="flex items-center justify-center gap-2 mb-8 shrink-0">
               {STEPS.map((s, i) => (
                 <div
                   key={s}
@@ -324,6 +324,7 @@ export function SetupWizard({ open, onComplete, onRegister }: SetupWizardProps) 
               ))}
             </div>
 
+            <div className="flex-1 min-h-0 overflow-y-auto [scrollbar-width:none]">
             <AnimatePresence mode="wait">
               <motion.div
                 key={step}
@@ -715,9 +716,10 @@ export function SetupWizard({ open, onComplete, onRegister }: SetupWizardProps) 
                 )}
               </motion.div>
             </AnimatePresence>
+            </div>
 
             {/* Navigation */}
-            <div className="flex items-center justify-between mt-8">
+            <div className="flex items-center justify-between mt-8 shrink-0">
               {stepIdx > 0 && step !== 'done' && step !== 'check' ? (
                 <button
                   onClick={prev}

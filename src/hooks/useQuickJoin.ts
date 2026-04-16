@@ -26,14 +26,25 @@ function getToggle(id: string): boolean {
   return val === null ? true : val === '1'
 }
 
+const SYNC_EVENT = 'fuse-quickjoin-changed'
+
+function readAllToggles(): Record<string, boolean> {
+  const t: Record<string, boolean> = {}
+  for (const p of PROVIDERS) t[p.id] = getToggle(p.id)
+  return t
+}
+
 export function useQuickJoin() {
   const { settings } = useSettings()
   const [toggles, setToggles] = useState<Record<string, boolean>>({})
 
   useEffect(() => {
-    const t: Record<string, boolean> = {}
-    for (const p of PROVIDERS) t[p.id] = getToggle(p.id)
-    setToggles(t)
+    setToggles(readAllToggles())
+    function handleSync() {
+      setToggles(readAllToggles())
+    }
+    window.addEventListener(SYNC_EVENT, handleSync)
+    return () => window.removeEventListener(SYNC_EVENT, handleSync)
   }, [])
 
   function configReady(id: string): boolean {
@@ -64,6 +75,7 @@ export function useQuickJoin() {
   function setEnabled(id: string, enabled: boolean) {
     localStorage.setItem(`${STORAGE_PREFIX}${id}`, enabled ? '1' : '0')
     setToggles((prev) => ({ ...prev, [id]: enabled }))
+    window.dispatchEvent(new Event(SYNC_EVENT))
   }
 
   function isToggled(id: string): boolean {

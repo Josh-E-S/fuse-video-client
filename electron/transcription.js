@@ -156,48 +156,84 @@ function registerModelHandlers() {
   });
 
   ipcMain.handle("transcription:download-models", (event) => {
-    return new Promise((resolve) => {
-      const scriptPath = isDev
-        ? path.join(__dirname, "..", "scripts", "download-models.sh")
-        : path.join(process.resourcesPath, "scripts", "download-models.sh");
+    const https = require("https");
+    const { execSync } = require("child_process");
 
-      if (!fs.existsSync(scriptPath)) {
-        resolve({ success: false, error: "Download script not found" });
-        return;
-      }
+    const REPO = "Josh-E-S/fuse-video-client";
+    const TAG = "models-v1";
+    const URL = `https://github.com/${REPO}/releases/download/${TAG}/parakeet-tdt-ctc-110m-int8.tar.bz2`;
 
-      const modelsDir = getModelsDir();
-      fs.mkdirSync(modelsDir, { recursive: true });
+    const modelsDir = getModelsDir();
+    fs.mkdirSync(modelsDir, { recursive: true });
+    const archivePath = path.join(modelsDir, "parakeet.tar.bz2");
 
-      const { spawn } = require("child_process");
-      const child = spawn("bash", [scriptPath], {
-        cwd: isDev ? path.join(__dirname, "..") : process.resourcesPath,
-        env: { ...process.env, MODELS_DIR: modelsDir },
+    function send(msg) {
+      event.sender.send("transcription:download-progress", msg);
+    }
+
+    function followRedirects(url) {
+      return new Promise((resolve, reject) => {
+        const mod = url.startsWith("https") ? https : require("http");
+        mod.get(url, { headers: { "User-Agent": "fuse-video-client" } }, (res) => {
+          if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+            followRedirects(res.headers.location).then(resolve, reject);
+          } else if (res.statusCode === 200) {
+            resolve(res);
+          } else {
+            reject(new Error(`HTTP ${res.statusCode}`));
+          }
+        }).on("error", reject);
       });
+    }
 
-      let output = "";
+    return new Promise(async (resolve) => {
+      try {
+        send("Connecting...");
+        const res = await followRedirects(URL);
+        const total = parseInt(res.headers["content-length"] || "0", 10);
+        let downloaded = 0;
+        let lastPct = -1;
 
-      child.stdout.on("data", (data) => {
-        const line = data.toString().trim();
-        output += line + "\n";
-        event.sender.send("transcription:download-progress", line);
-      });
+        const file = fs.createWriteStream(archivePath);
 
-      child.stderr.on("data", (data) => {
-        output += data.toString();
-      });
+        res.on("data", (chunk) => {
+          downloaded += chunk.length;
+          if (total > 0) {
+            const pct = Math.round((downloaded / total) * 100);
+            if (pct !== lastPct) {
+              lastPct = pct;
+              const mb = (downloaded / 1048576).toFixed(1);
+              const totalMb = (total / 1048576).toFixed(0);
+              send(`${pct}% (${mb} / ${totalMb} MB)`);
+            }
+          }
+        });
 
-      child.on("close", (code) => {
-        if (code === 0 && modelsExist()) {
-          resolve({ success: true });
-        } else {
-          resolve({ success: false, error: output.slice(-500) });
-        }
-      });
+        res.pipe(file);
 
-      child.on("error", (err) => {
+        file.on("finish", () => {
+          file.close();
+          try {
+            send("Extracting...");
+            execSync(`tar xjf "${archivePath}" -C "${modelsDir}"`, { timeout: 60000 });
+            fs.unlinkSync(archivePath);
+            send("Parakeet model ready.");
+            resolve({ success: modelsExist() });
+          } catch (err) {
+            resolve({ success: false, error: `Extract failed: ${err.message}` });
+          }
+        });
+
+        file.on("error", (err) => {
+          resolve({ success: false, error: err.message });
+        });
+
+        res.on("error", (err) => {
+          resolve({ success: false, error: err.message });
+        });
+      } catch (err) {
         resolve({ success: false, error: err.message });
-      });
+      }
     });
   });
 }
