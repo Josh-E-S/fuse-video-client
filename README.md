@@ -28,6 +28,36 @@
   <img src="public/icons/meeting-providers/microsoft-teams.svg" alt="Microsoft Teams" width="32" height="32" />
 </p>
 
+<br/>
+
+<p align="center">
+  <strong>Compact</strong> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>Expanded</strong>
+</p>
+<p align="center">
+  <img src="public/screenshots/home.png" alt="Compact" height="350" />&nbsp;&nbsp;&nbsp;
+  <img src="public/screenshots/expanded-mode.png" alt="Expanded" height="350" />
+</p>
+
+<br/>
+
+<p align="center"><strong>Mini Mode</strong></p>
+<p align="center">
+  <img src="public/screenshots/mini-mode.png" alt="Mini Mode" width="320" />
+</p>
+
+<br/>
+
+<p align="center"><strong>Quick Join</strong></p>
+<p align="center">
+  <img src="public/screenshots/join-google.png" alt="Google Meet" height="280" />&nbsp;
+  <img src="public/screenshots/join-teams.png" alt="Teams" height="280" />&nbsp;
+  <img src="public/screenshots/join-zoom.png" alt="Zoom" height="280" />&nbsp;
+  <img src="public/screenshots/join-pexip.png" alt="Pexip" height="280" />
+</p>
+<p align="center">
+  <em>Google Meet &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Teams &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Zoom &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Pexip</em>
+</p>
+
 ---
 
 ## Key Features

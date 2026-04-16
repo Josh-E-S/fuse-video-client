@@ -415,9 +415,6 @@ export default function HomePage() {
         >
           <div style={{ height: !isElectron && pip.isActive ? '4vh' : '10vh' }} />
 
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo-1.png" alt="Fuse" width={80} height={24} className="mx-auto mb-4 opacity-40" />
-
           <ClockDisplay />
 
           {featuredMeeting && (
@@ -495,6 +492,13 @@ export default function HomePage() {
         </div>
 
         <div className="pb-6" />
+      </div>
+
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <div className="fixed bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1.5 pointer-events-none z-10 opacity-20">
+        <span className="text-[15px] font-semibold tracking-[0.25em] uppercase" style={{ color: '#B08D57' }}>Fuse</span>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/logo-1.png" alt="" width={90} height={27} />
       </div>
 
       <JoinModal
