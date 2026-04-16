@@ -9,6 +9,8 @@ import {
   PhoneOff,
   Pin,
   PinOff,
+  Eye,
+  EyeOff,
   GalleryThumbnails,
   Share,
   FileText,
@@ -39,7 +41,9 @@ interface ControlBarProps {
   captionsVisible?: boolean
   activeDockTab?: DockTab | null
   dockMode?: 'bottom' | 'side'
-  layout?: 'spotlight' | 'split' | 'stacked'
+  layout?: 'focus' | 'gallery' | 'side-by-side'
+  selfViewVisible?: boolean
+  onToggleSelfView?: () => void
   // Device selection
   audioInputId?: string
   videoInputId?: string
@@ -307,6 +311,8 @@ export function ControlBar({
   activeDockTab,
   dockMode,
   layout,
+  selfViewVisible,
+  onToggleSelfView,
   audioInputId = '',
   videoInputId = '',
   onAudioInputChange,
@@ -437,17 +443,28 @@ export function ControlBar({
             </button>
           )}
 
+          {/* Self-view toggle */}
+          {onToggleSelfView && (
+            <button
+              onClick={onToggleSelfView}
+              className={`${btn} w-[44px] h-[44px] rounded-xl border ${stateClass(!!selfViewVisible, 'blue')}`}
+              title={selfViewVisible ? 'Hide self-view' : 'Show self-view'}
+            >
+              {selfViewVisible ? <Eye size={17} /> : <EyeOff size={17} />}
+            </button>
+          )}
+
           {/* Layout */}
           {onToggleLayout && (
             <button
               onClick={onToggleLayout}
               className={`${btn} w-[44px] h-[44px] rounded-xl border ${stateClass(false, 'neutral')}`}
               title={
-                layout === 'spotlight'
-                  ? 'Stacked view'
-                  : layout === 'stacked'
-                    ? 'Split view'
-                    : 'Spotlight view'
+                layout === 'focus'
+                  ? 'Gallery view'
+                  : layout === 'gallery'
+                    ? 'Side-by-side view'
+                    : 'Focus view'
               }
             >
               <GalleryThumbnails size={17} />
@@ -578,17 +595,28 @@ export function ControlBar({
           </button>
         )}
 
+        {/* Self-view toggle */}
+        {onToggleSelfView && (
+          <button
+            onClick={onToggleSelfView}
+            className={`${btnLg} ${stateClass(!!selfViewVisible, 'blue')}`}
+            title={selfViewVisible ? 'Hide self-view' : 'Show self-view'}
+          >
+            {selfViewVisible ? <Eye size={20} /> : <EyeOff size={20} />}
+          </button>
+        )}
+
         {/* Layout */}
         {onToggleLayout && (
           <button
             onClick={onToggleLayout}
             className={`${btnLg} ${stateClass(false, 'neutral')}`}
             title={
-              layout === 'spotlight'
-                ? 'Stacked view'
-                : layout === 'stacked'
-                  ? 'Split view'
-                  : 'Spotlight view'
+              layout === 'focus'
+                ? 'Gallery view'
+                : layout === 'gallery'
+                  ? 'Side-by-side view'
+                  : 'Focus view'
             }
           >
             <GalleryThumbnails size={20} />

@@ -76,7 +76,8 @@ export default function MeetingPage() {
     stopScreenShare,
   } = usePexip()
   const pip = usePip()
-  const [layout, setLayout] = useState<'spotlight' | 'split' | 'stacked'>('spotlight')
+  const [layout, setLayout] = useState<'focus' | 'gallery' | 'side-by-side'>('focus')
+  const [selfViewVisible, setSelfViewVisible] = useState(true)
   const [pipLayout, setPipLayout] = useState<'portrait' | 'halves'>('portrait')
   const [dockTab, setDockTab] = useState<DockTab | null>(null)
   const [dockMode, setDockMode] = useState<'bottom' | 'side'>('bottom')
@@ -442,9 +443,11 @@ export default function MeetingPage() {
           )}
         </div>
         {/* Self-view pip at bottom-right */}
-        <div className="absolute bottom-28 right-4 z-30 w-[110px] h-[148px] rounded-2xl overflow-hidden border border-white/15 shadow-2xl">
-          {selfViewContent}
-        </div>
+        {selfViewVisible && (
+          <div className="absolute bottom-28 right-4 z-30 w-[110px] h-[148px] rounded-2xl overflow-hidden border border-white/15 shadow-2xl">
+            {selfViewContent}
+          </div>
+        )}
         {pipTopBar}
         <div className="flex-1" />
         {pipControls}
@@ -465,9 +468,11 @@ export default function MeetingPage() {
               remoteVideoPlaceholder
             )}
           </div>
-          <div className="flex-1 rounded-2xl overflow-hidden bg-black/30 border border-white/6 min-h-0">
-            {selfViewContent}
-          </div>
+          {selfViewVisible && (
+            <div className="flex-1 rounded-2xl overflow-hidden bg-black/30 border border-white/6 min-h-0">
+              {selfViewContent}
+            </div>
+          )}
         </div>
         {pipControls}
       </div>
@@ -566,7 +571,7 @@ export default function MeetingPage() {
           )}
 
           {/* Self-view PiP */}
-          {localStream && (
+          {selfViewVisible && localStream && (
             <div className={`absolute bottom-1.5 right-1.5 w-[64px] h-[48px] rounded-lg overflow-hidden border border-white/10 shadow-lg bg-black/60 z-10 transition-all duration-300 ${isVideoMuted ? 'opacity-0 pointer-events-none' : miniHover ? 'opacity-100 bottom-[52px]' : 'opacity-100'}`}>
               <video
                 ref={miniSelfRef}
@@ -740,14 +745,14 @@ export default function MeetingPage() {
           ref={mainVideoRef}
           className={`relative min-h-0 flex-1 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] ${
             presentationStream && !presentationPopped
-              ? layout === 'spotlight'
+              ? layout === 'focus'
                 ? 'flex flex-col justify-center'
-                : layout === 'stacked'
+                : layout === 'gallery'
                   ? 'flex flex-col gap-3'
                   : 'flex flex-col md:flex-row gap-4 justify-center'
-              : layout === 'spotlight'
+              : layout === 'focus'
                 ? 'flex flex-col justify-center'
-                : layout === 'stacked'
+                : layout === 'gallery'
                   ? 'flex flex-col gap-3'
                   : 'grid grid-cols-1 md:grid-cols-2 grid-rows-2 md:grid-rows-1 gap-4 md:gap-6'
           }`}
@@ -757,9 +762,9 @@ export default function MeetingPage() {
               {/* Presentation content */}
               <GlassPanel
                 className={`relative flex items-center justify-center bg-black/50 ${
-                  layout === 'spotlight'
+                  layout === 'focus'
                     ? 'h-full'
-                    : layout === 'stacked'
+                    : layout === 'gallery'
                       ? 'flex-[2] min-h-0 w-full'
                       : 'flex-[2] md:h-full min-h-[300px]'
                 }`}
@@ -774,8 +779,8 @@ export default function MeetingPage() {
                 />
               </GlassPanel>
 
-              {/* Spotlight: remote bottom-left, self bottom-right */}
-              {layout === 'spotlight' && (
+              {/* Focus: remote bottom-left, self bottom-right */}
+              {layout === 'focus' && (
                 <>
                   <div
                     className="absolute bottom-4 left-4 rounded-2xl overflow-hidden border border-white/10 shadow-2xl z-20 bg-black/80"
@@ -822,8 +827,8 @@ export default function MeetingPage() {
                 </>
               )}
 
-              {/* Stacked: remote + self side-by-side below content */}
-              {layout === 'stacked' && (
+              {/* Gallery: remote + self side-by-side below content */}
+              {layout === 'gallery' && (
                 <div className="flex-1 flex flex-row gap-3 min-h-0">
                   <GlassPanel className="relative flex-1 min-h-0" hoverEffect={false}>
                     {remoteStream ? (
@@ -858,8 +863,8 @@ export default function MeetingPage() {
                 </div>
               )}
 
-              {/* Split: side strip for remote/local */}
-              {layout === 'split' && (
+              {/* Side-by-side: side strip for remote/local */}
+              {layout === 'side-by-side' && (
                 <div className="flex-1 flex flex-row md:flex-col gap-4 md:w-80 md:min-w-[320px] md:max-w-xs shrink-0 overflow-x-auto md:overflow-y-auto w-full md:h-full no-scrollbar">
                   <GlassPanel
                     className="relative flex-1 min-w-[200px] md:w-full md:min-h-[200px]"
@@ -908,9 +913,9 @@ export default function MeetingPage() {
               {/* Remote video */}
               <GlassPanel
                 className={`relative ${
-                  layout === 'spotlight'
+                  layout === 'focus'
                     ? 'h-full'
-                    : layout === 'stacked'
+                    : layout === 'gallery'
                       ? 'flex-[2] min-h-0 w-full'
                       : 'min-h-0 h-full w-full flex items-center justify-center'
                 }`}
@@ -930,10 +935,15 @@ export default function MeetingPage() {
                 )}
               </GlassPanel>
 
-              {/* Local self-view */}
-              {layout === 'spotlight' ? (
-                <div
-                  className="absolute bottom-4 right-4 rounded-2xl overflow-hidden border border-white/10 shadow-2xl z-20 bg-black/80 transition-all duration-300"
+              {/* Local self-view (toggle controlled, local-only, draggable in spotlight) */}
+              {selfViewVisible && (layout === 'focus' ? (
+                <motion.div
+                  drag
+                  dragConstraints={mainVideoRef}
+                  dragElastic={0.1}
+                  dragMomentum={false}
+                  whileDrag={{ scale: 1.05, boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }}
+                  className="absolute bottom-4 right-4 rounded-2xl overflow-hidden border border-white/10 shadow-2xl z-20 bg-black/80 cursor-grab active:cursor-grabbing"
                   style={videoAspect >= 1
                     ? { width: 200, height: Math.round(200 / videoAspect) }
                     : { height: 200, width: Math.round(200 * videoAspect) }
@@ -945,7 +955,7 @@ export default function MeetingPage() {
                       autoPlay
                       playsInline
                       muted
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover pointer-events-none"
                       style={{ transform: 'scaleX(-1)' }}
                     />
                   ) : (
@@ -953,11 +963,11 @@ export default function MeetingPage() {
                       <VideoOff size={20} strokeWidth={1.5} className="text-white/30" />
                     </div>
                   )}
-                </div>
+                </motion.div>
               ) : (
                 <GlassPanel
                   className={`relative min-h-0 w-full flex items-center justify-center ${
-                    layout === 'stacked' ? 'flex-1' : 'h-full'
+                    layout === 'gallery' ? 'flex-1' : 'h-full'
                   }`}
                   isActive={isBroadcasting}
                   isAudioOnly={isAudioOnly}
@@ -981,7 +991,7 @@ export default function MeetingPage() {
                     </div>
                   )}
                 </GlassPanel>
-              )}
+              ))}
             </>
           )}
 
@@ -1122,6 +1132,8 @@ export default function MeetingPage() {
             activeDockTab={dockTab}
             dockMode={dockMode}
             layout={layout}
+            selfViewVisible={selfViewVisible}
+            onToggleSelfView={() => setSelfViewVisible((v) => !v)}
             audioInputId={settings.audioInput}
             videoInputId={settings.videoInput}
             onAudioInputChange={(id) => saveSettings({ audioInput: id })}
@@ -1131,7 +1143,7 @@ export default function MeetingPage() {
             onTogglePip={() => (pip.isActive ? pip.closePip() : pip.openPip())}
             onToggleLayout={() =>
               setLayout((l) =>
-                l === 'spotlight' ? 'stacked' : l === 'stacked' ? 'split' : 'spotlight',
+                l === 'focus' ? 'gallery' : l === 'gallery' ? 'side-by-side' : 'focus',
               )
             }
             onToggleShare={() => (isPresenting ? stopScreenShare() : startScreenShare())}
