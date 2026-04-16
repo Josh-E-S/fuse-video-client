@@ -166,6 +166,9 @@ function registerModelHandlers() {
         return;
       }
 
+      const modelsDir = getModelsDir();
+      fs.mkdirSync(modelsDir, { recursive: true });
+
       const { spawn } = require("child_process");
       const child = spawn("bash", [scriptPath], {
         cwd: isDev ? path.join(__dirname, "..") : process.resourcesPath,

@@ -74,6 +74,10 @@
         "from": "models",
         "to": "models",
         "filter": ["**/*.onnx", "**/*.txt"]
+      },
+      {
+        "from": "scripts/download-models.sh",
+        "to": "scripts/download-models.sh"
       }
     ],
     "mac": {
