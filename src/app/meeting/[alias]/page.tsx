@@ -72,6 +72,7 @@ export default function MeetingPage() {
     setMessageText,
     sendDTMF,
     getMediaStatistics,
+    requestAspectRatio,
     startScreenShare,
     stopScreenShare,
   } = usePexip()
@@ -85,8 +86,23 @@ export default function MeetingPage() {
   const [transcriptionEnabled, setTranscriptionEnabled] = useState(false)
   const [captionsVisible, setCaptionsVisible] = useState(true)
   const [showDTMF, setShowDTMF] = useState(false)
-  const [videoAspect, setVideoAspect] = useState(1)
   const [presentationPopped, setPresentationPopped] = useState(false)
+
+  const sideDockOpen = dockMode === 'side' && dockTab !== null
+
+  const targetAspectRatio: '16:9' | '9:16' =
+    isMini ? '16:9'
+    : isExpanded ? '16:9'
+    : layout === 'gallery' ? '16:9'
+    : sideDockOpen ? '16:9'
+    : '9:16'
+
+  useEffect(() => {
+    if (connectionState !== 'connected') return
+    const ratio = targetAspectRatio === '16:9' ? 16 / 9 : 9 / 16
+    requestAspectRatio(ratio)
+  }, [targetAspectRatio, connectionState, requestAspectRatio])
+
   const popoutWindowRef = useRef<Window | null>(null)
   const mainVideoRef = useRef<HTMLElement | null>(null)
 
@@ -232,18 +248,6 @@ export default function MeetingPage() {
     },
     [presentationStream],
   )
-
-  // Track main video container aspect ratio for PiP self-view sizing
-  useEffect(() => {
-    const el = mainVideoRef.current
-    if (!el) return
-    const ro = new ResizeObserver(([entry]) => {
-      const { width, height } = entry.contentRect
-      if (width > 0 && height > 0) setVideoAspect(width / height)
-    })
-    ro.observe(el)
-    return () => ro.disconnect()
-  }, [])
 
   useEffect(() => {
     if (connectionState === 'disconnected' || connectionState === 'error') {
@@ -784,10 +788,7 @@ export default function MeetingPage() {
                 <>
                   <div
                     className="absolute bottom-4 left-4 rounded-2xl overflow-hidden border border-white/10 shadow-2xl z-20 bg-black/80"
-                    style={videoAspect >= 1
-                      ? { width: 160, height: Math.round(160 / videoAspect) }
-                      : { height: 160, width: Math.round(160 * videoAspect) }
-                    }
+                    style={{ width: 160, height: 90 }}
                   >
                     {remoteStream ? (
                       <video
@@ -804,10 +805,7 @@ export default function MeetingPage() {
                   </div>
                   <div
                     className="absolute bottom-4 right-4 rounded-2xl overflow-hidden border border-white/10 shadow-2xl z-20 bg-black/80"
-                    style={videoAspect >= 1
-                      ? { width: 160, height: Math.round(160 / videoAspect) }
-                      : { height: 160, width: Math.round(160 * videoAspect) }
-                    }
+                    style={{ width: 160, height: 90 }}
                   >
                     {localStream && !isVideoMuted ? (
                       <video
@@ -944,9 +942,9 @@ export default function MeetingPage() {
                   dragMomentum={false}
                   whileDrag={{ scale: 1.05, boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }}
                   className="absolute bottom-4 right-4 rounded-2xl overflow-hidden border border-white/10 shadow-2xl z-20 bg-black/80 cursor-grab active:cursor-grabbing"
-                  style={videoAspect >= 1
-                    ? { width: 200, height: Math.round(200 / videoAspect) }
-                    : { height: 200, width: Math.round(200 * videoAspect) }
+                  style={targetAspectRatio === '16:9'
+                    ? { width: 200, height: 112 }
+                    : { width: 112, height: 200 }
                   }
                 >
                   {localStream && !isVideoMuted ? (
