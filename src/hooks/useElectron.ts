@@ -14,6 +14,9 @@ interface ElectronBridge {
   transcriptionStop: () => Promise<Array<string | { text: string; speaker: string }>>
   transcriptionSendAudio: (samples: Float32Array, speaker?: string) => void
   onTranscriptionResult: (callback: (text: string, speaker?: string) => void) => () => void
+  modelsStatus: () => Promise<{ downloaded: boolean }>
+  downloadModels: () => Promise<{ success: boolean; error?: string }>
+  onDownloadProgress: (callback: (line: string) => void) => () => void
 }
 
 export function getElectronBridge(): ElectronBridge | null {

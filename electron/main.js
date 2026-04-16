@@ -2,7 +2,7 @@ const { app, BrowserWindow, session, ipcMain, systemPreferences, desktopCapturer
 const { spawn, fork } = require("child_process");
 const path = require("path");
 const net = require("net");
-const { registerTranscriptionHandlers } = require("./transcription");
+const { registerTranscriptionHandlers, registerModelHandlers } = require("./transcription");
 
 const COMPACT_SIZE = { width: 500, height: 900 };
 const EXPANDED_SIZE = { width: 1220, height: 900 };
@@ -271,6 +271,7 @@ async function createWindow(port) {
 
 app.whenReady().then(async () => {
   registerTranscriptionHandlers();
+  registerModelHandlers();
 
   serverPort = await getFreePort();
   console.log(`Starting Next.js on port ${serverPort}...`);

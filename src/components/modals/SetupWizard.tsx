@@ -17,9 +17,13 @@ import {
   ChevronLeft,
   Check,
   Sparkles,
+  Mail,
+  Download,
+  Languages,
 } from 'lucide-react'
 import { useSettings } from '@/hooks/useSettings'
 import { useMediaDevices, useSpeakerTest } from '@/hooks/useMediaDevices'
+import { getElectronBridge } from '@/hooks/useElectron'
 
 const SETUP_KEY = 'fuse_setup_complete'
 
@@ -36,7 +40,7 @@ interface SetupWizardProps {
   onComplete: () => void
 }
 
-const STEPS = ['welcome', 'connection', 'calendar', 'providers', 'devices', 'check', 'done'] as const
+const ALL_STEPS = ['welcome', 'connection', 'registration', 'calendar', 'providers', 'devices', 'transcription', 'check', 'done'] as const
 
 type CheckStatus = 'pending' | 'checking' | 'pass' | 'warn' | 'fail'
 interface CheckItem {
@@ -44,28 +48,46 @@ interface CheckItem {
   status: CheckStatus
   detail?: string
 }
-type Step = typeof STEPS[number]
+type Step = typeof ALL_STEPS[number]
 
 export function SetupWizard({ open, onComplete }: SetupWizardProps) {
   const { settings, saveSettings } = useSettings()
   const [step, setStep] = useState<Step>('welcome')
+
+  const [isElectron, setIsElectron] = useState(false)
+  useEffect(() => {
+    setIsElectron(!!getElectronBridge())
+  }, [])
+
+  const STEPS = ALL_STEPS.filter((s) => s !== 'transcription' || isElectron)
   const stepIdx = STEPS.indexOf(step)
 
   const [nodeDomain, setNodeDomain] = useState('')
   const [displayName, setDisplayName] = useState('')
+  const [regAlias, setRegAlias] = useState('')
+  const [regUsername, setRegUsername] = useState('')
+  const [regPassword, setRegPassword] = useState('')
   const [otjClientId, setOtjClientId] = useState('')
   const [otjClientSecret, setOtjClientSecret] = useState('')
   const [pexipCustomerId, setPexipCustomerId] = useState('')
   const [googleDomain, setGoogleDomain] = useState('')
 
+  const [modelsDownloaded, setModelsDownloaded] = useState(false)
+  const [downloadBusy, setDownloadBusy] = useState(false)
+  const [downloadStatus, setDownloadStatus] = useState('')
+
   useEffect(() => {
     if (open) {
       setNodeDomain(settings.nodeDomain)
       setDisplayName(settings.displayName)
+      setRegAlias(localStorage.getItem('fuse_reg_alias') ?? '')
+      setRegUsername(localStorage.getItem('fuse_reg_username') ?? '')
+      setRegPassword(localStorage.getItem('fuse_reg_password') ?? '')
       setOtjClientId(settings.otjClientId)
       setOtjClientSecret(settings.otjClientSecret)
       setPexipCustomerId(settings.pexipCustomerId)
       setGoogleDomain(settings.googleDomain)
+      getElectronBridge()?.modelsStatus().then((s) => setModelsDownloaded(s.downloaded)).catch(() => {})
     }
   }, [open, settings])
 
@@ -98,6 +120,10 @@ export function SetupWizard({ open, onComplete }: SetupWizardProps) {
   function saveAndNext() {
     if (step === 'connection') {
       saveSettings({ nodeDomain, displayName })
+    } else if (step === 'registration') {
+      localStorage.setItem('fuse_reg_alias', regAlias)
+      localStorage.setItem('fuse_reg_username', regUsername)
+      localStorage.setItem('fuse_reg_password', regPassword)
     } else if (step === 'calendar') {
       saveSettings({ otjClientId, otjClientSecret })
     } else if (step === 'providers') {
@@ -110,6 +136,23 @@ export function SetupWizard({ open, onComplete }: SetupWizardProps) {
     }
   }
 
+  async function handleDownloadModels() {
+    const bridge = getElectronBridge()
+    if (!bridge) return
+    setDownloadBusy(true)
+    setDownloadStatus('Downloading model (~126 MB)...')
+    const cleanup = bridge.onDownloadProgress((line) => setDownloadStatus(line))
+    const result = await bridge.downloadModels()
+    cleanup()
+    setDownloadBusy(false)
+    if (result.success) {
+      setModelsDownloaded(true)
+      setDownloadStatus('Model ready')
+    } else {
+      setDownloadStatus(result.error ?? 'Download failed')
+    }
+  }
+
   const [checks, setChecks] = useState<CheckItem[]>([])
 
   async function runChecks() {
@@ -118,6 +161,7 @@ export function SetupWizard({ open, onComplete }: SetupWizardProps) {
       { label: 'Calendar (OTJ)', status: 'pending' },
       { label: 'Camera', status: 'pending' },
       { label: 'Microphone', status: 'pending' },
+      ...(isElectron ? [{ label: 'Transcription Model', status: 'pending' as CheckStatus }] : []),
     ]
     setChecks([...items])
 
@@ -185,6 +229,22 @@ export function SetupWizard({ open, onComplete }: SetupWizardProps) {
       await update(3, 'pass', 'Microphone accessible')
     } catch {
       await update(3, 'fail', 'No microphone access')
+    }
+
+    // Check 5: Transcription model (Electron only)
+    if (isElectron) {
+      await update(4, 'checking')
+      const bridge = getElectronBridge()
+      if (bridge) {
+        const status = await bridge.modelsStatus()
+        if (status.downloaded) {
+          await update(4, 'pass', 'Model ready')
+        } else {
+          await update(4, 'warn', 'Not downloaded (optional)')
+        }
+      } else {
+        await update(4, 'warn', 'Bridge unavailable')
+      }
     }
   }
 
@@ -280,6 +340,52 @@ export function SetupWizard({ open, onComplete }: SetupWizardProps) {
                         className="w-full px-4 py-3 rounded-xl bg-white/6 border border-white/10 text-white placeholder-white/20 focus:outline-none focus:border-white/30 transition-colors text-sm"
                       />
                     </div>
+                  </div>
+                )}
+
+                {step === 'registration' && (
+                  <div className="space-y-5">
+                    <div>
+                      <h2 className="text-xl font-light text-white/90 mb-1">Registration</h2>
+                      <p className="text-sm text-white/30">Register as a SIP endpoint to receive incoming calls</p>
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-white/40 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                        <Mail size={10} /> Alias
+                      </label>
+                      <input
+                        type="email"
+                        value={regAlias}
+                        onChange={(e) => setRegAlias(e.target.value)}
+                        placeholder="e.g. user@example.com"
+                        className="w-full px-4 py-3 rounded-xl bg-white/6 border border-white/10 text-white placeholder-white/20 focus:outline-none focus:border-white/30 transition-colors text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-white/40 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                        <User size={10} /> Username
+                      </label>
+                      <input
+                        type="text"
+                        value={regUsername}
+                        onChange={(e) => setRegUsername(e.target.value)}
+                        placeholder="e.g. username"
+                        className="w-full px-4 py-3 rounded-xl bg-white/6 border border-white/10 text-white placeholder-white/20 focus:outline-none focus:border-white/30 transition-colors text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-white/40 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                        <KeyRound size={10} /> Password
+                      </label>
+                      <input
+                        type="password"
+                        value={regPassword}
+                        onChange={(e) => setRegPassword(e.target.value)}
+                        placeholder="••••••••"
+                        className="w-full px-4 py-3 rounded-xl bg-white/6 border border-white/10 text-white placeholder-white/20 focus:outline-none focus:border-white/30 transition-colors text-sm"
+                      />
+                    </div>
+                    <p className="text-[11px] text-white/20">Optional. Skip if you don't need to receive incoming calls.</p>
                   </div>
                 )}
 
@@ -452,6 +558,48 @@ export function SetupWizard({ open, onComplete }: SetupWizardProps) {
                         </button>
                       </div>
                     </div>
+                  </div>
+                )}
+
+                {step === 'transcription' && (
+                  <div className="space-y-5">
+                    <div>
+                      <h2 className="text-xl font-light text-white/90 mb-1">Live Transcription</h2>
+                      <p className="text-sm text-white/30">Download a speech model for offline captions</p>
+                    </div>
+                    <div className="px-4 py-5 rounded-xl bg-white/3 border border-white/6 space-y-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-white/6 border border-white/8 flex items-center justify-center shrink-0">
+                          <Languages size={18} className="text-white/40" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-[13px] font-medium text-white/80">Parakeet TDT-CTC 110M</div>
+                          <div className="text-[11px] text-white/30">English, ~126 MB, runs locally</div>
+                        </div>
+                        {modelsDownloaded ? (
+                          <div className="flex items-center gap-1.5 text-emerald-400 text-xs font-medium">
+                            <Check size={14} /> Ready
+                          </div>
+                        ) : (
+                          <button
+                            onClick={handleDownloadModels}
+                            disabled={downloadBusy}
+                            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white/8 border border-white/10 text-white/70 text-xs font-medium hover:bg-white/12 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                          >
+                            {downloadBusy ? (
+                              <div className="w-3 h-3 border border-white/20 border-t-white/60 rounded-full animate-spin" />
+                            ) : (
+                              <Download size={12} />
+                            )}
+                            {downloadBusy ? 'Downloading...' : 'Download'}
+                          </button>
+                        )}
+                      </div>
+                      {downloadStatus && !modelsDownloaded && (
+                        <div className="text-[11px] text-white/25 truncate">{downloadStatus}</div>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-white/20">Optional. You can also download this later from Settings or by running <code className="text-white/30">npm run download-models</code>.</p>
                   </div>
                 )}
 

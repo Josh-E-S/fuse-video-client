@@ -18,6 +18,8 @@ describe('useElectron', () => {
       isElectron: true,
       toggleExpand: vi.fn().mockResolvedValue(true),
       getExpanded: vi.fn().mockResolvedValue(false),
+      toggleMini: vi.fn().mockResolvedValue(false),
+      getMini: vi.fn().mockResolvedValue(false),
     }
 
     const { result } = renderHook(() => useElectron())
@@ -33,6 +35,8 @@ describe('useElectron', () => {
       isElectron: true,
       toggleExpand: vi.fn().mockResolvedValue(true),
       getExpanded: vi.fn().mockResolvedValue(false),
+      toggleMini: vi.fn().mockResolvedValue(false),
+      getMini: vi.fn().mockResolvedValue(false),
     }
 
     const { result } = renderHook(() => useElectron())

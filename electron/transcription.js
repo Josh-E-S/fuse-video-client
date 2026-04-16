@@ -1,5 +1,6 @@
 const { ipcMain } = require("electron");
 const path = require("path");
+const fs = require("fs");
 
 let sherpa = null;
 let recognizer = null;
@@ -33,7 +34,6 @@ function ensureLoaded() {
   const modelsDir = getModelsDir();
   const parakeetDir = path.join(modelsDir, "parakeet");
 
-  const fs = require("fs");
   if (!fs.existsSync(path.join(parakeetDir, "model.int8.onnx"))) return false;
 
   try {
@@ -145,4 +145,58 @@ function decodeBuffer(audioSamples) {
   }
 }
 
-module.exports = { registerTranscriptionHandlers };
+function modelsExist() {
+  const modelsDir = getModelsDir();
+  return fs.existsSync(path.join(modelsDir, "parakeet", "model.int8.onnx"));
+}
+
+function registerModelHandlers() {
+  ipcMain.handle("transcription:models-status", () => {
+    return { downloaded: modelsExist() };
+  });
+
+  ipcMain.handle("transcription:download-models", (event) => {
+    return new Promise((resolve) => {
+      const scriptPath = isDev
+        ? path.join(__dirname, "..", "scripts", "download-models.sh")
+        : path.join(process.resourcesPath, "scripts", "download-models.sh");
+
+      if (!fs.existsSync(scriptPath)) {
+        resolve({ success: false, error: "Download script not found" });
+        return;
+      }
+
+      const { spawn } = require("child_process");
+      const child = spawn("bash", [scriptPath], {
+        cwd: isDev ? path.join(__dirname, "..") : process.resourcesPath,
+        env: { ...process.env },
+      });
+
+      let output = "";
+
+      child.stdout.on("data", (data) => {
+        const line = data.toString().trim();
+        output += line + "\n";
+        event.sender.send("transcription:download-progress", line);
+      });
+
+      child.stderr.on("data", (data) => {
+        output += data.toString();
+      });
+
+      child.on("close", (code) => {
+        if (code === 0 && modelsExist()) {
+          resolve({ success: true });
+        } else {
+          resolve({ success: false, error: output.slice(-500) });
+        }
+      });
+
+      child.on("error", (err) => {
+        resolve({ success: false, error: err.message });
+      });
+    });
+  });
+}
+
+module.exports = { registerTranscriptionHandlers, registerModelHandlers };

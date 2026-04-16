@@ -20,4 +20,13 @@ contextBridge.exposeInMainWorld("electron", {
     ipcRenderer.on("transcription:result", listener);
     return () => ipcRenderer.removeListener("transcription:result", listener);
   },
+
+  // Model management
+  modelsStatus: () => ipcRenderer.invoke("transcription:models-status"),
+  downloadModels: () => ipcRenderer.invoke("transcription:download-models"),
+  onDownloadProgress: (callback) => {
+    const listener = (_event, line) => callback(line);
+    ipcRenderer.on("transcription:download-progress", listener);
+    return () => ipcRenderer.removeListener("transcription:download-progress", listener);
+  },
 });
