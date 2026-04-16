@@ -5,8 +5,7 @@
 <h1 align="center">Fuse Video Client</h1>
 
 <p align="center">
-  A native Electron video conferencing client that joins Pexip, Zoom, Google Meet, and Microsoft Teams meetings through a single interface.<br/>
-  Built on <a href="https://www.pexip.com/">Pexip Infinity's</a> PexRTC client APIs with offline live transcription powered by NVIDIA's Parakeet speech model via Sherpa-ONNX.
+  A native Electron video conferencing client that joins Pexip, Zoom, Google Meet, and Microsoft Teams meetings through a single interface. Built on <a href="https://www.pexip.com/">Pexip Infinity's</a> PexRTC client APIs with offline live transcription powered by NVIDIA's Parakeet speech model via Sherpa-ONNX.
 </p>
 
 <p align="center">
@@ -31,10 +30,10 @@
 <br/>
 
 <p align="center">
-  <strong>Compact</strong> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>Expanded</strong>
+  <strong>Compact</strong>                                                                                                                <strong>Expanded</strong>
 </p>
 <p align="center">
-  <img src="public/screenshots/home.png" alt="Compact" height="350" />&nbsp;&nbsp;&nbsp;
+  <img src="public/screenshots/home.png" alt="Compact" height="350" />   
   <img src="public/screenshots/expanded-mode.png" alt="Expanded" height="350" />
 </p>
 
@@ -49,13 +48,13 @@
 
 <p align="center"><strong>Quick Join</strong></p>
 <p align="center">
-  <img src="public/screenshots/join-google.png" alt="Google Meet" height="280" />&nbsp;
-  <img src="public/screenshots/join-teams.png" alt="Teams" height="280" />&nbsp;
-  <img src="public/screenshots/join-zoom.png" alt="Zoom" height="280" />&nbsp;
+  <img src="public/screenshots/join-google.png" alt="Google Meet" height="280" /> 
+  <img src="public/screenshots/join-teams.png" alt="Teams" height="280" /> 
+  <img src="public/screenshots/join-zoom.png" alt="Zoom" height="280" /> 
   <img src="public/screenshots/join-pexip.png" alt="Pexip" height="280" />
 </p>
 <p align="center">
-  <em>Google Meet &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Teams &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Zoom &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Pexip</em>
+  <em>Google Meet                           Teams                           Zoom                         Pexip</em>
 </p>
 
 ---
@@ -90,17 +89,17 @@
 
 ## Tech Stack
 
-| Layer          | Technology                                                        |
-| -------------- | ----------------------------------------------------------------- |
-| **Framework**  | Next.js 16 (App Router, standalone output)                        |
-| **Language**   | TypeScript 5 (strict mode)                                        |
-| **UI**         | React 19, Tailwind CSS v4, Framer Motion                          |
-| **Components** | Radix UI primitives, Lucide React icons, Sonner toasts            |
-| **WebRTC**     | PexRTC (Pexip Infinity browser SDK, loaded dynamically from node) |
-| **Desktop**    | Electron 35 with context isolation                                |
+| Layer          | Technology                                                            |
+| -------------- | --------------------------------------------------------------------- |
+| **Framework**  | Next.js 16 (App Router, standalone output)                            |
+| **Language**   | TypeScript 5 (strict mode)                                            |
+| **UI**         | React 19, Tailwind CSS v4, Framer Motion                              |
+| **Components** | Radix UI primitives, Lucide React icons, Sonner toasts                |
+| **WebRTC**     | PexRTC (Pexip Infinity browser SDK, loaded dynamically from node)     |
+| **Desktop**    | Electron 35 with context isolation                                    |
 | **Speech**     | NVIDIA Parakeet TDT-CTC 110M via Sherpa-ONNX (offline, Electron-only) |
-| **Testing**    | Vitest 4, Testing Library, jsdom                                  |
-| **Linting**    | ESLint 9, Prettier                                                |
+| **Testing**    | Vitest 4, Testing Library, jsdom                                      |
+| **Linting**    | ESLint 9, Prettier                                                    |
 
 ---
 
@@ -173,19 +172,19 @@ All settings can be changed later via the gear icon in the top bar.
 
 All configuration persists in `localStorage` and syncs across windows:
 
-| Setting                | Purpose                                            |
-| ---------------------- | -------------------------------------------------- |
-| **Node Domain**        | Your Pexip Infinity node (e.g.`pexip.example.com`) |
-| **Display Name**       | Name shown to other participants                   |
+| Setting                | Purpose                                                    |
+| ---------------------- | ---------------------------------------------------------- |
+| **Node Domain**        | Your Pexip Infinity node (e.g.`pexip.example.com`)         |
+| **Display Name**       | Name shown to other participants                           |
 | **Registration**       | WebRTC device alias, username, password for incoming calls |
-| **Audio Input/Output** | Microphone and speaker selection                   |
-| **Video Input**        | Camera selection                                   |
-| **Ringtone**           | Incoming call sound (8 options)                    |
-| **OTJ Credentials**    | Client ID/Secret for calendar integration          |
-| **Customer ID**        | Required for Microsoft Teams CVI dial strings      |
-| **Google Domain**      | Required for Google Meet CVI dial strings          |
-| **Quick Join Toggles** | Show/hide provider buttons on the home screen      |
-| **Theme**              | 10 visual themes across 4 categories               |
+| **Audio Input/Output** | Microphone and speaker selection                           |
+| **Video Input**        | Camera selection                                           |
+| **Ringtone**           | Incoming call sound (8 options)                            |
+| **OTJ Credentials**    | Client ID/Secret for calendar integration                  |
+| **Customer ID**        | Required for Microsoft Teams CVI dial strings              |
+| **Google Domain**      | Required for Google Meet CVI dial strings                  |
+| **Quick Join Toggles** | Show/hide provider buttons on the home screen              |
+| **Theme**              | 10 visual themes across 4 categories                       |
 
 ### Dial String Builders
 
@@ -211,14 +210,14 @@ Fuse constructs provider-specific dial strings automatically. All calls route th
 
 ### State Architecture
 
-| Layer                  | Mechanism           | Scope                                          |
-| ---------------------- | ------------------- | ---------------------------------------------- |
-| **Conference**         | PexipContext        | WebRTC connection, streams, participants, chat |
+| Layer                  | Mechanism           | Scope                                                 |
+| ---------------------- | ------------------- | ----------------------------------------------------- |
+| **Conference**         | PexipContext        | WebRTC connection, streams, participants, chat        |
 | **Registration**       | RegistrationContext | WebRTC device registration, incoming calls, heartbeat |
-| **Picture-in-Picture** | PipContext          | documentPictureInPicture API                   |
-| **Settings**           | useSettings hook    | localStorage with cross-instance sync          |
-| **Theme**              | useTheme hook       | CSS custom properties, no flash on load        |
-| **Quick Join**         | useQuickJoin hook   | Provider toggle state with cross-instance sync |
+| **Picture-in-Picture** | PipContext          | documentPictureInPicture API                          |
+| **Settings**           | useSettings hook    | localStorage with cross-instance sync                 |
+| **Theme**              | useTheme hook       | CSS custom properties, no flash on load               |
+| **Quick Join**         | useQuickJoin hook   | Provider toggle state with cross-instance sync        |
 
 ### Key Services
 
@@ -293,13 +292,13 @@ Copy `.env.example` to `.env.local`. All values are optional -- settings can be 
 
 ### Dev Defaults (optional, pre-populate Settings on first launch)
 
-| Variable                           | Description                    |
-| ---------------------------------- | ------------------------------ |
-| `NEXT_PUBLIC_DEFAULT_NODE_DOMAIN`  | Default Pexip node domain      |
-| `NEXT_PUBLIC_DEFAULT_DISPLAY_NAME` | Default display name           |
-| `NEXT_PUBLIC_DEFAULT_ALIAS`        | Default registration alias     |
-| `NEXT_PUBLIC_DEFAULT_REG_USERNAME` | Default registration username  |
-| `NEXT_PUBLIC_DEFAULT_REG_PASSWORD` | Default registration password  |
+| Variable                           | Description                   |
+| ---------------------------------- | ----------------------------- |
+| `NEXT_PUBLIC_DEFAULT_NODE_DOMAIN`  | Default Pexip node domain     |
+| `NEXT_PUBLIC_DEFAULT_DISPLAY_NAME` | Default display name          |
+| `NEXT_PUBLIC_DEFAULT_ALIAS`        | Default registration alias    |
+| `NEXT_PUBLIC_DEFAULT_REG_USERNAME` | Default registration username |
+| `NEXT_PUBLIC_DEFAULT_REG_PASSWORD` | Default registration password |
 
 > OTJ credentials can also be provided per-user through the Settings modal, which passes them as headers to the API route.
 
