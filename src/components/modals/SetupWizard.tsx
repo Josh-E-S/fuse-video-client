@@ -38,6 +38,7 @@ export function useSetupRequired() {
 interface SetupWizardProps {
   open: boolean
   onComplete: () => void
+  onRegister?: (creds: { alias: string; username: string; password: string }, nodeDomain: string) => Promise<void>
 }
 
 const ALL_STEPS = ['welcome', 'connection', 'registration', 'calendar', 'providers', 'devices', 'transcription', 'check', 'done'] as const
@@ -50,7 +51,7 @@ interface CheckItem {
 }
 type Step = typeof ALL_STEPS[number]
 
-export function SetupWizard({ open, onComplete }: SetupWizardProps) {
+export function SetupWizard({ open, onComplete, onRegister }: SetupWizardProps) {
   const { settings, saveSettings } = useSettings()
   const [step, setStep] = useState<Step>('welcome')
 
@@ -75,6 +76,7 @@ export function SetupWizard({ open, onComplete }: SetupWizardProps) {
   const [modelsDownloaded, setModelsDownloaded] = useState(false)
   const [downloadBusy, setDownloadBusy] = useState(false)
   const [downloadStatus, setDownloadStatus] = useState('')
+  const [downloadProgress, setDownloadProgress] = useState(0)
 
   useEffect(() => {
     if (open) {
@@ -140,15 +142,23 @@ export function SetupWizard({ open, onComplete }: SetupWizardProps) {
     const bridge = getElectronBridge()
     if (!bridge) return
     setDownloadBusy(true)
-    setDownloadStatus('Downloading model (~126 MB)...')
-    const cleanup = bridge.onDownloadProgress((line) => setDownloadStatus(line))
+    setDownloadProgress(0)
+    setDownloadStatus('Starting download...')
+    const cleanup = bridge.onDownloadProgress((line) => {
+      setDownloadStatus(line)
+      const pctMatch = line.match(/(\d+(?:\.\d+)?)%/)
+      if (pctMatch) setDownloadProgress(Math.min(parseFloat(pctMatch[1]), 100))
+      if (line.toLowerCase().includes('extracting')) setDownloadProgress(95)
+    })
     const result = await bridge.downloadModels()
     cleanup()
     setDownloadBusy(false)
     if (result.success) {
       setModelsDownloaded(true)
+      setDownloadProgress(100)
       setDownloadStatus('Model ready')
     } else {
+      setDownloadProgress(0)
       setDownloadStatus(result.error ?? 'Download failed')
     }
   }
@@ -156,8 +166,10 @@ export function SetupWizard({ open, onComplete }: SetupWizardProps) {
   const [checks, setChecks] = useState<CheckItem[]>([])
 
   async function runChecks() {
+    const hasRegCreds = !!(regAlias && regUsername && nodeDomain)
     const items: CheckItem[] = [
       { label: 'Pexip Node', status: 'pending' },
+      { label: 'Registration', status: 'pending' },
       { label: 'Calendar (OTJ)', status: 'pending' },
       { label: 'Camera', status: 'pending' },
       { label: 'Microphone', status: 'pending' },
@@ -165,33 +177,51 @@ export function SetupWizard({ open, onComplete }: SetupWizardProps) {
     ]
     setChecks([...items])
 
-    async function update(idx: number, status: CheckStatus, detail?: string) {
+    let idx = 0
+    async function update(status: CheckStatus, detail?: string) {
       items[idx] = { ...items[idx], status, detail }
       setChecks([...items])
       await new Promise((r) => setTimeout(r, 400))
     }
 
-    // Check 1: Pexip node reachability
-    await update(0, 'checking')
+    // Pexip node reachability
+    await update('checking')
     try {
       const res = await fetch(`https://${nodeDomain}/api/client/v2/status`, { method: 'GET', signal: AbortSignal.timeout(5000) })
       if (res.ok) {
-        await update(0, 'pass', 'Node reachable')
+        await update('pass', 'Node reachable')
       } else {
-        await update(0, 'warn', `Status ${res.status}`)
+        await update('warn', `Status ${res.status}`)
       }
     } catch {
       if (nodeDomain) {
-        await update(0, 'fail', 'Cannot reach node')
+        await update('fail', 'Cannot reach node')
       } else {
-        await update(0, 'fail', 'No node domain configured')
+        await update('fail', 'No node domain configured')
       }
     }
+    idx++
 
-    // Check 2: Calendar / OTJ
-    await update(1, 'checking')
+    // Registration
+    await update('checking')
+    if (!hasRegCreds) {
+      await update('warn', 'Not configured (optional)')
+    } else if (onRegister) {
+      try {
+        await onRegister({ alias: regAlias, username: regUsername, password: regPassword }, nodeDomain)
+        await update('pass', 'Registered')
+      } catch {
+        await update('fail', 'Registration failed')
+      }
+    } else {
+      await update('warn', 'No handler available')
+    }
+    idx++
+
+    // Calendar / OTJ
+    await update('checking')
     if (!otjClientId || !otjClientSecret) {
-      await update(1, 'warn', 'Not configured (optional)')
+      await update('warn', 'Not configured (optional)')
     } else {
       try {
         const res = await fetch('/api/meetings', {
@@ -202,48 +232,51 @@ export function SetupWizard({ open, onComplete }: SetupWizardProps) {
         })
         const data = await res.json()
         if (res.ok && data.meetings) {
-          await update(1, 'pass', `${data.meetings.length} meetings found`)
+          await update('pass', `${data.meetings.length} meetings found`)
         } else {
-          await update(1, 'fail', 'Auth failed')
+          await update('fail', 'Auth failed')
         }
       } catch {
-        await update(1, 'fail', 'Connection error')
+        await update('fail', 'Connection error')
       }
     }
+    idx++
 
-    // Check 3: Camera
-    await update(2, 'checking')
+    // Camera
+    await update('checking')
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false })
       stream.getTracks().forEach((t) => t.stop())
-      await update(2, 'pass', 'Camera accessible')
+      await update('pass', 'Camera accessible')
     } catch {
-      await update(2, 'fail', 'No camera access')
+      await update('fail', 'No camera access')
     }
+    idx++
 
-    // Check 4: Microphone
-    await update(3, 'checking')
+    // Microphone
+    await update('checking')
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false })
       stream.getTracks().forEach((t) => t.stop())
-      await update(3, 'pass', 'Microphone accessible')
+      await update('pass', 'Microphone accessible')
     } catch {
-      await update(3, 'fail', 'No microphone access')
+      await update('fail', 'No microphone access')
     }
+    idx++
 
-    // Check 5: Transcription model (Electron only)
+    // Transcription model (Electron only)
     if (isElectron) {
-      await update(4, 'checking')
+      await update('checking')
       const bridge = getElectronBridge()
       if (bridge) {
         const status = await bridge.modelsStatus()
         if (status.downloaded) {
-          await update(4, 'pass', 'Model ready')
+          await update('pass', 'Model ready')
         } else {
-          await update(4, 'warn', 'Not downloaded (optional)')
+          await update('warn', 'Not downloaded (optional)')
         }
       } else {
-        await update(4, 'warn', 'Bridge unavailable')
+        await update('warn', 'Bridge unavailable')
       }
     }
   }
@@ -595,8 +628,19 @@ export function SetupWizard({ open, onComplete }: SetupWizardProps) {
                           </button>
                         )}
                       </div>
-                      {downloadStatus && !modelsDownloaded && (
-                        <div className="text-[11px] text-white/25 truncate">{downloadStatus}</div>
+                      {downloadBusy && (
+                        <div className="space-y-1.5">
+                          <div className="h-1.5 rounded-full bg-white/6 overflow-hidden">
+                            <div
+                              className="h-full rounded-full bg-white/30 transition-all duration-300"
+                              style={{ width: `${downloadProgress}%` }}
+                            />
+                          </div>
+                          <div className="text-[11px] text-white/25 truncate">{downloadStatus}</div>
+                        </div>
+                      )}
+                      {downloadStatus && !modelsDownloaded && !downloadBusy && (
+                        <div className="text-[11px] text-rose-400/60 truncate">{downloadStatus}</div>
                       )}
                     </div>
                     <p className="text-[11px] text-white/20">Optional. You can also download this later from Settings or by running <code className="text-white/30">npm run download-models</code>.</p>

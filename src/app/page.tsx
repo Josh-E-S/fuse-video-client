@@ -512,7 +512,13 @@ export default function HomePage() {
         }}
         onJoin={handlePreflightJoin}
       />
-      <SetupWizard open={setup.required} onComplete={setup.complete} />
+      <SetupWizard
+        open={setup.required}
+        onComplete={setup.complete}
+        onRegister={async (creds, node) => {
+          await regRegister(creds, node)
+        }}
+      />
       <SettingsModal
         open={showSettings}
         onClose={() => setShowSettings(false)}
