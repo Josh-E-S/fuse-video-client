@@ -8,6 +8,8 @@ const COMPACT_SIZE = { width: 500, height: 900 };
 const EXPANDED_SIZE = { width: 1220, height: 900 };
 const MINI_SIZE = { width: 320, height: 180 };
 
+const FIXED_PORT = 14032;
+
 let mainWindow;
 let nextProcess;
 let serverPort;
@@ -273,7 +275,7 @@ app.whenReady().then(async () => {
   registerTranscriptionHandlers();
   registerModelHandlers();
 
-  serverPort = await getFreePort();
+  serverPort = isDev ? await getFreePort() : FIXED_PORT;
   console.log(`Starting Next.js on port ${serverPort}...`);
 
   // Show the window immediately with a loading screen so the user
@@ -310,7 +312,7 @@ app.on("activate", async () => {
   // macOS dock click re-opens window
   if (mainWindow === null) {
     if (!nextProcess) {
-      serverPort = await getFreePort();
+      serverPort = isDev ? await getFreePort() : FIXED_PORT;
       await createWindow(serverPort);
       await startNextServer(serverPort);
       await waitForServer(serverPort);

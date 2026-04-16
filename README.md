@@ -1,6 +1,13 @@
-# Fuse Video Client
+<p align="center">
+  <img src="public/logo-1.png" alt="Fuse Video Client" width="120" />
+</p>
 
-A premium video conferencing interface built on [Pexip Infinity](https://www.pexip.com/) WebRTC APIs. Fuse showcases the Pexip client SDK through a polished, modern UI with glassmorphism design, animated themes, and native desktop packaging via Electron.
+<h1 align="center">Fuse Video Client</h1>
+
+<p align="center">
+  A premium video conferencing interface built on <a href="https://www.pexip.com/">Pexip Infinity</a> WebRTC APIs.<br/>
+  Fuse showcases the Pexip client SDK through a polished, modern UI with glassmorphism design, animated themes, and native desktop packaging via Electron.
+</p>
 
 ## Key Features
 
@@ -412,6 +419,20 @@ Tests use **Vitest** with **Testing Library** for component testing and **jsdom*
 
 - **Live mode**: Requires a WebSocket transcription service at the URL configured in `NEXT_PUBLIC_TRANSCRIPTION_API_URL`
 - **Local mode**: Requires Electron + downloaded ONNX models (`npm run download-models`)
+
+---
+
+## Roadmap
+
+- [ ] **Sandbox mode** -- enable Electron's OS-level sandbox (`sandbox: true`) for renderer hardening
+- [ ] **Content Security Policy** -- configure CSP headers on all windows
+- [ ] **Navigation guards** -- intercept `will-navigate` and `new-window` to block unexpected URLs
+- [ ] **Auto-update** -- ship updates via `electron-updater` with GitHub Releases
+- [ ] **Notarization** -- macOS notarization for Gatekeeper-trusted distribution
+- [ ] **Custom app icon** -- replace default Electron icon with Fuse branding
+- [ ] **Supabase integration** -- cloud-synced settings, call history, and user profiles (Phase 2)
+- [ ] **QR provisioning** -- scan a QR code to configure node domain and credentials
+- [ ] **Email discovery** -- auto-detect Pexip node from user email domain
 
 ---
 
