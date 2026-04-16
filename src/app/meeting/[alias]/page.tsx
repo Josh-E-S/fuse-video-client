@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useRouter, useParams } from 'next/navigation'
-import { AnimatePresence, motion } from 'framer-motion'
+import { AnimatePresence, motion, useMotionValue } from 'framer-motion'
 import {
   Mic,
   MicOff,
@@ -103,6 +103,19 @@ export default function MeetingPage() {
     : layout === 'gallery' ? '16:9'
     : sideDockOpen ? '16:9'
     : '9:16'
+
+  const pipX = useMotionValue(0)
+  const pipY = useMotionValue(0)
+
+  const pipResetKey = `${layout}-${isMini}-${isExpanded}-${dockTab}-${dockMode}-${targetAspectRatio}`
+  const prevPipResetKey = useRef(pipResetKey)
+  useEffect(() => {
+    if (prevPipResetKey.current !== pipResetKey) {
+      pipX.set(0)
+      pipY.set(0)
+      prevPipResetKey.current = pipResetKey
+    }
+  }, [pipResetKey, pipX, pipY])
 
   useEffect(() => {
     if (connectionState !== 'connected') return
@@ -947,12 +960,15 @@ export default function MeetingPage() {
                   dragConstraints={mainVideoRef}
                   dragElastic={0.1}
                   dragMomentum={false}
+                  style={{
+                    x: pipX,
+                    y: pipY,
+                    ...(targetAspectRatio === '16:9'
+                      ? { width: 200, height: 112 }
+                      : { width: 112, height: 200 }),
+                  }}
                   whileDrag={{ scale: 1.05, boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }}
                   className="absolute bottom-4 right-4 rounded-2xl overflow-hidden border border-white/10 shadow-2xl z-20 bg-black/80 cursor-grab active:cursor-grabbing"
-                  style={targetAspectRatio === '16:9'
-                    ? { width: 200, height: 112 }
-                    : { width: 112, height: 200 }
-                  }
                 >
                   {localStream && !isVideoMuted ? (
                     <video
