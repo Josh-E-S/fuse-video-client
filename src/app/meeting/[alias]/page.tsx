@@ -78,6 +78,13 @@ export default function MeetingPage() {
   } = usePexip()
   const pip = usePip()
   const [layout, setLayout] = useState<'focus' | 'gallery' | 'side-by-side'>('focus')
+  useEffect(() => {
+    if (isMini) {
+      setLayout('focus')
+    } else if (!isExpanded && layout === 'side-by-side') {
+      setLayout('focus')
+    }
+  }, [isMini, isExpanded, layout])
   const [selfViewVisible, setSelfViewVisible] = useState(true)
   const [pipLayout, setPipLayout] = useState<'portrait' | 'halves'>('portrait')
   const [dockTab, setDockTab] = useState<DockTab | null>(null)
@@ -1139,10 +1146,13 @@ export default function MeetingPage() {
             onToggleMic={() => muteAudio(!isAudioMuted)}
             onToggleVideo={() => muteVideo(!isVideoMuted)}
             onTogglePip={() => (pip.isActive ? pip.closePip() : pip.openPip())}
-            onToggleLayout={() =>
-              setLayout((l) =>
-                l === 'focus' ? 'gallery' : l === 'gallery' ? 'side-by-side' : 'focus',
-              )
+            onToggleLayout={isMini ? undefined : () =>
+              setLayout((l) => {
+                if (isExpanded) {
+                  return l === 'focus' ? 'gallery' : l === 'gallery' ? 'side-by-side' : 'focus'
+                }
+                return l === 'focus' ? 'gallery' : 'focus'
+              })
             }
             onToggleShare={() => (isPresenting ? stopScreenShare() : startScreenShare())}
             onToggleTranscription={() => setTranscriptionEnabled(!transcriptionEnabled)}
