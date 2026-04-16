@@ -11,7 +11,7 @@ const isDev = !require("electron").app.isPackaged;
 function getModelsDir() {
   return isDev
     ? path.join(__dirname, "..", "models")
-    : path.join(process.resourcesPath, "models");
+    : path.join(require("electron").app.getPath("userData"), "models");
 }
 
 function ensureLoaded() {
@@ -172,7 +172,7 @@ function registerModelHandlers() {
       const { spawn } = require("child_process");
       const child = spawn("bash", [scriptPath], {
         cwd: isDev ? path.join(__dirname, "..") : process.resourcesPath,
-        env: { ...process.env },
+        env: { ...process.env, MODELS_DIR: modelsDir },
       });
 
       let output = "";

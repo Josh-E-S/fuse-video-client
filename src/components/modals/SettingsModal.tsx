@@ -29,6 +29,7 @@ import {
 import { useSettings } from '@/hooks/useSettings'
 import { useMediaDevices, useSpeakerTest } from '@/hooks/useMediaDevices'
 import { getElectronBridge } from '@/hooks/useElectron'
+import { useQuickJoin } from '@/hooks/useQuickJoin'
 import type { RegistrationStatus, RegistrationCredentials } from '@/contexts/RegistrationContext'
 import { THEMES, CATEGORY_ORDER } from '@/themes/themes'
 import type { CosmeticTheme } from '@/themes/types'
@@ -55,6 +56,7 @@ export function SettingsModal({
   onUnregister,
 }: SettingsModalProps) {
   const { settings, saveSettings } = useSettings()
+  const quickJoin = useQuickJoin()
   const [nodeDomain, setNodeDomain] = useState(settings.nodeDomain)
   const [displayName, setDisplayName] = useState(settings.displayName)
   const [tab, setTab] = useState<'connection' | 'meetings' | 'devices' | 'appearance'>('connection')
@@ -502,6 +504,52 @@ export function SettingsModal({
                       placeholder="e.g. meet.example.com"
                       className="w-full px-4 py-3 rounded-xl bg-white/6 border border-white/10 text-white placeholder-white/20 focus:outline-none focus:border-white/30 transition-colors text-sm"
                     />
+                  </div>
+
+                  <div className="border-t border-white/6" />
+
+                  <div className="text-[10px] font-bold uppercase tracking-widest text-white/20 pl-1">
+                    Quick Join
+                  </div>
+
+                  <div className="space-y-2">
+                    {quickJoin.providers.map((p) => (
+                      <div key={p.id} className="flex items-center justify-between px-3 py-2.5 rounded-xl bg-white/3 border border-white/6">
+                        <div className="flex items-center gap-3">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={p.icon} alt="" width={20} height={20} className="opacity-70" />
+                          <div>
+                            <div className="text-[13px] font-medium text-white/70">{p.label}</div>
+                            {p.configHint && (
+                              <div className="text-[10px] text-amber-400/50">{p.configHint}</div>
+                            )}
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => quickJoin.setEnabled(p.id, !quickJoin.isToggled(p.id))}
+                          disabled={!p.configReady}
+                          className="relative w-9 h-5 rounded-full transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                          style={{
+                            background: quickJoin.isToggled(p.id) && p.configReady
+                              ? 'rgba(52, 211, 153, 0.4)'
+                              : 'rgba(255, 255, 255, 0.08)',
+                          }}
+                        >
+                          <div
+                            className="absolute top-0.5 w-4 h-4 rounded-full bg-white/80 transition-all"
+                            style={{
+                              left: quickJoin.isToggled(p.id) && p.configReady ? '18px' : '2px',
+                            }}
+                          />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="px-3 py-3 rounded-xl bg-white/2 border border-white/4">
+                    <p className="text-[11px] text-white/25 leading-relaxed">
+                      Quick Join requires call routing rules configured on your Pexip Infinity deployment. Contact your Pexip administrator if calls fail to connect.
+                    </p>
                   </div>
                 </div>
               )}

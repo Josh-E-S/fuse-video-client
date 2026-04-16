@@ -6,17 +6,17 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { getProviderById, getMeetingProvider } from '@/utils/meetingProvider'
 import type { RecentCall } from '@/hooks/useRecentCalls'
 
-const AD_HOC_PROVIDERS = [
-  { id: 'google-meet', label: 'Google', icon: '/icons/meeting-providers/google-meet.svg' },
-  { id: 'zoom', label: 'Zoom', icon: '/icons/meeting-providers/zoom.svg' },
-  { id: 'microsoft-teams', label: 'Teams', icon: '/icons/meeting-providers/microsoft-teams.svg' },
-  { id: 'pexip', label: 'Pexip', icon: '/icons/meeting-providers/pexip.svg' },
-]
+interface VisibleProvider {
+  id: string
+  label: string
+  icon: string
+}
 
 interface AdHocJoinProps {
   isBusy: boolean
   cardBg: string
   recentCalls: RecentCall[]
+  providers: VisibleProvider[]
   expanded?: boolean
   onExpandChange?: (expanded: boolean) => void
   onProviderClick: (provider: { id: string; icon: string; label: string }) => void
@@ -28,6 +28,7 @@ export function AdHocJoin({
   isBusy,
   cardBg,
   recentCalls,
+  providers,
   expanded,
   onExpandChange,
   onProviderClick,
@@ -42,11 +43,13 @@ export function AdHocJoin({
 
   return (
     <div className="mt-10 flex flex-col items-center gap-4">
+      {providers.length > 0 && (
+        <>
       <span className="text-[11px] font-semibold tracking-[0.08em] uppercase text-white/50">
         Quick Join
       </span>
       <div className="flex items-center gap-5">
-        {AD_HOC_PROVIDERS.map((p) => (
+        {providers.map((p) => (
           <button
             key={p.id}
             onClick={() => onProviderClick(p)}
@@ -72,6 +75,8 @@ export function AdHocJoin({
           </button>
         ))}
       </div>
+        </>
+      )}
 
       <div className="flex items-center gap-3 mt-4">
         <button

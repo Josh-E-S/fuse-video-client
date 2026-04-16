@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-MODELS_DIR="$(dirname "$0")/../models"
+MODELS_DIR="${MODELS_DIR:-$(dirname "$0")/../models}"
 mkdir -p "$MODELS_DIR"
 
 REPO="Josh-E-S/fuse-video-client"

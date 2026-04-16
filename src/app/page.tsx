@@ -18,6 +18,7 @@ import { TopBar } from '@/components/home/TopBar'
 import { ClockDisplay } from '@/components/home/ClockDisplay'
 import { FeaturedMeetingCard } from '@/components/home/FeaturedMeetingCard'
 import { AdHocJoin } from '@/components/home/AdHocJoin'
+import { useQuickJoin } from '@/hooks/useQuickJoin'
 import { ConnectingOverlay } from '@/components/home/ConnectingOverlay'
 import { PipMeetingView } from '@/components/home/PipMeetingView'
 import { usePexip } from '@/contexts/PexipContext'
@@ -35,6 +36,7 @@ export default function HomePage() {
   const router = useRouter()
   const { theme: cosmeticTheme, themeId, setTheme, applyThemeToDocument } = useTheme()
   const { settings, saveSettings } = useSettings()
+  const quickJoin = useQuickJoin()
   const setup = useSetupRequired()
   const {
     status: regStatus,
@@ -440,8 +442,20 @@ export default function HomePage() {
           )}
 
           {meetings.length === 0 && (
-            <div className="mt-12 text-center">
-              <p className="text-sm text-white/20">No upcoming meetings</p>
+            <div className="mt-12 text-center space-y-2">
+              {settings.otjClientId && settings.otjClientSecret ? (
+                <p className="text-sm text-white/20">No upcoming meetings</p>
+              ) : (
+                <>
+                  <p className="text-sm text-white/20">Calendar not configured</p>
+                  <button
+                    onClick={() => setShowSettings(true)}
+                    className="text-xs text-white/30 hover:text-white/50 transition-colors underline underline-offset-2"
+                  >
+                    Set up One Touch Join in Settings
+                  </button>
+                </>
+              )}
             </div>
           )}
 
@@ -451,6 +465,7 @@ export default function HomePage() {
             isBusy={isBusy}
             cardBg={cosmeticTheme.cardBg}
             recentCalls={recentCalls}
+            providers={quickJoin.visibleProviders}
             expanded={recentsExpanded}
             onExpandChange={(v) => {
               setRecentsExpanded(v)

@@ -68,8 +68,8 @@ export function useSettings() {
     function handleSync() {
       setSettings(readAllSettings())
     }
-    window.addEventListener('resync-settings-changed', handleSync)
-    return () => window.removeEventListener('resync-settings-changed', handleSync)
+    window.addEventListener('fuse-settings-changed', handleSync)
+    return () => window.removeEventListener('fuse-settings-changed', handleSync)
   }, [])
 
   function saveSettings(next: Partial<Settings>) {
@@ -104,7 +104,7 @@ export function useSettings() {
       localStorage.setItem(STORAGE_KEYS.googleDomain, next.googleDomain)
     }
     setSettings((prev) => ({ ...prev, ...next }))
-    window.dispatchEvent(new Event('resync-settings-changed'))
+    window.dispatchEvent(new Event('fuse-settings-changed'))
   }
 
   return { settings, saveSettings }
