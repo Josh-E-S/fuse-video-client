@@ -119,9 +119,14 @@ export default function MeetingPage() {
 
   useEffect(() => {
     if (connectionState !== 'connected') return
-    const ratio = targetAspectRatio === '16:9' ? 16 / 9 : 9 / 16
-    requestAspectRatio(ratio)
-  }, [targetAspectRatio, connectionState, requestAspectRatio])
+    if (pip.isActive) {
+      const ratio = pipLayout === 'portrait' ? 9 / 16 : 16 / 9
+      requestAspectRatio(ratio)
+    } else {
+      const ratio = targetAspectRatio === '16:9' ? 16 / 9 : 9 / 16
+      requestAspectRatio(ratio)
+    }
+  }, [targetAspectRatio, pipLayout, pip.isActive, connectionState, requestAspectRatio])
 
   const popoutWindowRef = useRef<Window | null>(null)
   const mainVideoRef = useRef<HTMLElement | null>(null)
