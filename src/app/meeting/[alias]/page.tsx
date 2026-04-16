@@ -642,6 +642,18 @@ export default function MeetingPage() {
             >
               <FileText size={15} />
             </button>
+            {presentationStream && (
+              <button
+                onClick={presentationPopped ? closePresentationPopout : openPresentationPopout}
+                className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors ${
+                  presentationPopped
+                    ? 'bg-blue-500/20 text-blue-400'
+                    : 'bg-white/8 text-white/70 hover:bg-white/12'
+                }`}
+              >
+                <MonitorUp size={15} />
+              </button>
+            )}
             <button
               onClick={handleLeave}
               className="w-9 h-9 rounded-full flex items-center justify-center bg-rose-600 text-white hover:bg-rose-500 transition-colors"
