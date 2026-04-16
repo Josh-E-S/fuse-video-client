@@ -48,6 +48,7 @@ interface CheckItem {
   label: string
   status: CheckStatus
   detail?: string
+  jumpTo?: Step
 }
 type Step = typeof ALL_STEPS[number]
 
@@ -168,12 +169,12 @@ export function SetupWizard({ open, onComplete, onRegister }: SetupWizardProps) 
   async function runChecks() {
     const hasRegCreds = !!(regAlias && regUsername && nodeDomain)
     const items: CheckItem[] = [
-      { label: 'Pexip Node', status: 'pending' },
-      { label: 'Registration', status: 'pending' },
-      { label: 'Calendar (OTJ)', status: 'pending' },
-      { label: 'Camera', status: 'pending' },
-      { label: 'Microphone', status: 'pending' },
-      ...(isElectron ? [{ label: 'Transcription Model', status: 'pending' as CheckStatus }] : []),
+      { label: 'Pexip Node', status: 'pending', jumpTo: 'connection' },
+      { label: 'Registration', status: 'pending', jumpTo: 'registration' },
+      { label: 'Calendar (OTJ)', status: 'pending', jumpTo: 'calendar' },
+      { label: 'Camera', status: 'pending', jumpTo: 'devices' },
+      { label: 'Microphone', status: 'pending', jumpTo: 'devices' },
+      ...(isElectron ? [{ label: 'Transcription Model', status: 'pending' as CheckStatus, jumpTo: 'transcription' as Step }] : []),
     ]
     setChecks([...items])
 
@@ -291,7 +292,8 @@ export function SetupWizard({ open, onComplete, onRegister }: SetupWizardProps) 
     setStep('welcome')
   }
 
-  const canNext = step === 'connection' ? !!nodeDomain.trim() && !!displayName.trim() : true
+  const canNavigate = !downloadBusy
+  const canNext = canNavigate && (step === 'connection' ? !!nodeDomain.trim() && !!displayName.trim() : true)
 
   return (
     <AnimatePresence>
@@ -686,6 +688,14 @@ export function SetupWizard({ open, onComplete, onRegister }: SetupWizardProps) 
                               </div>
                             )}
                           </div>
+                          {(item.status === 'fail' || item.status === 'warn') && item.jumpTo && !checks.some((c) => c.status === 'pending' || c.status === 'checking') && (
+                            <button
+                              onClick={() => setStep(item.jumpTo!)}
+                              className="text-[11px] text-white/30 hover:text-white/60 transition-colors px-2 py-1 rounded-lg hover:bg-white/6 shrink-0"
+                            >
+                              Configure
+                            </button>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -711,7 +721,8 @@ export function SetupWizard({ open, onComplete, onRegister }: SetupWizardProps) 
               {stepIdx > 0 && step !== 'done' && step !== 'check' ? (
                 <button
                   onClick={prev}
-                  className="flex items-center gap-1 text-sm text-white/30 hover:text-white/60 transition-colors"
+                  disabled={!canNavigate}
+                  className="flex items-center gap-1 text-sm text-white/30 hover:text-white/60 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                 >
                   <ChevronLeft size={16} /> Back
                 </button>
@@ -746,7 +757,8 @@ export function SetupWizard({ open, onComplete, onRegister }: SetupWizardProps) 
                   {step !== 'connection' && (
                     <button
                       onClick={saveAndNext}
-                      className="text-sm text-white/25 hover:text-white/50 transition-colors"
+                      disabled={!canNavigate}
+                      className="text-sm text-white/25 hover:text-white/50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                     >
                       Skip
                     </button>
