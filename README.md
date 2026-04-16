@@ -1,26 +1,44 @@
 <p align="center">
-  <img src="public/logo-1.png" alt="Fuse Video Client" width="120" />
+  <img src="public/logo-1.png" alt="Fuse Video Client" width="200" />
 </p>
 
 <h1 align="center">Fuse Video Client</h1>
 
 <p align="center">
-  A premium video conferencing interface built on <a href="https://www.pexip.com/">Pexip Infinity</a> WebRTC APIs.<br/>
-  Fuse showcases the Pexip client SDK through a polished, modern UI with glassmorphism design, animated themes, and native desktop packaging via Electron.
+  A native Electron video conferencing client that joins Pexip, Zoom, Google Meet, and Microsoft Teams meetings through a single interface.<br/>
+  Built on <a href="https://www.pexip.com/">Pexip Infinity's</a> PexRTC client APIs with offline live transcription powered by NVIDIA's Parakeet speech model via Sherpa-ONNX.
 </p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Next.js-16-black?logo=next.js" alt="Next.js 16" />
+  <img src="https://img.shields.io/badge/React-19-61DAFB?logo=react" alt="React 19" />
+  <img src="https://img.shields.io/badge/Electron-35-47848F?logo=electron" alt="Electron 35" />
+  <img src="https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript" alt="TypeScript 5" />
+  <img src="https://img.shields.io/badge/license-MIT-green" alt="MIT License" />
+</p>
+
+<p align="center">
+  <strong>One client for every meeting.</strong> Join any provider with a single click.
+</p>
+
+<p align="center">
+  <img src="public/icons/meeting-providers/pexip.svg" alt="Pexip" width="32" height="32" />   
+  <img src="public/icons/meeting-providers/zoom.svg" alt="Zoom" width="32" height="32" />   
+  <img src="public/icons/meeting-providers/google-meet.svg" alt="Google Meet" width="32" height="32" />   
+  <img src="public/icons/meeting-providers/microsoft-teams.svg" alt="Microsoft Teams" width="32" height="32" />
+</p>
+
+---
 
 ## Key Features
 
-- **WebRTC Conferencing** -- Join Pexip Infinity meetings with full audio/video, screen sharing, and DTMF support
-- **Multi-Provider Dial Strings** -- Connect to Zoom, Google Meet, Microsoft Teams, and Pexip rooms from a single interface
-- **Calendar Integration** -- One Touch Join (OTJ) pulls upcoming meetings and shows them in an orbital carousel
-- **Live Transcription** -- Dual-mode: remote WebSocket service or local offline speech recognition (Electron only, via Sherpa-ONNX)
-- **SIP Registration** -- Register as a SIP endpoint to receive incoming calls with ringtone selection
-- **Picture-in-Picture** -- Float your call in a compact window while multitasking
-- **10 Themes** -- Dark, light, luxury dark, and luxury light palettes with animated gradient backgrounds
-- **Electron Desktop App** -- Native macOS app with compact, expanded, and mini (320x180) window modes
-- **Preflight Lobby** -- Google Meet-style device preview with mic level visualization before joining
-- **Setup Wizard** -- Guided first-launch configuration with system checks for camera, mic, and node reachability
+- **One-Touch Multi-Provider Joining** -- Join Zoom, Google Meet, Microsoft Teams, and Pexip meetings from a single interface via Pexip CVI gateway routing
+- **Calendar Integration** -- One Touch Join calendar pulls upcoming meetings with auto-detected provider icons and one-click joining
+- **Local Transcription** -- Offline speech-to-text powered by NVIDIA's Parakeet TDT-CTC 110M model running locally via Sherpa-ONNX (Electron only, no cloud dependency). Also supports remote WebSocket transcription services.
+- **Registered WebRTC Client** -- Register as a Pexip WebRTC device to receive incoming calls with configurable ringtones
+- **3 Window Modes** -- Compact (500x900), expanded (1220x900), and mini (320x180) floating PiP
+- **Setup Wizard** -- Guided first-launch onboarding: connection, registration, calendar, providers, devices, transcription model download, and system checks
+- **Quick Join Toggles** -- Enable/disable provider buttons per your configured infrastructure
 
 ---
 
@@ -30,85 +48,92 @@
 - [Prerequisites](#prerequisites)
 - [Getting Started](#getting-started)
 - [Configuration](#configuration)
-- [Architecture](#architecture)
+- [How It Works](#how-it-works)
 - [Environment Variables](#environment-variables)
 - [Available Scripts](#available-scripts)
 - [Electron Desktop App](#electron-desktop-app)
 - [Testing](#testing)
 - [Troubleshooting](#troubleshooting)
+- [Roadmap](#roadmap)
 
 ---
 
 ## Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| **Framework** | Next.js 16 (App Router, standalone output) |
-| **Language** | TypeScript 5 (strict mode) |
-| **UI** | React 19, Tailwind CSS v4, Framer Motion |
-| **Components** | Radix UI primitives, Lucide React icons, Sonner toasts |
-| **WebRTC** | PexRTC (Pexip Infinity browser client, loaded dynamically) |
-| **Desktop** | Electron 35 with context isolation |
-| **Speech** | Sherpa-ONNX (optional, Electron-only local transcription) |
-| **Testing** | Vitest, Testing Library |
-| **Linting** | ESLint 9, Prettier |
+| Layer          | Technology                                                        |
+| -------------- | ----------------------------------------------------------------- |
+| **Framework**  | Next.js 16 (App Router, standalone output)                        |
+| **Language**   | TypeScript 5 (strict mode)                                        |
+| **UI**         | React 19, Tailwind CSS v4, Framer Motion                          |
+| **Components** | Radix UI primitives, Lucide React icons, Sonner toasts            |
+| **WebRTC**     | PexRTC (Pexip Infinity browser SDK, loaded dynamically from node) |
+| **Desktop**    | Electron 35 with context isolation                                |
+| **Speech**     | NVIDIA Parakeet TDT-CTC 110M via Sherpa-ONNX (offline, Electron-only) |
+| **Testing**    | Vitest 4, Testing Library, jsdom                                  |
+| **Linting**    | ESLint 9, Prettier                                                |
 
 ---
 
 ## Prerequisites
 
-- **Node.js** 20 or higher
+- **Node.js** 20+
 - **npm** (ships with Node.js)
-- A **Pexip Infinity** deployment to connect to (node domain)
-- *(Optional)* Pexip OTJ portal credentials for calendar integration
-- *(Optional)* Electron dependencies for desktop builds (Xcode Command Line Tools on macOS)
+- A **Pexip Infinity** deployment (node domain) -- the app cannot function without one
+- _(Optional)_ Pexip OTJ portal credentials for calendar integration
+- _(Optional)_ Xcode Command Line Tools for Electron macOS builds
+
+> **Note**: All provider features (Zoom, Teams, Google Meet quick join) route through your Pexip node via CVI. Without a Pexip deployment and properly configured call routing rules, calls will not connect.
 
 ---
 
 ## Getting Started
 
-### 1. Clone the Repository
+### 1. Clone and Install
 
 ```bash
-git clone <repo-url>
+git clone https://github.com/Josh-E-S/fuse-video-client.git
 cd fuse-video-client
-```
-
-### 2. Install Dependencies
-
-```bash
 npm install
 ```
 
-### 3. Environment Setup
-
-Copy the example environment file:
+### 2. Environment Setup
 
 ```bash
 cp .env.example .env.local
 ```
 
-See [Environment Variables](#environment-variables) for details on each value. For basic usage, you only need to configure your Pexip node domain in the app's Settings modal -- no `.env.local` values are strictly required.
+For basic usage, no `.env.local` values are strictly required -- configure everything through the in-app Settings modal or Setup Wizard. See [Environment Variables](#environment-variables) for the full reference.
 
-### 4. Start the Development Server
+### 3. Start Development
+
+**Browser mode:**
 
 ```bash
 npm run dev
 ```
 
-Open [http://localhost:3002](http://localhost:3002) in your browser.
+Open [http://localhost:3002](http://localhost:3002).
 
-### 5. Configure the App
+**Electron mode:**
 
-On first launch, the Setup Wizard walks you through:
+```bash
+npm run dev          # Terminal 1: Next.js dev server
+npm run electron:dev # Terminal 2: Electron shell
+```
 
-1. **Connection** -- Enter your Pexip Infinity node domain
-2. **Calendar** -- (Optional) Add OTJ client credentials for meeting discovery
-3. **Providers** -- Configure Google Meet domain and Pexip customer ID for Teams CVI
-4. **Devices** -- Select camera, microphone, and speaker
-5. **System Check** -- Validates node reachability, calendar auth, and device access
+### 4. First Launch
 
-You can also access these settings anytime via the gear icon in the top bar.
+The Setup Wizard walks you through:
+
+1. **Connection** -- Pexip node domain and display name
+2. **Registration** -- WebRTC device alias, username, and password for incoming calls
+3. **Calendar** -- OTJ client credentials for meeting discovery
+4. **Providers** -- Google Meet domain and Pexip customer ID for Teams CVI
+5. **Devices** -- Camera, microphone, and speaker selection with live preview
+6. **Transcription** -- Download the speech model for offline captions (Electron only, ~126 MB)
+7. **System Check** -- Validates node reachability, registration, calendar auth, devices, and model status
+
+All settings can be changed later via the gear icon in the top bar.
 
 ---
 
@@ -116,233 +141,170 @@ You can also access these settings anytime via the gear icon in the top bar.
 
 ### In-App Settings
 
-All primary configuration lives in the browser's `localStorage` and is managed through the Settings modal:
+All configuration persists in `localStorage` and syncs across windows:
 
-| Setting | Purpose |
-|---------|---------|
-| **Node Domain** | Your Pexip Infinity node (e.g. `pexip.example.com`) |
-| **Display Name** | Your name shown to other participants |
-| **Audio Input/Output** | Microphone and speaker selection |
-| **Video Input** | Camera selection |
-| **Ringtone** | Incoming call sound (8 options) |
-| **OTJ Client ID/Secret** | Pexip One Touch Join credentials for calendar integration |
-| **Pexip Customer ID** | Required for Microsoft Teams CVI dial strings |
-| **Google Domain** | Required for Google Meet dial strings |
+| Setting                | Purpose                                            |
+| ---------------------- | -------------------------------------------------- |
+| **Node Domain**        | Your Pexip Infinity node (e.g.`pexip.example.com`) |
+| **Display Name**       | Name shown to other participants                   |
+| **Registration**       | WebRTC device alias, username, password for incoming calls |
+| **Audio Input/Output** | Microphone and speaker selection                   |
+| **Video Input**        | Camera selection                                   |
+| **Ringtone**           | Incoming call sound (8 options)                    |
+| **OTJ Credentials**    | Client ID/Secret for calendar integration          |
+| **Customer ID**        | Required for Microsoft Teams CVI dial strings      |
+| **Google Domain**      | Required for Google Meet CVI dial strings          |
+| **Quick Join Toggles** | Show/hide provider buttons on the home screen      |
+| **Theme**              | 10 visual themes across 4 categories               |
 
 ### Dial String Builders
 
-Fuse constructs provider-specific dial strings automatically:
+Fuse constructs provider-specific dial strings automatically. All calls route through your Pexip node:
 
-| Provider | Format | Requirements |
-|----------|--------|-------------|
-| **Pexip** | Alias passthrough | Node domain |
-| **Zoom** | `meetingId.passcode@zoomcrc.com` | None (client-side) |
-| **Google Meet** | `meetingId@GOOGLE_DOMAIN` | Google domain in settings |
-| **Microsoft Teams** | `meetingId.encodedPasscode..CUSTOMER_ID@pex.ms` | Customer ID in settings (server-side API) |
-| **Generic** | Alias passthrough | Node domain |
+| Provider            | Dial String Format                              | Config Required           |
+| ------------------- | ----------------------------------------------- | ------------------------- |
+| **Pexip**           | Alias passthrough                               | Node domain               |
+| **Zoom**            | `meetingId.passcode@zoomcrc.com`                | Node domain               |
+| **Google Meet**     | `meetingId@GOOGLE_DOMAIN`                       | Google domain             |
+| **Microsoft Teams** | `meetingId.encodedPasscode..CUSTOMER_ID@pex.ms` | Customer ID (server-side) |
+| **Generic**         | Alias passthrough                               | Node domain               |
+
+> Quick Join buttons are automatically hidden when their required configuration is missing. You can also toggle them manually in Settings > Meetings > Quick Join.
 
 ---
 
-## Architecture
+## How It Works
 
-### System Overview
+### Meeting Join Flow
 
-![System Architecture](docs/architecture.svg)
+![Join Flow](docs/join-flow.svg)
 
-### Connection Flow
+### State Architecture
+
+| Layer                  | Mechanism           | Scope                                          |
+| ---------------------- | ------------------- | ---------------------------------------------- |
+| **Conference**         | PexipContext        | WebRTC connection, streams, participants, chat |
+| **Registration**       | RegistrationContext | WebRTC device registration, incoming calls, heartbeat |
+| **Picture-in-Picture** | PipContext          | documentPictureInPicture API                   |
+| **Settings**           | useSettings hook    | localStorage with cross-instance sync          |
+| **Theme**              | useTheme hook       | CSS custom properties, no flash on load        |
+| **Quick Join**         | useQuickJoin hook   | Provider toggle state with cross-instance sync |
+
+### Key Services
+
+| Service                   | Role                                                                                     |
+| ------------------------- | ---------------------------------------------------------------------------------------- |
+| `pexrtcLoader`            | Dynamically loads PexRTC.js from the Pexip node with retry logic                         |
+| `pexrtcConnectionManager` | Singleton managing the full conference lifecycle (connect, PIN, mute, share, disconnect) |
+| `pexipOTJ`                | OAuth + REST client for the Pexip One Touch Join calendar API                            |
+
+### Architecture Diagrams
+
+<details>
+<summary>Connection Flow</summary>
 
 ![Connection Flow](docs/connection-flow.svg)
 
-### In-Call Feature Map
-
-![In-Call Features](docs/in-call-features.svg)
+</details>
 
 ### Directory Structure
 
 ```
 src/
 ├── app/                          # Next.js App Router
-│   ├── api/
-│   │   ├── meetings/route.ts     # OTJ calendar meetings endpoint
-│   │   └── dial-string/
-│   │       └── teams/route.ts    # Teams CVI dial string builder
-│   ├── meeting/[alias]/page.tsx  # In-call meeting page
+│   ├── api/                      # Server-side API routes
+│   │   ├── meetings/             # OTJ calendar proxy
+│   │   └── dial-string/teams/    # Teams CVI dial string builder
+│   ├── meeting/[alias]/          # In-call meeting page
 │   ├── presentation-popout/      # Second window for content sharing
-│   ├── layout.tsx                # Root layout with context providers
 │   └── page.tsx                  # Home page
 ├── components/
-│   ├── home/                     # Home page UI
-│   │   ├── TopBar.tsx            # Navigation rail with settings
-│   │   ├── FeaturedMeetingCard.tsx # Day-grouped upcoming meetings
-│   │   ├── AdHocJoin.tsx         # Quick join with provider detection
-│   │   ├── PipMeetingView.tsx    # Picture-in-Picture home view
-│   │   ├── ClockDisplay.tsx      # Live clock
-│   │   └── GradientBackground.tsx # Animated wave background
-│   ├── modals/
-│   │   ├── PreflightModal.tsx    # Device preview lobby
-│   │   ├── JoinModal.tsx         # Meeting alias + PIN entry
-│   │   ├── SettingsModal.tsx     # App configuration
-│   │   ├── SetupWizard.tsx       # First-launch onboarding (7 steps)
-│   │   ├── IncomingCallModal.tsx # SIP incoming call accept/reject
-│   │   ├── CallStatsModal.tsx    # Live bitrate, packet loss, resolution
-│   │   └── DTMFModal.tsx         # Dial pad for conference IVR
-│   └── resync/                   # In-call UI
-│       ├── ControlBar.tsx        # Mic, camera, share, hang up controls
-│       ├── ChatPanel.tsx         # Text messaging
-│       ├── TranscriptPanel.tsx   # Live/local transcription display
-│       ├── ParticipantsPanel.tsx # Participant list with mute status
-│       ├── DockPanel.tsx         # Resizable side panel
-│       ├── GlassPanel.tsx        # Frosted glass container
-│       └── SubtitleBar.tsx       # Real-time subtitle overlay
-├── contexts/
-│   ├── PexipContext.tsx          # Conference connection state
-│   ├── RegistrationContext.tsx   # SIP registration state
-│   └── PipContext.tsx            # Picture-in-Picture state
-├── hooks/
-│   ├── useSettings.ts           # localStorage settings with cross-tab sync
-│   ├── useMediaDevices.ts       # Device enumeration, preview, mic level
-│   ├── useTheme.ts              # Theme management with CSS variables
-│   ├── useElectron.ts           # Electron IPC bridge detection
-│   ├── useMeetings.ts           # OTJ calendar polling
-│   ├── useMeetingNotifications.ts # Toast alerts for upcoming meetings
-│   ├── useTranscription.ts      # WebSocket live transcription
-│   ├── useLocalTranscription.ts # Sherpa-ONNX offline transcription
-│   ├── useAudioAnalyser.ts      # 20-bin FFT mic visualization
-│   ├── usePictureInPicture.ts   # documentPictureInPicture API
-│   ├── useRecentCalls.ts        # Call history (max 10)
-│   └── useMediaQuery.ts         # CSS media query listener
-├── services/
-│   ├── pexrtcConnectionManager.ts # Singleton conference lifecycle
-│   ├── pexrtcLoader.ts          # Dynamic PexRTC script loading
-│   └── pexipOTJ.ts              # OTJ OAuth + meeting API client
-├── themes/
-│   ├── themes.ts                # 10 theme definitions
-│   └── types.ts                 # CosmeticTheme interface
-├── types/
-│   └── pexrtc.ts                # PexRTC TypeScript definitions
-└── utils/
-    ├── media.ts                 # Media helper functions
-    ├── meetingDate.ts            # Date formatting and countdown
-    ├── meetingProvider.ts        # Provider detection from aliases
-    └── stateTheme.ts            # Semantic state theming (muted, audio-only, etc.)
+│   ├── home/                     # Landing page (clock, calendar, quick join)
+│   ├── modals/                   # Dialogs (join, preflight, settings, wizard, DTMF, stats)
+│   └── resync/                   # In-call UI (controls, chat, transcript, participants, dock)
+├── contexts/                     # React Context providers
+├── hooks/                        # Custom hooks (settings, devices, theme, transcription, etc.)
+├── services/                     # PexRTC loader, connection manager, OTJ client
+├── themes/                       # 10 theme definitions with CosmeticTheme interface
+├── types/                        # PexRTC and meeting TypeScript types
+└── utils/                        # Media, date, provider detection helpers
 
 electron/
-├── main.js                      # Window management, IPC handlers, permissions
-├── preload.js                   # Context-isolated API bridge
-└── transcription.js             # Sherpa-ONNX speech recognition worker
-
-public/
-├── pcm-worklet.js               # AudioWorklet for 16kHz PCM capture
-├── ringtone[1-8].mp3            # Incoming call ringtones
-├── noise.svg                    # Tileable background texture
-└── icons/                       # Provider logos (Google Meet, Teams, Zoom, etc.)
+├── main.js                       # Window management, IPC, permissions, splash screen
+├── preload.js                    # Context-isolated bridge (expand, mini, transcription, models)
+├── transcription.js              # Sherpa-ONNX speech recognition + model management
+└── splash.html                   # Loading screen with logo
 ```
-
-### Request Lifecycle
-
-```
-User clicks "Join" in PreflightModal
-  -> PexRTC loaded dynamically from Pexip node
-  -> PexRTCConnectionManager.connect() establishes WebRTC session
-  -> PexipContext broadcasts connection state to all components
-  -> Meeting page renders far-side video + controls
-  -> Side panels (chat, transcript, participants) via DockPanel
-```
-
-### State Management
-
-| Layer | Mechanism |
-|-------|-----------|
-| **Conference state** | PexipContext (React Context) |
-| **SIP registration** | RegistrationContext (EventSource + heartbeat) |
-| **Picture-in-Picture** | PipContext (documentPictureInPicture API) |
-| **User settings** | localStorage via useSettings hook (syncs across tabs) |
-| **Theme** | localStorage via useTheme hook (CSS variables applied at load) |
-
-### Theme System
-
-Themes are defined in `src/themes/themes.ts` with the `CosmeticTheme` interface:
-
-- **4 categories**: Dark, Light, Luxury Dark, Luxury Light
-- Each theme specifies: gradient background, wave color, accent color, text colors, card backgrounds, and opacity-based surface values
-- **Semantic state theming** overlays visual feedback for call states: muted (privacy mesh), audio-only, broadcasting, late
-- Themes are applied instantly via CSS custom properties (no flash on load)
 
 ---
 
 ## Environment Variables
 
-Copy `.env.example` to `.env.local` and configure as needed:
+Copy `.env.example` to `.env.local`. All values are optional -- settings can be configured through the UI.
 
-### Server-Side (used by API routes)
+### Server-Side (API routes only)
 
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `PEXIP_OTJ_AUTH_URL` | Pexip OAuth endpoint | For calendar integration |
-| `PEXIP_OTJ_API_URL` | Pexip OTJ API endpoint | For calendar integration |
-| `PEXIP_OTJ_CLIENT_ID` | OTJ OAuth client ID | For calendar integration |
-| `PEXIP_OTJ_CLIENT_SECRET` | OTJ OAuth client secret | For calendar integration |
-| `PEXIP_CUSTOMER_ID` | Pexip customer ID | For Teams CVI dial strings |
+| Variable                  | Description                                                |
+| ------------------------- | ---------------------------------------------------------- |
+| `PEXIP_OTJ_AUTH_URL`      | Pexip OAuth endpoint (default:`https://auth.otj.pexip.io`) |
+| `PEXIP_OTJ_API_URL`       | Pexip OTJ API endpoint (default:`https://otj.pexip.io`)    |
+| `PEXIP_OTJ_CLIENT_ID`     | OTJ OAuth client ID                                        |
+| `PEXIP_OTJ_CLIENT_SECRET` | OTJ OAuth client secret                                    |
+| `PEXIP_CUSTOMER_ID`       | Pexip customer ID for Teams CVI                            |
 
 ### Client-Side
 
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `NEXT_PUBLIC_GOOGLE_DOMAIN` | Google Meet CVI gateway domain | For Google Meet dial strings and provider detection |
-| `NEXT_PUBLIC_TEAMS_DOMAIN` | Teams CVI gateway domain | For provider detection on incoming aliases |
-| `NEXT_PUBLIC_PEXIP_DOMAIN` | Pexip tenant domain suffix | For provider detection on incoming aliases |
-| `NEXT_PUBLIC_TRANSCRIPTION_API_URL` | WebSocket transcription service URL | For live transcription |
+| Variable                            | Description                                     |
+| ----------------------------------- | ----------------------------------------------- |
+| `NEXT_PUBLIC_GOOGLE_DOMAIN`         | Google Meet CVI gateway domain                  |
+| `NEXT_PUBLIC_TEAMS_DOMAIN`          | Teams CVI gateway domain (provider detection)   |
+| `NEXT_PUBLIC_PEXIP_DOMAIN`          | Pexip tenant domain suffix (provider detection) |
+| `NEXT_PUBLIC_TRANSCRIPTION_API_URL` | WebSocket transcription service URL             |
 
-### Future (Phase 2)
+### Dev Defaults (optional, pre-populate Settings on first launch)
 
-| Variable | Description |
-|----------|-------------|
-| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anonymous key |
+| Variable                           | Description                    |
+| ---------------------------------- | ------------------------------ |
+| `NEXT_PUBLIC_DEFAULT_NODE_DOMAIN`  | Default Pexip node domain      |
+| `NEXT_PUBLIC_DEFAULT_DISPLAY_NAME` | Default display name           |
+| `NEXT_PUBLIC_DEFAULT_ALIAS`        | Default registration alias     |
+| `NEXT_PUBLIC_DEFAULT_REG_USERNAME` | Default registration username  |
+| `NEXT_PUBLIC_DEFAULT_REG_PASSWORD` | Default registration password  |
 
-> **Note**: OTJ credentials can also be provided per-user through the Settings modal, which passes them as headers to the API route. Environment variables serve as defaults.
+> OTJ credentials can also be provided per-user through the Settings modal, which passes them as headers to the API route.
 
 ---
 
 ## Available Scripts
 
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Start Next.js dev server on port 3002 |
-| `npm run build` | Production build |
-| `npm start` | Start production server |
-| `npm run lint` | Run ESLint |
-| `npm test` | Run Vitest test suite |
-| `npm run test:watch` | Run tests in watch mode |
-| `npm run format` | Format code with Prettier |
-| `npm run format:check` | Check formatting without writing |
-| `npm run electron:dev` | Launch Electron in development mode |
-| `npm run electron:build` | Build Next.js + package as Electron .dmg |
-| `npm run electron:pack` | Build + package Electron (unpacked, for testing) |
-| `npm run download-models` | Download Sherpa-ONNX models for local transcription |
+| Command                   | Description                                      |
+| ------------------------- | ------------------------------------------------ |
+| `npm run dev`             | Start Next.js dev server on port 3002            |
+| `npm run build`           | Production build (standalone output)             |
+| `npm start`               | Start production server                          |
+| `npm run lint`            | Run ESLint                                       |
+| `npm test`                | Run Vitest test suite                            |
+| `npm run test:watch`      | Run tests in watch mode                          |
+| `npm run format`          | Format code with Prettier                        |
+| `npm run format:check`    | Check formatting without writing                 |
+| `npm run electron:dev`    | Launch Electron in development mode              |
+| `npm run electron:build`  | Build Next.js + package as signed `.dmg`         |
+| `npm run electron:pack`   | Build + package Electron (unpacked, for testing) |
+| `npm run download-models` | Download Sherpa-ONNX Parakeet model (~126 MB)    |
 
 ---
 
 ## Electron Desktop App
 
-### Development
-
-Start the Next.js dev server first, then launch Electron:
-
-```bash
-npm run dev          # Terminal 1
-npm run electron:dev # Terminal 2
-```
-
 ### Window Modes
 
-| Mode | Size | Use Case |
-|------|------|----------|
-| **Compact** | 500 x 900 | Default home view |
-| **Expanded** | 1220 x 900 | In-call with side panels |
-| **Mini** | 320 x 180 | Floating webcam PiP (centers under camera) |
+| Mode         | Size       | Use Case                                                  |
+| ------------ | ---------- | --------------------------------------------------------- |
+| **Compact**  | 500 x 900  | Default home view                                         |
+| **Expanded** | 1220 x 900 | In-call with side panels (chat, transcript, participants) |
+| **Mini**     | 320 x 180  | Floating PiP centered under webcam                        |
 
-Mini mode joins calls fully muted with no preflight. It shows far-side video with a 64x48 self-view overlay and minimal controls (mic, camera, hang up).
+Mini mode joins calls fully muted with no preflight. It shows far-side video with a 64x48 self-view overlay and minimal controls.
 
 ### Building for macOS
 
@@ -350,87 +312,94 @@ Mini mode joins calls fully muted with no preflight. It shows far-side video wit
 npm run electron:build
 ```
 
-This produces a `.dmg` in `dist-electron/`. The build includes:
+Produces a code-signed `.dmg` in `dist-electron/`. Includes:
 
 - macOS entitlements for camera, microphone, and screen capture
 - Dark mode support
-- Sherpa-ONNX models bundled in `extraResources` (if downloaded)
-- Code signing via `resources/entitlements.mac.plist`
+- Splash screen with logo while Next.js cold-starts
 
 ### Local Transcription
 
-For offline speech recognition in Electron:
+Fuse runs NVIDIA's Parakeet TDT-CTC 110M speech model locally via Sherpa-ONNX -- no cloud transcription service required. The model (~126 MB) can be downloaded from:
 
-```bash
-npm run download-models   # Downloads Sherpa-ONNX Parakeet model
-npm run electron:dev      # Models are loaded at runtime
-```
+1. **Setup Wizard** -- Transcription step during first launch
+2. **Settings** -- Devices tab > Live Transcription
+3. **Terminal** -- `npm run download-models`
 
-The transcription worker (`electron/transcription.js`) processes 16kHz PCM audio via an AudioWorklet with 3-second decoding windows and per-speaker buffering.
+Models are stored in `~/Library/Application Support/Fuse Video Client/models/` and persist across app updates.
 
 ---
 
 ## Testing
 
 ```bash
-# Run all tests
-npm test
-
-# Watch mode
-npm run test:watch
+npm test              # Run all tests
+npm run test:watch    # Watch mode
 ```
 
-Tests use **Vitest** with **Testing Library** for component testing and **jsdom** as the DOM environment.
+Tests use **Vitest** with **Testing Library** and **jsdom**:
+
+```
+src/__tests__/
+├── utils/
+│   ├── meetingProvider.test.ts   # Provider detection from aliases
+│   ├── meetingDate.test.ts       # Date formatting helpers
+│   ├── stateTheme.test.ts        # Theme state utilities
+│   └── media.test.ts             # Media helper functions
+└── hooks/
+    └── useElectron.test.ts       # Electron bridge detection
+```
 
 ---
 
 ## Troubleshooting
 
-### "Cannot connect to node"
+### Cannot connect to node
 
 1. Verify your Pexip node domain is correct in Settings
-2. Ensure the node is reachable from your network (try opening `https://<node>/api/client/v2/status` in a browser)
-3. Check for CORS issues if running on a different origin than the node
+2. Test reachability: open `https://<node>/api/client/v2/status` in a browser
+3. Check for CORS issues if running on a different origin
 
 ### Camera or microphone not working
 
-1. Check browser permissions (look for the camera icon in the address bar)
-2. On macOS, verify System Settings > Privacy & Security > Camera/Microphone permissions
-3. In Electron, permissions are requested on first use -- restart the app if denied accidentally
+1. Check browser permissions (camera icon in address bar)
+2. macOS: System Settings > Privacy & Security > Camera/Microphone
+3. Electron: permissions are requested on first use -- restart if denied
 
-### OTJ calendar shows no meetings
+### Quick Join calls fail
 
-1. Verify OTJ credentials in Settings or `.env.local`
-2. Check that the OTJ portal has calendar sources configured
-3. Look at the browser console for API errors from `/api/meetings`
+1. Ensure call routing rules are configured on your Pexip Infinity deployment
+2. Verify the required provider config is set (Google domain, customer ID)
+3. Check that CVI licenses are active on your Pexip node
 
-### Electron app shows blank screen
+### Calendar shows "Calendar not configured"
 
-1. Make sure the Next.js dev server is running first (`npm run dev`)
+1. Add OTJ credentials in Settings > Meetings or the Setup Wizard
+2. Verify the OTJ portal has calendar sources configured
+3. Check browser console for errors from `/api/meetings`
+
+### Electron shows blank screen
+
+1. Ensure the Next.js dev server is running first (`npm run dev`)
 2. Electron connects to `localhost:3002` in development mode
-3. Check the Electron dev tools console (opens automatically in dev)
-
-### Teams dial string fails
-
-1. Ensure `PEXIP_CUSTOMER_ID` is set in `.env.local` or in Settings
-2. The Teams API route (`/api/dial-string/teams`) requires this value server-side
+3. DevTools opens automatically in dev -- check for errors
 
 ### Transcription not appearing
 
-- **Live mode**: Requires a WebSocket transcription service at the URL configured in `NEXT_PUBLIC_TRANSCRIPTION_API_URL`
-- **Local mode**: Requires Electron + downloaded ONNX models (`npm run download-models`)
+- **Live mode**: Requires a WebSocket transcription service at `NEXT_PUBLIC_TRANSCRIPTION_API_URL`
+- **Local mode**: Requires Electron + downloaded model (check Settings > Devices > Live Transcription)
+- If the model shows "Ready" but captions are empty, check the Electron main process console for decode errors
 
 ---
 
 ## Roadmap
 
-- [ ] **Sandbox mode** -- enable Electron's OS-level sandbox (`sandbox: true`) for renderer hardening
+- [ ] **Sandbox mode** -- enable Electron's OS-level sandbox for renderer hardening
 - [ ] **Content Security Policy** -- configure CSP headers on all windows
-- [ ] **Navigation guards** -- intercept `will-navigate` and `new-window` to block unexpected URLs
+- [ ] **Navigation guards** -- intercept `will-navigate` to block unexpected URLs
 - [ ] **Auto-update** -- ship updates via `electron-updater` with GitHub Releases
 - [ ] **Notarization** -- macOS notarization for Gatekeeper-trusted distribution
-- [ ] **Custom app icon** -- replace default Electron icon with Fuse branding
-- [ ] **Supabase integration** -- cloud-synced settings, call history, and user profiles (Phase 2)
+- [ ] **Supabase integration** -- cloud-synced settings, call history, and user profiles
 - [ ] **QR provisioning** -- scan a QR code to configure node domain and credentials
 - [ ] **Email discovery** -- auto-detect Pexip node from user email domain
 

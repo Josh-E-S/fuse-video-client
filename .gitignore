@@ -52,6 +52,5 @@ next-env.d.ts
 api-reference-docs/
 instructions.txt
 /docs/*
-!/docs/architecture.svg
 !/docs/connection-flow.svg
-!/docs/in-call-features.svg
+!/docs/join-flow.svg

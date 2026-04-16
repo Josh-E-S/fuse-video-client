@@ -211,56 +211,7 @@ async function createWindow(port) {
   });
 
   // Show a minimal loading screen while Next.js starts up
-  mainWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(`
-<!DOCTYPE html>
-<html>
-<head>
-<style>
-  * { margin: 0; padding: 0; }
-  body {
-    background: #000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 100vh;
-    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
-    color: #fff;
-    -webkit-app-region: drag;
-    user-select: none;
-  }
-  .loader {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 24px;
-  }
-  .spinner {
-    width: 28px;
-    height: 28px;
-    border: 2px solid rgba(255,255,255,0.1);
-    border-top-color: rgba(255,255,255,0.6);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-  }
-  .text {
-    font-size: 13px;
-    font-weight: 400;
-    color: rgba(255,255,255,0.4);
-    letter-spacing: 0.02em;
-  }
-  @keyframes spin {
-    to { transform: rotate(360deg); }
-  }
-</style>
-</head>
-<body>
-  <div class="loader">
-    <div class="spinner"></div>
-    <div class="text">Starting Fuse</div>
-  </div>
-</body>
-</html>
-  `)}`);
+  mainWindow.loadFile(path.join(__dirname, "splash.html"));
 
   if (isDev) {
     mainWindow.webContents.openDevTools({ mode: "detach" });

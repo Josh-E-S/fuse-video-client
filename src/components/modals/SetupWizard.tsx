@@ -16,7 +16,6 @@ import {
   ChevronRight,
   ChevronLeft,
   Check,
-  Sparkles,
   Mail,
   Download,
   Languages,
@@ -335,9 +334,8 @@ export function SetupWizard({ open, onComplete, onRegister }: SetupWizardProps) 
               >
                 {step === 'welcome' && (
                   <div className="text-center space-y-4">
-                    <div className="w-16 h-16 rounded-2xl bg-white/6 border border-white/8 flex items-center justify-center mx-auto">
-                      <Sparkles size={28} className="text-white/50" />
-                    </div>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src="/logo-1.png" alt="Fuse" width={64} height={64} className="mx-auto opacity-80" />
                     <h2 className="text-2xl font-light text-white/90">Welcome to Fuse</h2>
                     <p className="text-sm text-white/40 leading-relaxed max-w-sm mx-auto">
                       Let's get you set up in a few quick steps. You can always change these later in Settings.

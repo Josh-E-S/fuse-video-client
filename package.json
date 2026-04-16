@@ -80,6 +80,7 @@
         "to": "scripts/download-models.sh"
       }
     ],
+    "icon": "resources/icon.icns",
     "mac": {
       "category": "public.app-category.video",
       "target": [

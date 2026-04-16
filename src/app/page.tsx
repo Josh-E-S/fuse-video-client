@@ -415,6 +415,9 @@ export default function HomePage() {
         >
           <div style={{ height: !isElectron && pip.isActive ? '4vh' : '10vh' }} />
 
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo-1.png" alt="Fuse" width={80} height={24} className="mx-auto mb-4 opacity-40" />
+
           <ClockDisplay />
 
           {featuredMeeting && (
