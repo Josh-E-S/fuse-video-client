@@ -19,7 +19,6 @@ let preMiniBounds = null;
 
 const isDev = !app.isPackaged;
 
-// Find a free port so we don't collide with anything
 function getFreePort() {
   return new Promise((resolve, reject) => {
     const server = net.createServer();
@@ -53,10 +52,8 @@ function waitForServer(port, retries = 60) {
 }
 
 async function startNextServer(port) {
-  let serverPath, args, cwd;
-
   if (isDev) {
-    cwd = path.join(__dirname, "..");
+    const cwd = path.join(__dirname, "..");
     const nextBin = path.join(cwd, "node_modules", ".bin", "next");
     nextProcess = spawn(nextBin, ["dev", "--port", String(port)], {
       cwd,
@@ -93,10 +90,11 @@ async function requestMediaPermissions() {
   }
 }
 
+function getAllowedOrigin() {
+  return `http://127.0.0.1:${serverPort}`;
+}
+
 async function createWindow(port) {
-  // Chromium does a permission CHECK before a permission REQUEST.
-  // Without the check handler returning true, getUserMedia is denied
-  // before the request handler is ever called.
   const allowedPermissions = new Set([
     "media",
     "camera",
@@ -118,6 +116,52 @@ async function createWindow(port) {
     }
   );
 
+  // CSP: Next.js requires unsafe-inline + unsafe-eval for inline scripts and HMR.
+  // PexRTC is loaded from the user's configured Pexip node (any https domain).
+  const cspDirectives = [
+    "default-src 'self'",
+    `script-src 'self' 'unsafe-inline' 'unsafe-eval' https: ${getAllowedOrigin()}`,
+    `style-src 'self' 'unsafe-inline' ${getAllowedOrigin()}`,
+    `img-src 'self' data: blob: ${getAllowedOrigin()}`,
+    `media-src 'self' blob: mediastream: ${getAllowedOrigin()}`,
+    `connect-src 'self' https: wss: ${getAllowedOrigin()} ${isDev ? 'ws://127.0.0.1:*' : ''}`,
+    `font-src 'self' data: ${getAllowedOrigin()}`,
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "frame-ancestors 'none'",
+  ].join("; ");
+
+  // Strip Origin header on outbound requests to external HTTPS domains.
+  // PexRTC and the registration API make cross-origin requests from the local
+  // Next.js server. Removing the Origin header prevents the Pexip server from
+  // treating these as CORS requests, avoiding preflight failures.
+  session.defaultSession.webRequest.onBeforeSendHeaders((details, callback) => {
+    const url = new URL(details.url);
+    if (url.protocol === "https:" && url.hostname !== "127.0.0.1") {
+      delete details.requestHeaders["Origin"];
+    }
+    callback({ requestHeaders: details.requestHeaders });
+  });
+
+  // Inject CSP on local server responses and CORS headers on external responses.
+  session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+    const responseHeaders = { ...details.responseHeaders };
+
+    if (details.url.startsWith(getAllowedOrigin())) {
+      responseHeaders["Content-Security-Policy"] = [cspDirectives];
+    }
+
+    const url = new URL(details.url);
+    if (url.protocol === "https:" && url.hostname !== "127.0.0.1") {
+      responseHeaders["Access-Control-Allow-Origin"] = [getAllowedOrigin()];
+      responseHeaders["Access-Control-Allow-Headers"] = ["*"];
+      responseHeaders["Access-Control-Allow-Methods"] = ["GET, POST, OPTIONS"];
+    }
+
+    callback({ responseHeaders });
+  });
+
   mainWindow = new BrowserWindow({
     width: 500,
     height: 900,
@@ -130,11 +174,48 @@ async function createWindow(port) {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
+      sandbox: true,
+      webSecurity: true,
+      allowRunningInsecureContent: false,
       preload: path.join(__dirname, "preload.js"),
     },
   });
 
-  // IPC: toggle between compact and expanded window sizes
+  // Navigation guard: only allow our local server
+  mainWindow.webContents.on("will-navigate", (event, url) => {
+    const allowed = getAllowedOrigin();
+    if (!url.startsWith(allowed) && !url.startsWith("file://")) {
+      event.preventDefault();
+      console.warn(`Blocked navigation to: ${url}`);
+    }
+  });
+
+  // Window open handler: only allow presentation popout
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    if (url.includes("/presentation-popout")) {
+      return {
+        action: "allow",
+        overrideBrowserWindowOptions: {
+          width: 960,
+          height: 540,
+          titleBarStyle: "hiddenInset",
+          trafficLightPosition: { x: 12, y: 12 },
+          backgroundColor: "#000000",
+          webPreferences: {
+            nodeIntegration: false,
+            contextIsolation: true,
+            sandbox: true,
+            webSecurity: true,
+            allowRunningInsecureContent: false,
+          },
+        },
+      };
+    }
+    console.warn(`Blocked window open: ${url}`);
+    return { action: "deny" };
+  });
+
+  // IPC handlers
   ipcMain.handle("toggle-expand", () => {
     if (!mainWindow) return false;
     isExpanded = !isExpanded;
@@ -151,6 +232,7 @@ async function createWindow(port) {
     isMini = !isMini;
     if (isMini) {
       preMiniBounds = mainWindow.getBounds();
+      mainWindow.setResizable(false);
       const { screen } = require("electron");
       const display = screen.getDisplayNearestPoint(
         screen.getCursorScreenPoint()
@@ -160,6 +242,7 @@ async function createWindow(port) {
       const y = display.workArea.y + 8;
       mainWindow.setBounds({ x, y, ...MINI_SIZE }, true);
     } else {
+      mainWindow.setResizable(true);
       if (preMiniBounds) {
         mainWindow.setBounds(preMiniBounds, true);
         preMiniBounds = null;
@@ -174,15 +257,17 @@ async function createWindow(port) {
 
   ipcMain.handle("get-mini", () => isMini);
 
-  // IPC: adjust window width by a delta (used for side dock extend/collapse)
   ipcMain.handle("adjust-width", (_event, delta) => {
     if (!mainWindow) return;
+    if (typeof delta !== "number" || !Number.isFinite(delta) || Math.abs(delta) > 1000) {
+      console.warn(`Rejected invalid adjust-width delta: ${delta}`);
+      return;
+    }
     const [x, y] = mainWindow.getPosition();
     const [w, h] = mainWindow.getSize();
     mainWindow.setBounds({ x, y, width: w + delta, height: h }, true);
   });
 
-  // Enable getDisplayMedia() in the renderer with the native macOS picker
   session.defaultSession.setDisplayMediaRequestHandler(
     (_request, callback) => {
       callback({ video: mainWindow, audio: "loopback" });
@@ -190,27 +275,6 @@ async function createWindow(port) {
     { useSystemPicker: true }
   );
 
-  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    if (url.includes('/presentation-popout')) {
-      return {
-        action: 'allow',
-        overrideBrowserWindowOptions: {
-          width: 960,
-          height: 540,
-          titleBarStyle: 'hiddenInset',
-          trafficLightPosition: { x: 12, y: 12 },
-          backgroundColor: '#000000',
-          webPreferences: {
-            nodeIntegration: false,
-            contextIsolation: true,
-          },
-        },
-      };
-    }
-    return { action: 'deny' };
-  });
-
-  // Show a minimal loading screen while Next.js starts up
   mainWindow.loadFile(path.join(__dirname, "splash.html"));
 
   if (isDev) {
@@ -223,26 +287,27 @@ async function createWindow(port) {
 }
 
 app.whenReady().then(async () => {
+  // Block <webview> tags from being created
+  app.on("web-contents-created", (_event, contents) => {
+    contents.on("will-attach-webview", (event) => {
+      event.preventDefault();
+    });
+  });
+
   registerTranscriptionHandlers();
   registerModelHandlers();
 
   serverPort = isDev ? await getFreePort() : FIXED_PORT;
   console.log(`Starting Next.js on port ${serverPort}...`);
 
-  // Show the window immediately with a loading screen so the user
-  // isn't staring at nothing while Next.js cold-starts
   await createWindow(serverPort);
 
-  // Start the server and request media permissions in parallel.
-  // Media permissions cause OS dialogs but aren't needed until
-  // the user actually joins a call.
   await startNextServer(serverPort);
   await Promise.all([
     waitForServer(serverPort),
     requestMediaPermissions(),
   ]);
 
-  // Server is ready, load the app
   mainWindow.loadURL(`http://127.0.0.1:${serverPort}`);
 });
 
@@ -260,7 +325,6 @@ app.on("before-quit", () => {
 });
 
 app.on("activate", async () => {
-  // macOS dock click re-opens window
   if (mainWindow === null) {
     if (!nextProcess) {
       serverPort = isDev ? await getFreePort() : FIXED_PORT;

@@ -144,8 +144,28 @@ export function PexipProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const disconnect = useCallback(() => {
-    // Reset state BEFORE calling manager.disconnect() to prevent "black screen after hanging up"
-    resetCallState()
+    // Stop all media tracks before resetting state to fully release the camera/mic.
+    // Without this, rejoining a call can produce a black video because the browser
+    // still considers the old tracks active.
+    setLocalStream((prev) => {
+      prev?.getTracks().forEach((t) => t.stop())
+      return null
+    })
+    setRemoteStream((prev) => {
+      prev?.getTracks().forEach((t) => t.stop())
+      return null
+    })
+    setPresentationStream((prev) => {
+      prev?.getTracks().forEach((t) => t.stop())
+      return null
+    })
+    setConnectionState('disconnected')
+    setIsAudioMuted(true)
+    setIsVideoMuted(true)
+    setIsPresenting(false)
+    setChatMessages([])
+    setParticipants([])
+    setCurrentMeetingId(null)
     setError(null)
     pexRTCConnectionManager.disconnect()
   }, [])
