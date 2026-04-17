@@ -13,7 +13,6 @@ export default function GlobalError({
   useEffect(() => {
     Sentry.captureException(error)
   }, [error])
-
   return (
     <html lang="en">
       <body className="min-h-screen bg-black flex items-center justify-center font-sans antialiased">

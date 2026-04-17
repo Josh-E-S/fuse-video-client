@@ -54,6 +54,3 @@ instructions.txt
 /docs/*
 !/docs/connection-flow.svg
 !/docs/join-flow.svg
-
-# Sentry Config File
-.env.sentry-build-plugin
