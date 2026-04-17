@@ -807,11 +807,13 @@ export default function MeetingPage() {
                 : 'flex flex-row gap-4'
           }`}
         >
-          {/* Content tile — only in expanded gallery/side-by-side when presentation stream is separate */}
-          {isExpanded && presentationStream && !presentationPopped && layout !== 'focus' && (
+          {/* Content tile — when presentation stream is active and not popped out */}
+          {presentationStream && !presentationPopped && (
             <GlassPanel
               className={`relative flex items-center justify-center bg-black/50 ${
-                layout === 'gallery' ? 'flex-1 min-h-0 w-full' : 'flex-[2] h-full'
+                layout === 'focus' ? 'flex-1 min-h-0 w-full'
+                : layout === 'gallery' ? 'flex-1 min-h-0 w-full'
+                : 'flex-[2] h-full'
               }`}
               hoverEffect={false}
             >
@@ -827,20 +829,55 @@ export default function MeetingPage() {
 
           {/* Far-side (remote) video */}
           {layout === 'focus' ? (
-            <GlassPanel className="relative h-full w-full" hoverEffect={false}>
-              {remoteStream ? (
-                <video
-                  ref={setRemoteVideoRef}
-                  autoPlay
-                  playsInline
-                  className="w-full h-full object-cover rounded-2xl"
-                />
-              ) : (
-                <div className="absolute inset-0 flex items-center justify-center text-white/20 text-sm">
-                  Waiting for conference feed...
-                </div>
+            <div className={`relative ${presentationStream && !presentationPopped ? 'flex-1 min-h-0' : 'h-full'} w-full`}>
+              <GlassPanel className="relative h-full w-full" hoverEffect={false}>
+                {remoteStream ? (
+                  <video
+                    ref={setRemoteVideoRef}
+                    autoPlay
+                    playsInline
+                    className="w-full h-full object-cover rounded-2xl"
+                  />
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center text-white/20 text-sm">
+                    Waiting for conference feed...
+                  </div>
+                )}
+              </GlassPanel>
+              {/* Self-view PIP overlays the far-side tile */}
+              {selfViewVisible && (
+                <motion.div
+                  drag
+                  dragConstraints={mainVideoRef}
+                  dragElastic={0.1}
+                  dragMomentum={false}
+                  style={{
+                    x: pipX,
+                    y: pipY,
+                    ...(targetAspectRatio === '16:9'
+                      ? { width: 200, height: 112 }
+                      : { width: 112, height: 200 }),
+                  }}
+                  whileDrag={{ scale: 1.05, boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }}
+                  className="absolute bottom-4 right-4 rounded-2xl overflow-hidden border border-white/10 shadow-2xl z-20 bg-black/80 cursor-grab active:cursor-grabbing"
+                >
+                  {localStream && !isVideoMuted ? (
+                    <video
+                      ref={setLocalVideoRef}
+                      autoPlay
+                      playsInline
+                      muted
+                      className="w-full h-full object-cover pointer-events-none"
+                      style={{ transform: 'scaleX(-1)' }}
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <VideoOff size={20} strokeWidth={1.5} className="text-white/30" />
+                    </div>
+                  )}
+                </motion.div>
               )}
-            </GlassPanel>
+            </div>
           ) : layout === 'gallery' ? (
             isExpanded && presentationStream && !presentationPopped ? (
               <div className="flex-1 flex flex-row gap-3 min-h-0">
@@ -1000,39 +1037,6 @@ export default function MeetingPage() {
             )
           )}
 
-          {/* Self-view PIP — Focus mode only */}
-          {layout === 'focus' && selfViewVisible && (
-            <motion.div
-              drag
-              dragConstraints={mainVideoRef}
-              dragElastic={0.1}
-              dragMomentum={false}
-              style={{
-                x: pipX,
-                y: pipY,
-                ...(targetAspectRatio === '16:9'
-                  ? { width: 200, height: 112 }
-                  : { width: 112, height: 200 }),
-              }}
-              whileDrag={{ scale: 1.05, boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }}
-              className="absolute bottom-4 right-4 rounded-2xl overflow-hidden border border-white/10 shadow-2xl z-20 bg-black/80 cursor-grab active:cursor-grabbing"
-            >
-              {localStream && !isVideoMuted ? (
-                <video
-                  ref={setLocalVideoRef}
-                  autoPlay
-                  playsInline
-                  muted
-                  className="w-full h-full object-cover pointer-events-none"
-                  style={{ transform: 'scaleX(-1)' }}
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <VideoOff size={20} strokeWidth={1.5} className="text-white/30" />
-                </div>
-              )}
-            </motion.div>
-          )}
         </main>
 
         {/* Subtitle Bar */}
