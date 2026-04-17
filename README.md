@@ -9,6 +9,7 @@
 </p>
 
 <p align="center">
+  <img src="https://github.com/Josh-E-S/fuse-video-client/actions/workflows/ci.yml/badge.svg" alt="CI" />
   <img src="https://img.shields.io/badge/Next.js-16-black?logo=next.js" alt="Next.js 16" />
   <img src="https://img.shields.io/badge/React-19-61DAFB?logo=react" alt="React 19" />
   <img src="https://img.shields.io/badge/Electron-35-47848F?logo=electron" alt="Electron 35" />
@@ -96,9 +97,11 @@
 | **UI**         | React 19, Tailwind CSS v4, Framer Motion                              |
 | **Components** | Radix UI primitives, Lucide React icons, Sonner toasts                |
 | **WebRTC**     | PexRTC (Pexip Infinity browser SDK, loaded dynamically from node)     |
-| **Desktop**    | Electron 35 with context isolation                                    |
+| **Desktop**    | Electron 35 with sandbox, context isolation, CSP                      |
 | **Speech**     | NVIDIA Parakeet TDT-CTC 110M via Sherpa-ONNX (offline, Electron-only) |
-| **Testing**    | Vitest 4, Testing Library, jsdom                                      |
+| **Validation** | Zod (API input schemas)                                               |
+| **Testing**    | Vitest 4, Testing Library, jsdom (96 tests)                           |
+| **CI/CD**      | GitHub Actions (lint, typecheck, test, build, security scanning)      |
 | **Linting**    | ESLint 9, Prettier                                                    |
 
 ---
@@ -366,17 +369,29 @@ npm test              # Run all tests
 npm run test:watch    # Watch mode
 ```
 
-Tests use **Vitest** with **Testing Library** and **jsdom**:
+96 tests across 15 files using **Vitest** with **Testing Library** and **jsdom**:
 
 ```
 src/__tests__/
-├── utils/
-│   ├── meetingProvider.test.ts   # Provider detection from aliases
-│   ├── meetingDate.test.ts       # Date formatting helpers
-│   ├── stateTheme.test.ts        # Theme state utilities
-│   └── media.test.ts             # Media helper functions
-└── hooks/
-    └── useElectron.test.ts       # Electron bridge detection
+├── api/
+│   └── teams-dial-string.test.ts # Teams CVI API route validation
+├── hooks/
+│   ├── useElectron.test.ts       # Electron bridge detection
+│   ├── useMediaQuery.test.ts     # Responsive breakpoint hook
+│   ├── usePresentationPopout.test.ts # Presentation window lifecycle
+│   ├── useQuickJoin.test.ts      # Provider toggle state
+│   ├── useRecentCalls.test.ts    # Call history with dedup/limits
+│   ├── useSettings.test.ts       # Settings persistence and sync
+│   ├── useTheme.test.ts          # Theme switching and localStorage
+│   └── useVideoRefs.test.ts      # Video element stream attachment
+├── services/
+│   ├── pexipOTJ.test.ts          # OTJ calendar API and transforms
+│   └── pexrtcLoader.test.ts      # PexRTC script loading and retry
+└── utils/
+    ├── media.test.ts             # Media constraints and fallback
+    ├── meetingDate.test.ts       # Date formatting helpers
+    ├── meetingProvider.test.ts   # Provider detection from aliases
+    └── stateTheme.test.ts        # Theme state utilities
 ```
 
 ---
@@ -423,9 +438,13 @@ src/__tests__/
 
 ## Roadmap
 
-- [ ] **Sandbox mode** -- enable Electron's OS-level sandbox for renderer hardening
-- [ ] **Content Security Policy** -- configure CSP headers on all windows
-- [ ] **Navigation guards** -- intercept `will-navigate` to block unexpected URLs
+- [x] **Sandbox mode** -- Electron OS-level sandbox for renderer hardening
+- [x] **Content Security Policy** -- CSP headers on all windows
+- [x] **Navigation guards** -- `will-navigate` blocks unexpected URLs
+- [x] **Error boundaries** -- graceful error recovery at app, page, and meeting level
+- [x] **CI/CD** -- GitHub Actions for lint, typecheck, test, build, secrets scanning, dependency audit
+- [x] **API validation** -- Zod schemas for API route inputs
+- [x] **Accessibility** -- aria-labels on all controls, keyboard Escape for modals
 - [ ] **Auto-update** -- ship updates via `electron-updater` with GitHub Releases
 - [ ] **Notarization** -- macOS notarization for Gatekeeper-trusted distribution
 - [ ] **Supabase integration** -- cloud-synced settings, call history, and user profiles
