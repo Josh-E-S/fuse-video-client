@@ -21,9 +21,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
 
-      - run: npm ci --omit=optional
+      - run: npm install --ignore-scripts
 
       - name: Lint
         run: npx eslint src/ --max-warnings 0
@@ -46,9 +45,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
 
-      - run: npm ci --omit=optional
+      - run: npm install --ignore-scripts
 
       - name: Build Next.js
         run: npm run build
