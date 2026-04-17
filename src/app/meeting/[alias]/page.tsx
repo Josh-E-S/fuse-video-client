@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { AnimatePresence, useMotionValue } from 'framer-motion'
+import { toast } from 'sonner'
 import { ControlBar } from '@/components/meeting/ControlBar'
 import { DockPanel, type DockTab } from '@/components/meeting/DockPanel'
 import { BackgroundEngine } from '@/components/meeting/BackgroundEngine'
@@ -43,6 +44,7 @@ export default function MeetingPage() {
 
   const {
     connectionState,
+    disconnectReason,
     localStream,
     remoteStream,
     presentationStream,
@@ -175,12 +177,17 @@ export default function MeetingPage() {
     }
   }, [])
 
-  // Navigate home when disconnected
+  // Navigate home when disconnected — notify user if unexpected
   useEffect(() => {
     if (connectionState === 'disconnected' || connectionState === 'error') {
+      if (disconnectReason === 'remote') {
+        toast.error('Call disconnected', { description: 'The connection was lost unexpectedly.' })
+      } else if (disconnectReason === 'error') {
+        toast.error('Call failed', { description: 'An error occurred during the call.' })
+      }
       router.push('/')
     }
-  }, [connectionState, router])
+  }, [connectionState, disconnectReason, router])
 
   // Apply theme to PiP window
   useEffect(() => {

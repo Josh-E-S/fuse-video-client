@@ -4,8 +4,11 @@ import React, { createContext, useContext, useState, useCallback, useRef } from 
 import { pexRTCConnectionManager, ConnectionConfig } from '@/services/pexrtcConnectionManager'
 import { ConnectionState, ChatMessage, Participant } from '@/types/pexrtc'
 
+export type DisconnectReason = 'user' | 'remote' | 'error' | null
+
 interface PexipContextValue {
   connectionState: ConnectionState
+  disconnectReason: DisconnectReason
   localStream: MediaStream | null
   remoteStream: MediaStream | null
   presentationStream: MediaStream | null
@@ -45,7 +48,9 @@ export function PexipProvider({ children }: { children: React.ReactNode }) {
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
   const [participants, setParticipants] = useState<Participant[]>([])
   const [currentMeetingId, setCurrentMeetingId] = useState<string | null>(null)
+  const [disconnectReason, setDisconnectReason] = useState<DisconnectReason>(null)
   const pinSubmittedRef = useRef(false)
+  const intentionalDisconnectRef = useRef(false)
 
   function resetCallState() {
     setConnectionState('disconnected')
@@ -62,6 +67,8 @@ export function PexipProvider({ children }: { children: React.ReactNode }) {
 
   const joinConference = useCallback(async (config: ConnectionConfig) => {
     pinSubmittedRef.current = false
+    intentionalDisconnectRef.current = false
+    setDisconnectReason(null)
     setConnectionState('connecting')
     setError(null)
     setChatMessages([])
@@ -88,6 +95,8 @@ export function PexipProvider({ children }: { children: React.ReactNode }) {
           setConnectionState('connected')
         },
         onDisconnect: () => {
+          setDisconnectReason(intentionalDisconnectRef.current ? 'user' : 'remote')
+          intentionalDisconnectRef.current = false
           resetCallState()
         },
         onError: (err) => {
@@ -97,6 +106,7 @@ export function PexipProvider({ children }: { children: React.ReactNode }) {
             setError('Invalid PIN. Please try again.')
             setConnectionState('pin_required')
           } else {
+            setDisconnectReason('error')
             setError(err)
             setConnectionState('error')
             setLocalStream(null)
@@ -144,9 +154,8 @@ export function PexipProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const disconnect = useCallback(() => {
-    // Stop all media tracks before resetting state to fully release the camera/mic.
-    // Without this, rejoining a call can produce a black video because the browser
-    // still considers the old tracks active.
+    intentionalDisconnectRef.current = true
+    setDisconnectReason('user')
     setLocalStream((prev) => {
       prev?.getTracks().forEach((t) => t.stop())
       return null
@@ -262,6 +271,7 @@ export function PexipProvider({ children }: { children: React.ReactNode }) {
     <PexipContext.Provider
       value={{
         connectionState,
+        disconnectReason,
         localStream,
         remoteStream,
         presentationStream,
