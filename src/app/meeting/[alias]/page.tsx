@@ -75,6 +75,7 @@ export default function MeetingPage() {
     requestAspectRatio,
     startScreenShare,
     stopScreenShare,
+    switchMediaDevices,
   } = usePexip()
   const pip = usePip()
   const [layout, setLayout] = useState<'focus' | 'gallery' | 'side-by-side'>('focus')
@@ -127,6 +128,20 @@ export default function MeetingPage() {
       requestAspectRatio(ratio)
     }
   }, [targetAspectRatio, pipLayout, pip.isActive, connectionState, requestAspectRatio])
+
+  // Switch media devices in-call when user changes audio/video input
+  const prevAudioRef = useRef(settings.audioInput)
+  const prevVideoRef = useRef(settings.videoInput)
+  useEffect(() => {
+    if (
+      connectionState === 'connected' &&
+      (prevAudioRef.current !== settings.audioInput || prevVideoRef.current !== settings.videoInput)
+    ) {
+      switchMediaDevices(settings.audioInput || undefined, settings.videoInput || undefined)
+    }
+    prevAudioRef.current = settings.audioInput
+    prevVideoRef.current = settings.videoInput
+  }, [settings.audioInput, settings.videoInput, connectionState, switchMediaDevices])
 
   const popoutWindowRef = useRef<Window | null>(null)
   const mainVideoRef = useRef<HTMLElement | null>(null)
