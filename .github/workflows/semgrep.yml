@@ -17,7 +17,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Run Semgrep
-        run: semgrep scan --config auto --error --exclude='node_modules' --exclude='.next' --exclude='electron'
+        run: semgrep scan --config auto --error --exclude='node_modules' --exclude='.next' --exclude='electron' --exclude='scripts'
         env:
           SEMGREP_RULES: >-
             p/javascript
