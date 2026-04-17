@@ -30,6 +30,7 @@ import { useSettings } from '@/hooks/useSettings'
 import { useMediaDevices, useSpeakerTest } from '@/hooks/useMediaDevices'
 import { getElectronBridge } from '@/hooks/useElectron'
 import { useQuickJoin } from '@/hooks/useQuickJoin'
+import { useEscapeKey } from '@/hooks/useEscapeKey'
 import type { RegistrationStatus, RegistrationCredentials } from '@/contexts/RegistrationContext'
 import { THEMES, CATEGORY_ORDER } from '@/themes/themes'
 import type { CosmeticTheme } from '@/themes/types'
@@ -55,6 +56,7 @@ export function SettingsModal({
   onRegister,
   onUnregister,
 }: SettingsModalProps) {
+  useEscapeKey(onClose, open)
   const { settings, saveSettings } = useSettings()
   const quickJoin = useQuickJoin()
   const [nodeDomain, setNodeDomain] = useState(settings.nodeDomain)
