@@ -1,6 +1,12 @@
 import { NextResponse } from 'next/server'
+import { z } from 'zod'
 
 const CUSTOMER_ID = process.env.PEXIP_CUSTOMER_ID || ''
+
+const TeamsDialStringSchema = z.object({
+  meetingId: z.string().min(1, 'meetingId is required'),
+  passcode: z.string().min(1, 'passcode is required'),
+})
 
 function toBase32(input: string): string {
   const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'
@@ -25,16 +31,22 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Pexip Cloud Customer ID not configured' }, { status: 500 })
   }
 
-  const body = await request.json()
-  const { meetingId, passcode } = body as { meetingId?: string; passcode?: string }
-
-  if (!meetingId || typeof meetingId !== 'string') {
-    return NextResponse.json({ error: 'meetingId is required' }, { status: 400 })
-  }
-  if (!passcode || typeof passcode !== 'string') {
-    return NextResponse.json({ error: 'passcode is required' }, { status: 400 })
+  let body: unknown
+  try {
+    body = await request.json()
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
   }
 
+  const parsed = TeamsDialStringSchema.safeParse(body)
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: parsed.error.issues[0].message },
+      { status: 400 },
+    )
+  }
+
+  const { meetingId, passcode } = parsed.data
   const encodedPasscode = toBase32(`e|${passcode}`).replace(/=+$/, '')
   const alias = `${meetingId}.${encodedPasscode}..${customerId}@pex.ms`
 
