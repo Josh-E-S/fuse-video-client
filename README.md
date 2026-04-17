@@ -250,7 +250,7 @@ src/
 ├── components/
 │   ├── home/                     # Landing page (clock, calendar, quick join)
 │   ├── modals/                   # Dialogs (join, preflight, settings, wizard, DTMF, stats)
-│   └── resync/                   # In-call UI (controls, chat, transcript, participants, dock)
+│   └── meeting/                  # In-call UI (controls, chat, transcript, participants, dock)
 ├── contexts/                     # React Context providers
 ├── hooks/                        # Custom hooks (settings, devices, theme, transcription, etc.)
 ├── services/                     # PexRTC loader, connection manager, OTJ client

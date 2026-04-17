@@ -47,6 +47,19 @@ export function PexipProvider({ children }: { children: React.ReactNode }) {
   const [currentMeetingId, setCurrentMeetingId] = useState<string | null>(null)
   const pinSubmittedRef = useRef(false)
 
+  function resetCallState() {
+    setConnectionState('disconnected')
+    setLocalStream(null)
+    setRemoteStream(null)
+    setPresentationStream(null)
+    setIsAudioMuted(true)
+    setIsVideoMuted(true)
+    setIsPresenting(false)
+    setChatMessages([])
+    setParticipants([])
+    setCurrentMeetingId(null)
+  }
+
   const joinConference = useCallback(async (config: ConnectionConfig) => {
     pinSubmittedRef.current = false
     setConnectionState('connecting')
@@ -75,16 +88,7 @@ export function PexipProvider({ children }: { children: React.ReactNode }) {
           setConnectionState('connected')
         },
         onDisconnect: () => {
-          setConnectionState('disconnected')
-          setLocalStream(null)
-          setRemoteStream(null)
-          setPresentationStream(null)
-          setIsAudioMuted(true)
-          setIsVideoMuted(true)
-          setIsPresenting(false)
-          setChatMessages([])
-          setParticipants([])
-          setCurrentMeetingId(null)
+          resetCallState()
         },
         onError: (err) => {
           const isPinError = /invalid pin/i.test(err)
@@ -140,18 +144,8 @@ export function PexipProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const disconnect = useCallback(() => {
-    // Reset ALL state BEFORE calling manager.disconnect()
-    // Prevents "black screen after hanging up" bug
-    setConnectionState('disconnected')
-    setLocalStream(null)
-    setRemoteStream(null)
-    setPresentationStream(null)
-    setIsAudioMuted(true)
-    setIsVideoMuted(true)
-    setIsPresenting(false)
-    setChatMessages([])
-    setParticipants([])
-    setCurrentMeetingId(null)
+    // Reset state BEFORE calling manager.disconnect() to prevent "black screen after hanging up"
+    resetCallState()
     setError(null)
     pexRTCConnectionManager.disconnect()
   }, [])

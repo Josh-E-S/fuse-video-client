@@ -45,7 +45,7 @@ describe('acquireUserMedia', () => {
 
     expect(getUserMedia.mock.calls[0][0]).toEqual({
       audio: { deviceId: { ideal: 'mic-123' } },
-      video: { deviceId: { ideal: 'cam-456' } },
+      video: { deviceId: { exact: 'cam-456' }, width: { ideal: 1920 }, height: { ideal: 1080 } },
     })
   })
 })

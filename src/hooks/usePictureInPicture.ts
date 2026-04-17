@@ -53,7 +53,7 @@ export function usePictureInPicture(): PipState {
     }
 
     try {
-      const pip = await (window as any).documentPictureInPicture.requestWindow({
+      const pip = await window.documentPictureInPicture!.requestWindow({
         width: PIP_WIDTH,
         height: PIP_HEIGHT,
         preferInitialWindowPlacement: true,

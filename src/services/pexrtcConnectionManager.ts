@@ -1,5 +1,5 @@
 import { pexRTCLoader } from './pexrtcLoader'
-import { PexRTCInstance } from '@/types/pexrtc'
+import { PexRTCInstance, ChatMessage, Participant } from '@/types/pexrtc'
 
 export interface ConnectionConfig {
   nodeDomain: string
@@ -30,11 +30,11 @@ export interface ConnectionCallbacks {
   onPresentationDisconnected?: (reason: string) => void
   onScreenshareConnected?: (stream: MediaStream) => void
   onScreenshareStopped?: (reason: string) => void
-  onChatMessage?: (message: any) => void
-  onStageUpdate?: (stage: any[]) => void
-  onParticipantCreate?: (participant: any) => void
-  onParticipantUpdate?: (participant: any) => void
-  onParticipantDelete?: (participant: any) => void
+  onChatMessage?: (message: ChatMessage) => void
+  onStageUpdate?: (stage: unknown[]) => void
+  onParticipantCreate?: (participant: Participant) => void
+  onParticipantUpdate?: (participant: Participant) => void
+  onParticipantDelete?: (participant: Participant) => void
 }
 
 class PexRTCConnectionManager {
@@ -251,21 +251,21 @@ class PexRTCConnectionManager {
     this.pexrtc.onScreenshareConnected = callbacks.onScreenshareConnected || (() => {})
     this.pexrtc.onScreenshareStopped = callbacks.onScreenshareStopped || (() => {})
 
-    this.pexrtc.onChatMessage = (message: any) => {
+    this.pexrtc.onChatMessage = (message: ChatMessage) => {
       if (callbacks.onChatMessage) {
         callbacks.onChatMessage(message)
       }
     }
 
-    this.pexrtc.onDirectMessage = (message: any) => {
+    this.pexrtc.onDirectMessage = (message: unknown) => {
       if (callbacks.onChatMessage) {
-        callbacks.onChatMessage(message)
+        callbacks.onChatMessage(message as ChatMessage)
       }
     }
 
-    this.pexrtc.onApplicationMessage = (message: any) => {
+    this.pexrtc.onApplicationMessage = (message: unknown) => {
       if (callbacks.onChatMessage) {
-        callbacks.onChatMessage(message)
+        callbacks.onChatMessage(message as ChatMessage)
       }
     }
 

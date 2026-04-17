@@ -11,7 +11,7 @@ function copyStyles(source: Document, target: Document) {
   })
 }
 
-interface PipContextValue {
+export interface PipContextValue {
   isSupported: boolean
   isActive: boolean
   pipWindow: Window | null
@@ -51,7 +51,7 @@ export function PipProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      const pip = await (window as any).documentPictureInPicture.requestWindow({
+      const pip = await window.documentPictureInPicture!.requestWindow({
         width: PIP_WIDTH,
         height: PIP_HEIGHT,
         preferInitialWindowPlacement: true,
