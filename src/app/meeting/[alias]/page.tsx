@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useRouter, useParams } from 'next/navigation'
-import { AnimatePresence, motion } from 'framer-motion'
+import { AnimatePresence, motion, useMotionValue } from 'framer-motion'
 import {
   Mic,
   MicOff,
@@ -72,11 +72,21 @@ export default function MeetingPage() {
     setMessageText,
     sendDTMF,
     getMediaStatistics,
+    requestAspectRatio,
     startScreenShare,
     stopScreenShare,
+    switchMediaDevices,
   } = usePexip()
   const pip = usePip()
-  const [layout, setLayout] = useState<'spotlight' | 'split' | 'stacked'>('spotlight')
+  const [layout, setLayout] = useState<'focus' | 'gallery' | 'side-by-side'>('focus')
+  useEffect(() => {
+    if (isMini) {
+      setLayout('focus')
+    } else if (!isExpanded && layout === 'side-by-side') {
+      setLayout('focus')
+    }
+  }, [isMini, isExpanded, layout])
+  const [selfViewVisible, setSelfViewVisible] = useState(true)
   const [pipLayout, setPipLayout] = useState<'portrait' | 'halves'>('portrait')
   const [dockTab, setDockTab] = useState<DockTab | null>(null)
   const [dockMode, setDockMode] = useState<'bottom' | 'side'>('bottom')
@@ -84,8 +94,55 @@ export default function MeetingPage() {
   const [transcriptionEnabled, setTranscriptionEnabled] = useState(false)
   const [captionsVisible, setCaptionsVisible] = useState(true)
   const [showDTMF, setShowDTMF] = useState(false)
-  const [videoAspect, setVideoAspect] = useState(1)
   const [presentationPopped, setPresentationPopped] = useState(false)
+
+  const sideDockOpen = dockMode === 'side' && dockTab !== null
+
+  const targetAspectRatio: '16:9' | '9:16' =
+    isMini ? '16:9'
+    : isExpanded ? '16:9'
+    : layout === 'gallery' ? '16:9'
+    : sideDockOpen ? '16:9'
+    : '9:16'
+
+  const pipX = useMotionValue(0)
+  const pipY = useMotionValue(0)
+
+  const pipResetKey = `${layout}-${isMini}-${isExpanded}-${dockTab}-${dockMode}-${targetAspectRatio}`
+  const prevPipResetKey = useRef(pipResetKey)
+  useEffect(() => {
+    if (prevPipResetKey.current !== pipResetKey) {
+      pipX.set(0)
+      pipY.set(0)
+      prevPipResetKey.current = pipResetKey
+    }
+  }, [pipResetKey, pipX, pipY])
+
+  useEffect(() => {
+    if (connectionState !== 'connected') return
+    if (pip.isActive) {
+      const ratio = pipLayout === 'portrait' ? 9 / 16 : 16 / 9
+      requestAspectRatio(ratio)
+    } else {
+      const ratio = targetAspectRatio === '16:9' ? 16 / 9 : 9 / 16
+      requestAspectRatio(ratio)
+    }
+  }, [targetAspectRatio, pipLayout, pip.isActive, connectionState, requestAspectRatio])
+
+  // Switch media devices in-call when user changes audio/video input
+  const prevAudioRef = useRef(settings.audioInput)
+  const prevVideoRef = useRef(settings.videoInput)
+  useEffect(() => {
+    if (
+      connectionState === 'connected' &&
+      (prevAudioRef.current !== settings.audioInput || prevVideoRef.current !== settings.videoInput)
+    ) {
+      switchMediaDevices(settings.audioInput || undefined, settings.videoInput || undefined)
+    }
+    prevAudioRef.current = settings.audioInput
+    prevVideoRef.current = settings.videoInput
+  }, [settings.audioInput, settings.videoInput, connectionState, switchMediaDevices])
+
   const popoutWindowRef = useRef<Window | null>(null)
   const mainVideoRef = useRef<HTMLElement | null>(null)
 
@@ -231,18 +288,6 @@ export default function MeetingPage() {
     },
     [presentationStream],
   )
-
-  // Track main video container aspect ratio for PiP self-view sizing
-  useEffect(() => {
-    const el = mainVideoRef.current
-    if (!el) return
-    const ro = new ResizeObserver(([entry]) => {
-      const { width, height } = entry.contentRect
-      if (width > 0 && height > 0) setVideoAspect(width / height)
-    })
-    ro.observe(el)
-    return () => ro.disconnect()
-  }, [])
 
   useEffect(() => {
     if (connectionState === 'disconnected' || connectionState === 'error') {
@@ -442,9 +487,11 @@ export default function MeetingPage() {
           )}
         </div>
         {/* Self-view pip at bottom-right */}
-        <div className="absolute bottom-28 right-4 z-30 w-[110px] h-[148px] rounded-2xl overflow-hidden border border-white/15 shadow-2xl">
-          {selfViewContent}
-        </div>
+        {selfViewVisible && (
+          <div className="absolute bottom-28 right-4 z-30 w-[110px] h-[148px] rounded-2xl overflow-hidden border border-white/15 shadow-2xl">
+            {selfViewContent}
+          </div>
+        )}
         {pipTopBar}
         <div className="flex-1" />
         {pipControls}
@@ -465,9 +512,11 @@ export default function MeetingPage() {
               remoteVideoPlaceholder
             )}
           </div>
-          <div className="flex-1 rounded-2xl overflow-hidden bg-black/30 border border-white/6 min-h-0">
-            {selfViewContent}
-          </div>
+          {selfViewVisible && (
+            <div className="flex-1 rounded-2xl overflow-hidden bg-black/30 border border-white/6 min-h-0">
+              {selfViewContent}
+            </div>
+          )}
         </div>
         {pipControls}
       </div>
@@ -566,7 +615,7 @@ export default function MeetingPage() {
           )}
 
           {/* Self-view PiP */}
-          {localStream && (
+          {selfViewVisible && localStream && (
             <div className={`absolute bottom-1.5 right-1.5 w-[64px] h-[48px] rounded-lg overflow-hidden border border-white/10 shadow-lg bg-black/60 z-10 transition-all duration-300 ${isVideoMuted ? 'opacity-0 pointer-events-none' : miniHover ? 'opacity-100 bottom-[52px]' : 'opacity-100'}`}>
               <video
                 ref={miniSelfRef}
@@ -613,6 +662,18 @@ export default function MeetingPage() {
             >
               <FileText size={15} />
             </button>
+            {presentationStream && (
+              <button
+                onClick={presentationPopped ? closePresentationPopout : openPresentationPopout}
+                className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors ${
+                  presentationPopped
+                    ? 'bg-blue-500/20 text-blue-400'
+                    : 'bg-white/8 text-white/70 hover:bg-white/12'
+                }`}
+              >
+                <MonitorUp size={15} />
+              </button>
+            )}
             <button
               onClick={handleLeave}
               className="w-9 h-9 rounded-full flex items-center justify-center bg-rose-600 text-white hover:bg-rose-500 transition-colors"
@@ -739,107 +800,103 @@ export default function MeetingPage() {
         <main
           ref={mainVideoRef}
           className={`relative min-h-0 flex-1 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] ${
-            presentationStream && !presentationPopped
-              ? layout === 'spotlight'
-                ? 'flex flex-col justify-center'
-                : layout === 'stacked'
-                  ? 'flex flex-col gap-3'
-                  : 'flex flex-col md:flex-row gap-4 justify-center'
-              : layout === 'spotlight'
-                ? 'flex flex-col justify-center'
-                : layout === 'stacked'
-                  ? 'flex flex-col gap-3'
-                  : 'grid grid-cols-1 md:grid-cols-2 grid-rows-2 md:grid-rows-1 gap-4 md:gap-6'
+            layout === 'focus'
+              ? 'flex flex-col justify-center'
+              : layout === 'gallery'
+                ? 'flex flex-col gap-3'
+                : 'flex flex-row gap-4'
           }`}
         >
-          {presentationStream && !presentationPopped ? (
-            <>
-              {/* Presentation content */}
-              <GlassPanel
-                className={`relative flex items-center justify-center bg-black/50 ${
-                  layout === 'spotlight'
-                    ? 'h-full'
-                    : layout === 'stacked'
-                      ? 'flex-[2] min-h-0 w-full'
-                      : 'flex-[2] md:h-full min-h-[300px]'
-                }`}
-                hoverEffect={false}
-              >
-                <video
-                  ref={setPresentationVideoRef}
-                  autoPlay
-                  playsInline
-                  muted
-                  className="absolute inset-0 w-full h-full object-contain rounded-2xl"
-                />
+          {/* Content tile — when presentation stream is active and not popped out */}
+          {presentationStream && !presentationPopped && (
+            <GlassPanel
+              className={`relative flex items-center justify-center bg-black/50 ${
+                layout === 'focus' ? 'flex-1 min-h-0 w-full'
+                : layout === 'gallery' ? 'flex-1 min-h-0 w-full'
+                : 'flex-[2] h-full'
+              }`}
+              hoverEffect={false}
+            >
+              <video
+                ref={setPresentationVideoRef}
+                autoPlay
+                playsInline
+                muted
+                className="absolute inset-0 w-full h-full object-contain rounded-2xl"
+              />
+            </GlassPanel>
+          )}
+
+          {/* Far-side (remote) video */}
+          {layout === 'focus' ? (
+            <div className={`relative ${presentationStream && !presentationPopped ? 'flex-1 min-h-0' : 'h-full'} w-full`}>
+              <GlassPanel className="relative h-full w-full" hoverEffect={false}>
+                {remoteStream ? (
+                  <video
+                    ref={setRemoteVideoRef}
+                    autoPlay
+                    playsInline
+                    className="w-full h-full object-cover rounded-2xl"
+                  />
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center text-white/20 text-sm">
+                    Waiting for conference feed...
+                  </div>
+                )}
               </GlassPanel>
-
-              {/* Spotlight: remote bottom-left, self bottom-right */}
-              {layout === 'spotlight' && (
-                <>
-                  <div
-                    className="absolute bottom-4 left-4 rounded-2xl overflow-hidden border border-white/10 shadow-2xl z-20 bg-black/80"
-                    style={videoAspect >= 1
-                      ? { width: 160, height: Math.round(160 / videoAspect) }
-                      : { height: 160, width: Math.round(160 * videoAspect) }
-                    }
-                  >
-                    {remoteStream ? (
-                      <video
-                        ref={setRemoteVideoRef}
-                        autoPlay
-                        playsInline
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-white/20">
-                        <VideoOff size={16} strokeWidth={1.5} />
-                      </div>
-                    )}
-                  </div>
-                  <div
-                    className="absolute bottom-4 right-4 rounded-2xl overflow-hidden border border-white/10 shadow-2xl z-20 bg-black/80"
-                    style={videoAspect >= 1
-                      ? { width: 160, height: Math.round(160 / videoAspect) }
-                      : { height: 160, width: Math.round(160 * videoAspect) }
-                    }
-                  >
-                    {localStream && !isVideoMuted ? (
-                      <video
-                        ref={setLocalVideoRef}
-                        autoPlay
-                        playsInline
-                        muted
-                        className="w-full h-full object-cover"
-                        style={{ transform: 'scaleX(-1)' }}
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-white/30">
-                        <VideoOff size={16} strokeWidth={1.5} />
-                      </div>
-                    )}
-                  </div>
-                </>
+              {/* Self-view PIP overlays the far-side tile */}
+              {selfViewVisible && (
+                <motion.div
+                  drag
+                  dragConstraints={mainVideoRef}
+                  dragElastic={0.1}
+                  dragMomentum={false}
+                  style={{
+                    x: pipX,
+                    y: pipY,
+                    ...(targetAspectRatio === '16:9'
+                      ? { width: 200, height: 112 }
+                      : { width: 112, height: 200 }),
+                  }}
+                  whileDrag={{ scale: 1.05, boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }}
+                  className="absolute bottom-4 right-4 rounded-2xl overflow-hidden border border-white/10 shadow-2xl z-20 bg-black/80 cursor-grab active:cursor-grabbing"
+                >
+                  {localStream && !isVideoMuted ? (
+                    <video
+                      ref={setLocalVideoRef}
+                      autoPlay
+                      playsInline
+                      muted
+                      className="w-full h-full object-cover pointer-events-none"
+                      style={{ transform: 'scaleX(-1)' }}
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <VideoOff size={20} strokeWidth={1.5} className="text-white/30" />
+                    </div>
+                  )}
+                </motion.div>
               )}
-
-              {/* Stacked: remote + self side-by-side below content */}
-              {layout === 'stacked' && (
-                <div className="flex-1 flex flex-row gap-3 min-h-0">
-                  <GlassPanel className="relative flex-1 min-h-0" hoverEffect={false}>
-                    {remoteStream ? (
-                      <video
-                        ref={setRemoteVideoRef}
-                        autoPlay
-                        playsInline
-                        className="absolute inset-0 w-full h-full object-cover rounded-2xl"
-                      />
-                    ) : (
-                      <div className="absolute inset-0 flex items-center justify-center text-white/20 text-sm">
-                        Waiting...
-                      </div>
-                    )}
-                  </GlassPanel>
-                  <GlassPanel className="relative flex-1 min-h-0" hoverEffect={false}>
+            </div>
+          ) : layout === 'gallery' ? (
+            isExpanded && presentationStream && !presentationPopped ? (
+              <div className="flex-1 flex flex-row gap-3 min-h-0">
+                <GlassPanel className="relative flex-1 min-h-0" hoverEffect={false}>
+                  {remoteStream ? (
+                    <video
+                      ref={setRemoteVideoRef}
+                      autoPlay
+                      playsInline
+                      className="absolute inset-0 w-full h-full object-cover rounded-2xl"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center text-white/20 text-sm">
+                      Waiting for conference feed...
+                    </div>
+                  )}
+                </GlassPanel>
+                {selfViewVisible && (
+                  <GlassPanel className="relative flex-1 min-h-0" isActive={isBroadcasting} isAudioOnly={isAudioOnly} hoverEffect={false}>
                     {localStream && !isVideoMuted ? (
                       <video
                         ref={setLocalVideoRef}
@@ -855,31 +912,29 @@ export default function MeetingPage() {
                       </div>
                     )}
                   </GlassPanel>
-                </div>
-              )}
-
-              {/* Split: side strip for remote/local */}
-              {layout === 'split' && (
-                <div className="flex-1 flex flex-row md:flex-col gap-4 md:w-80 md:min-w-[320px] md:max-w-xs shrink-0 overflow-x-auto md:overflow-y-auto w-full md:h-full no-scrollbar">
+                )}
+              </div>
+            ) : (
+              <>
+                <GlassPanel className="relative flex-1 min-h-0 w-full" hoverEffect={false}>
+                  {remoteStream ? (
+                    <video
+                      ref={setRemoteVideoRef}
+                      autoPlay
+                      playsInline
+                      className="absolute inset-0 w-full h-full object-cover rounded-2xl"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center text-white/20 text-sm">
+                      Waiting for conference feed...
+                    </div>
+                  )}
+                </GlassPanel>
+                {selfViewVisible && (
                   <GlassPanel
-                    className="relative flex-1 min-w-[200px] md:w-full md:min-h-[200px]"
-                    hoverEffect={false}
-                  >
-                    {remoteStream ? (
-                      <video
-                        ref={setRemoteVideoRef}
-                        autoPlay
-                        playsInline
-                        className="absolute inset-0 w-full h-full object-cover rounded-2xl"
-                      />
-                    ) : (
-                      <div className="absolute inset-0 flex items-center justify-center text-white/20 text-sm">
-                        Waiting for conference feed...
-                      </div>
-                    )}
-                  </GlassPanel>
-                  <GlassPanel
-                    className="relative flex-1 min-w-[140px] md:w-full md:min-h-[200px]"
+                    className="relative flex-1 min-h-0 w-full"
+                    isActive={isBroadcasting}
+                    isAudioOnly={isAudioOnly}
                     hoverEffect={false}
                   >
                     {localStream && !isVideoMuted ? (
@@ -893,113 +948,95 @@ export default function MeetingPage() {
                       />
                     ) : (
                       <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-white/30">
-                        <VideoOff size={24} strokeWidth={1.5} />
-                        <span className="text-[10px] uppercase tracking-widest hidden md:block">
-                          Camera off
-                        </span>
+                        <div className="w-20 h-20 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center">
+                          <VideoOff size={32} strokeWidth={1.5} />
+                        </div>
+                        <span className="text-xs uppercase tracking-widest">Camera off</span>
                       </div>
                     )}
                   </GlassPanel>
-                </div>
-              )}
-            </>
-          ) : (
-            <>
-              {/* Remote video */}
-              <GlassPanel
-                className={`relative ${
-                  layout === 'spotlight'
-                    ? 'h-full'
-                    : layout === 'stacked'
-                      ? 'flex-[2] min-h-0 w-full'
-                      : 'min-h-0 h-full w-full flex items-center justify-center'
-                }`}
-                hoverEffect={false}
-              >
-                {remoteStream ? (
-                  <video
-                    ref={setRemoteVideoRef}
-                    autoPlay
-                    playsInline
-                    className="w-full h-full object-cover rounded-2xl"
-                  />
-                ) : (
-                  <div className="absolute inset-0 flex items-center justify-center text-white/20 text-sm">
-                    Waiting for conference feed...
-                  </div>
                 )}
-              </GlassPanel>
-
-              {/* Local self-view */}
-              {layout === 'spotlight' ? (
-                <div
-                  className="absolute bottom-4 right-4 rounded-2xl overflow-hidden border border-white/10 shadow-2xl z-20 bg-black/80 transition-all duration-300"
-                  style={videoAspect >= 1
-                    ? { width: 200, height: Math.round(200 / videoAspect) }
-                    : { height: 200, width: Math.round(200 * videoAspect) }
-                  }
-                >
-                  {localStream && !isVideoMuted ? (
+              </>
+            )
+          ) : (
+            isExpanded && presentationStream && !presentationPopped ? (
+              <div className="flex-1 flex flex-col gap-3">
+                <GlassPanel className="relative flex-1 min-h-0" hoverEffect={false}>
+                  {remoteStream ? (
                     <video
-                      ref={setLocalVideoRef}
+                      ref={setRemoteVideoRef}
                       autoPlay
                       playsInline
-                      muted
-                      className="w-full h-full object-cover"
-                      style={{ transform: 'scaleX(-1)' }}
+                      className="absolute inset-0 w-full h-full object-cover rounded-2xl"
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <VideoOff size={20} strokeWidth={1.5} className="text-white/30" />
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <GlassPanel
-                  className={`relative min-h-0 w-full flex items-center justify-center ${
-                    layout === 'stacked' ? 'flex-1' : 'h-full'
-                  }`}
-                  isActive={isBroadcasting}
-                  isAudioOnly={isAudioOnly}
-                  hoverEffect={false}
-                >
-                  {localStream && !isVideoMuted ? (
-                    <video
-                      ref={setLocalVideoRef}
-                      autoPlay
-                      playsInline
-                      muted
-                      className="w-full h-full object-cover rounded-2xl"
-                      style={{ transform: 'scaleX(-1)' }}
-                    />
-                  ) : (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-white/30">
-                      <div className="w-20 h-20 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center">
-                        <VideoOff size={32} strokeWidth={1.5} />
-                      </div>
-                      <span className="text-xs uppercase tracking-widest">Camera off</span>
+                    <div className="absolute inset-0 flex items-center justify-center text-white/20 text-sm">
+                      Waiting for conference feed...
                     </div>
                   )}
                 </GlassPanel>
-              )}
-            </>
+                {selfViewVisible && (
+                  <GlassPanel className="relative flex-1 min-h-0" isActive={isBroadcasting} isAudioOnly={isAudioOnly} hoverEffect={false}>
+                    {localStream && !isVideoMuted ? (
+                      <video
+                        ref={setLocalVideoRef}
+                        autoPlay
+                        playsInline
+                        muted
+                        className="absolute inset-0 w-full h-full object-cover rounded-2xl"
+                        style={{ transform: 'scaleX(-1)' }}
+                      />
+                    ) : (
+                      <div className="absolute inset-0 flex items-center justify-center text-white/30">
+                        <VideoOff size={20} strokeWidth={1.5} />
+                      </div>
+                    )}
+                  </GlassPanel>
+                )}
+              </div>
+            ) : (
+              <>
+                <GlassPanel className="relative flex-1 h-full" hoverEffect={false}>
+                  {remoteStream ? (
+                    <video
+                      ref={setRemoteVideoRef}
+                      autoPlay
+                      playsInline
+                      className="absolute inset-0 w-full h-full object-cover rounded-2xl"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center text-white/20 text-sm">
+                      Waiting for conference feed...
+                    </div>
+                  )}
+                </GlassPanel>
+                {selfViewVisible && (
+                  <GlassPanel
+                    className="relative flex-1 h-full"
+                    isActive={isBroadcasting}
+                    isAudioOnly={isAudioOnly}
+                    hoverEffect={false}
+                  >
+                    {localStream && !isVideoMuted ? (
+                      <video
+                        ref={setLocalVideoRef}
+                        autoPlay
+                        playsInline
+                        muted
+                        className="absolute inset-0 w-full h-full object-cover rounded-2xl"
+                        style={{ transform: 'scaleX(-1)' }}
+                      />
+                    ) : (
+                      <div className="absolute inset-0 flex items-center justify-center text-white/30">
+                        <VideoOff size={20} strokeWidth={1.5} />
+                      </div>
+                    )}
+                  </GlassPanel>
+                )}
+              </>
+            )
           )}
 
-          {/* Mute reminder overlay */}
-          <AnimatePresence>
-            {muteReminderVisible && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.6 }}
-                className="absolute top-4 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 px-4 py-2 rounded-xl bg-black/70 backdrop-blur-xl border border-white/6"
-              >
-                <MicOff size={14} className="text-rose-400" />
-                <span className="text-[13px] text-white/70">Your microphone is muted</span>
-              </motion.div>
-            )}
-          </AnimatePresence>
         </main>
 
         {/* Subtitle Bar */}
@@ -1122,6 +1159,8 @@ export default function MeetingPage() {
             activeDockTab={dockTab}
             dockMode={dockMode}
             layout={layout}
+            selfViewVisible={selfViewVisible}
+            onToggleSelfView={() => setSelfViewVisible((v) => !v)}
             audioInputId={settings.audioInput}
             videoInputId={settings.videoInput}
             onAudioInputChange={(id) => saveSettings({ audioInput: id })}
@@ -1129,10 +1168,13 @@ export default function MeetingPage() {
             onToggleMic={() => muteAudio(!isAudioMuted)}
             onToggleVideo={() => muteVideo(!isVideoMuted)}
             onTogglePip={() => (pip.isActive ? pip.closePip() : pip.openPip())}
-            onToggleLayout={() =>
-              setLayout((l) =>
-                l === 'spotlight' ? 'stacked' : l === 'stacked' ? 'split' : 'spotlight',
-              )
+            onToggleLayout={isMini ? undefined : () =>
+              setLayout((l) => {
+                if (isExpanded) {
+                  return l === 'focus' ? 'gallery' : l === 'gallery' ? 'side-by-side' : 'focus'
+                }
+                return l === 'focus' ? 'gallery' : 'focus'
+              })
             }
             onToggleShare={() => (isPresenting ? stopScreenShare() : startScreenShare())}
             onToggleTranscription={() => setTranscriptionEnabled(!transcriptionEnabled)}

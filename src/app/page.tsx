@@ -261,6 +261,8 @@ export default function HomePage() {
       pin: preflightPin,
       audioOff,
       videoOff,
+      audioDeviceId: settings.audioInput || undefined,
+      videoDeviceId: settings.videoInput || undefined,
       userMediaStream,
     })
     setPreflightPin(undefined)
@@ -332,6 +334,8 @@ export default function HomePage() {
       displayName,
       audioOff: true,
       videoOff: true,
+      audioDeviceId: settings.audioInput || undefined,
+      videoDeviceId: settings.videoInput || undefined,
       userMediaStream,
     })
     setIsJoining(false)

@@ -104,6 +104,19 @@ class PexRTCConnectionManager {
         this.pexrtc.oneTimeToken = config.registrationToken
       }
 
+      this.pexrtc.bandwidth_in = 4096
+      this.pexrtc.bandwidth_out = 4096
+
+      if (config.audioDeviceId) {
+        this.pexrtc.audio_source = config.audioDeviceId
+      }
+      if (config.videoDeviceId) {
+        this.pexrtc.video_source = config.videoDeviceId
+      }
+      if (config.videoOff) {
+        this.pexrtc.video_source = false
+      }
+
       if (config.userMediaStream) {
         this.pexrtc.user_media_stream = config.userMediaStream
       }
@@ -201,6 +214,9 @@ class PexRTCConnectionManager {
       if (callbacks.onConnect) {
         callbacks.onConnect(remoteStream)
       }
+
+      // Upgrade video track to HD after PexRTC finishes its internal setup
+      this.upgradeToHD()
     }
     this.pexrtc.onError = (error: string) => {
       // PIN errors should not tear down the connection, let the user retry
@@ -373,11 +389,11 @@ class PexRTCConnectionManager {
     }
 
     const audioConstraint = audioDeviceId ? { deviceId: { ideal: audioDeviceId } } : true
-    let videoConstraint: boolean | object = true
+    let videoConstraint: boolean | object = { width: { ideal: 1920 }, height: { ideal: 1080 } }
     if (this.currentConfig?.videoOff) {
       videoConstraint = false
     } else if (videoDeviceId) {
-      videoConstraint = { deviceId: { ideal: videoDeviceId } }
+      videoConstraint = { deviceId: { exact: videoDeviceId }, width: { ideal: 1920 }, height: { ideal: 1080 } }
     }
 
     let stream: MediaStream | undefined
@@ -396,13 +412,74 @@ class PexRTCConnectionManager {
     }
 
     if (stream) {
-      this.pexrtc.user_media_stream = stream
+      // Replace tracks directly on the peer connection to preserve our HD constraints
+      const pc = (this.pexrtc as unknown as Record<string, unknown>).pc as RTCPeerConnection | undefined
+      if (pc) {
+        const senders = pc.getSenders()
+        for (const track of stream.getTracks()) {
+          const sender = senders.find((s) => s.track?.kind === track.kind)
+          if (sender) {
+            await sender.replaceTrack(track)
+          }
+        }
+        // Update PexRTC's internal references
+        this.pexrtc.user_media_stream = stream
+        if (this.pexrtc.call?.localStream) {
+          const oldTracks = this.pexrtc.call.localStream.getTracks()
+          oldTracks.forEach((t) => {
+            this.pexrtc!.call!.localStream!.removeTrack(t)
+            t.stop()
+          })
+          stream.getTracks().forEach((t) => this.pexrtc!.call!.localStream!.addTrack(t))
+        }
+      } else {
+        // Fallback: no PC access, use renegotiate
+        this.pexrtc.user_media_stream = stream
+        this.pexrtc.renegotiate()
+      }
+
       if (this.currentConfig) {
         this.currentConfig.userMediaStream = stream
       }
     }
 
-    this.pexrtc.renegotiate()
+    if (audioDeviceId) this.pexrtc.audio_source = audioDeviceId
+    if (videoDeviceId) this.pexrtc.video_source = videoDeviceId
+  }
+
+  private async upgradeToHD(): Promise<void> {
+    if (!this.pexrtc || !this.isConnected) return
+
+    const pc = (this.pexrtc as unknown as Record<string, unknown>).pc as RTCPeerConnection | undefined
+    if (!pc) return
+
+    const videoDeviceId = this.currentConfig?.videoDeviceId
+    const constraints: MediaTrackConstraints = videoDeviceId
+      ? { deviceId: { exact: videoDeviceId }, width: { ideal: 1920 }, height: { ideal: 1080 } }
+      : { width: { ideal: 1920 }, height: { ideal: 1080 } }
+
+    try {
+      const hdStream = await navigator.mediaDevices.getUserMedia({ video: constraints })
+      const hdTrack = hdStream.getVideoTracks()[0]
+      if (!hdTrack) return
+
+      const sender = pc.getSenders().find((s) => s.track?.kind === 'video')
+      if (sender) {
+        const oldTrack = sender.track
+        await sender.replaceTrack(hdTrack)
+        if (oldTrack) oldTrack.stop()
+
+        if (this.pexrtc.call?.localStream) {
+          const oldVideoTracks = this.pexrtc.call.localStream.getVideoTracks()
+          oldVideoTracks.forEach((t) => {
+            this.pexrtc!.call!.localStream!.removeTrack(t)
+          })
+          this.pexrtc.call.localStream.addTrack(hdTrack)
+        }
+      }
+    } catch {
+      // HD upgrade failed — keep the existing track
+    }
   }
 
   sendChatMessage(message: string): void {

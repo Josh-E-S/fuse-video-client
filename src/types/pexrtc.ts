@@ -52,6 +52,9 @@ export interface PexRTCInstance {
   video_source?: boolean | string | MediaTrackConstraints
   user_media_stream?: MediaStream | null
   user_presentation_stream?: MediaStream | null
+  bandwidth_in?: number
+  bandwidth_out?: number
+  presentation_in_main?: boolean
   h264_enabled?: boolean
   vp9_enabled?: boolean
   default_stun?: string | string[]
