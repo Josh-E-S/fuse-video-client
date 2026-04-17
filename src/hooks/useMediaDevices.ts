@@ -158,8 +158,8 @@ export function useSpeakerTest(audioOutputId: string) {
     }
     const audio = new Audio('/ringtone1.mp3')
     audio.volume = 0.5
-    if (audioOutputId && typeof audio.setSinkId === 'function') {
-      ;(audio as any).setSinkId(audioOutputId).catch(() => {})
+    if (audioOutputId) {
+      audio.setSinkId?.(audioOutputId).catch(() => {})
     }
     audioRef.current = audio
     setTesting(true)

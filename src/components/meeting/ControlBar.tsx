@@ -22,7 +22,7 @@ import {
   Grid3X3,
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
-import type { DockTab } from '@/components/resync/DockPanel'
+import type { DockTab } from '@/components/meeting/DockPanel'
 import { useElectron } from '@/hooks/useElectron'
 
 // Device info for the picker

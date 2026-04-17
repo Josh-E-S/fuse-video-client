@@ -206,13 +206,15 @@ export function RegistrationProvider({ children }: { children: React.ReactNode }
 
         startHeartbeat(credentials.alias)
         startEventSource(credentials.alias)
-      } catch (err: any) {
+      } catch (err: unknown) {
         tokenRef.current = null
         setStatus('error')
         const message =
           err instanceof TypeError
             ? `Cannot reach ${node} -- check the domain`
-            : err.message || 'Registration failed'
+            : err instanceof Error
+              ? err.message
+              : 'Registration failed'
         setError(message)
       }
     },
