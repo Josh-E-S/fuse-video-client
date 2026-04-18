@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useCallback, useEffect, useRef } from 'react'
+import { log } from '@/utils/logger'
 
 interface PipState {
   isSupported: boolean
@@ -73,8 +74,8 @@ export function usePictureInPicture(): PipState {
       })
 
       setPipWindow(pip)
-    } catch {
-      // User cancelled or API not available
+    } catch (err) {
+      log.pip.warn('PiP request failed: user cancelled or API not available')
     }
   }, [])
 

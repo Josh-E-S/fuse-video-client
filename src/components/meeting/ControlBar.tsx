@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { log } from '@/utils/logger'
 import {
   Mic,
   MicOff,
@@ -356,8 +357,8 @@ export function ControlBar({
             label: d.label || `Camera ${d.deviceId.slice(0, 8)}`,
           })),
       )
-    } catch {
-      // permissions not granted -- devices will be empty
+    } catch (err) {
+      log.media.warn('Device enumeration failed, permissions may not be granted')
     }
   }, [])
 

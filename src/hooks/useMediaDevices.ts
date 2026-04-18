@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { log } from '@/utils/logger'
 
 interface UseMediaDevicesOptions {
   active: boolean
@@ -52,14 +53,15 @@ export function useMediaDevices({ active, audioInputId, videoInputId }: UseMedia
           audio: audioConstraint,
           video: videoConstraint,
         })
-      } catch {
+      } catch (err) {
+        log.media.warn('getUserMedia with video failed, trying audio-only fallback')
         try {
           stream = await navigator.mediaDevices.getUserMedia({
             audio: audioConstraint,
             video: false,
           })
-        } catch {
-          // both failed
+        } catch (err) {
+          log.media.warn('Audio-only getUserMedia fallback also failed')
         }
       }
 

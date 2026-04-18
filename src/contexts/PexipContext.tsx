@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useCallback, useRef } from 'react'
 import { pexRTCConnectionManager, ConnectionConfig } from '@/services/pexrtcConnectionManager'
 import { ConnectionState, ChatMessage, Participant } from '@/types/pexrtc'
+import { log } from '@/utils/logger'
 
 export type DisconnectReason = 'user' | 'remote' | 'error' | null
 
@@ -182,8 +183,8 @@ export function PexipProvider({ children }: { children: React.ReactNode }) {
   const muteAudio = useCallback((mute: boolean) => {
     try {
       pexRTCConnectionManager.muteAudio(mute)
-    } catch {
-      // not connected yet, state is tracked for when we join
+    } catch (err) {
+      log.pexrtc.warn('muteAudio: not connected yet, state is tracked for when we join')
     }
     setIsAudioMuted(mute)
   }, [])
@@ -191,8 +192,8 @@ export function PexipProvider({ children }: { children: React.ReactNode }) {
   const muteVideo = useCallback((mute: boolean) => {
     try {
       pexRTCConnectionManager.muteVideo(mute)
-    } catch {
-      // not connected yet, state is tracked for when we join
+    } catch (err) {
+      log.pexrtc.warn('muteVideo: not connected yet, state is tracked for when we join')
     }
     setIsVideoMuted(mute)
   }, [])
@@ -210,8 +211,8 @@ export function PexipProvider({ children }: { children: React.ReactNode }) {
           timestamp: Date.now(),
         },
       ])
-    } catch {
-      // not connected
+    } catch (err) {
+      log.pexrtc.warn('sendChatMessage: not connected')
     }
   }, [])
 
@@ -246,24 +247,24 @@ export function PexipProvider({ children }: { children: React.ReactNode }) {
       })
 
       await pexRTCConnectionManager.startScreenShare(stream)
-    } catch {
-      // User cancelled the picker or not available
+    } catch (err) {
+      log.pexrtc.warn('startScreenShare: user cancelled the picker or not available')
     }
   }, [])
 
   const stopScreenShare = useCallback(() => {
     try {
       pexRTCConnectionManager.stopScreenShare()
-    } catch {
-      // not connected
+    } catch (err) {
+      log.pexrtc.warn('stopScreenShare: not connected')
     }
   }, [])
 
   const switchMediaDevices = useCallback(async (audioId?: string, videoId?: string) => {
     try {
       await pexRTCConnectionManager.switchMediaDevices(audioId, videoId)
-    } catch {
-      // Device switch can fail if permissions are denied
+    } catch (err) {
+      log.pexrtc.warn('switchMediaDevices: device switch failed, possibly permissions denied')
     }
   }, [])
 

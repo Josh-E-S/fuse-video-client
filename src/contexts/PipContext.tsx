@@ -1,6 +1,7 @@
 'use client'
 
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react'
+import { log } from '@/utils/logger'
 
 const PIP_WIDTH = 430
 const PIP_HEIGHT = 900
@@ -68,8 +69,8 @@ export function PipProvider({ children }: { children: React.ReactNode }) {
       })
 
       setPipWindow(pip)
-    } catch {
-      // User cancelled or API not available
+    } catch (err) {
+      log.pip.warn('PiP request failed: user cancelled or API not available')
     }
   }, [])
 

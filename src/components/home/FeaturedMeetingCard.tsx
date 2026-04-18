@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { log } from '@/utils/logger'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Clock, ChevronDown, Copy, Check, Info } from 'lucide-react'
 import { getMeetingProvider } from '@/utils/meetingProvider'
@@ -61,7 +62,8 @@ export function FeaturedMeetingCard({
     const text = lines.join('\n')
     try {
       await navigator.clipboard.writeText(text)
-    } catch {
+    } catch (err) {
+      log.ui.debug('Clipboard API unavailable, falling back to execCommand')
       const ta = document.createElement('textarea')
       ta.value = text
       ta.style.position = 'fixed'

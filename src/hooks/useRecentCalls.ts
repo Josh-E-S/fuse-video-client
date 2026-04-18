@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { log } from '@/utils/logger'
 
 export interface RecentCall {
   alias: string
@@ -20,8 +21,8 @@ export function useRecentCalls() {
         const parsed = JSON.parse(stored) as RecentCall[]
         setRecentCalls(parsed)
       }
-    } catch {
-      // localStorage may be unavailable
+    } catch (err) {
+      log.ui.debug('localStorage unavailable when loading recent calls')
     }
   }, [])
 
@@ -45,8 +46,8 @@ export function useRecentCalls() {
       // Save to localStorage
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
-      } catch {
-        // localStorage may be unavailable
+      } catch (err) {
+        log.ui.debug('localStorage unavailable when saving recent calls')
       }
 
       return updated
@@ -58,8 +59,8 @@ export function useRecentCalls() {
     setRecentCalls([])
     try {
       localStorage.removeItem(STORAGE_KEY)
-    } catch {
-      // localStorage may be unavailable
+    } catch (err) {
+      log.ui.debug('localStorage unavailable when clearing recent calls')
     }
   }, [])
 

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
+import { log } from '@/utils/logger'
 
 const CUSTOMER_ID = process.env.PEXIP_CUSTOMER_ID || ''
 
@@ -34,7 +35,8 @@ export async function POST(request: Request) {
   let body: unknown
   try {
     body = await request.json()
-  } catch {
+  } catch (err) {
+    log.api.warn('Teams dial-string: invalid JSON body in request')
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
   }
 
