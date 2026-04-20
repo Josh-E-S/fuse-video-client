@@ -59,9 +59,9 @@ export function TopBar({
 
   return (
     <div
-      className={`fixed top-0 left-0 right-0 z-20 flex items-center justify-between ${isElectron ? 'pt-14' : 'pt-5'} pb-10 px-5 backdrop-blur-xl border-b border-white/8`}
+      className={`fixed top-0 left-0 right-0 z-20 flex items-center justify-between ${isElectron ? 'pt-14' : 'pt-5'} pb-[60px] px-5`}
       style={{
-        backgroundColor: 'var(--theme-header-bg)',
+        background: `linear-gradient(to bottom, var(--theme-header-bg) 50%, transparent)`,
         ...(isElectron ? ({ WebkitAppRegion: 'drag' } as React.CSSProperties) : {}),
       }}
     >
@@ -91,9 +91,6 @@ export function TopBar({
           {regStatus === 'unregistered' && (
             <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-white/20 border-2 border-black" />
           )}
-        </div>
-        <div className="flex flex-col">
-          <span className="text-sm font-medium text-white/70 leading-tight">{displayName}</span>
         </div>
       </div>
 

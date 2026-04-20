@@ -532,9 +532,9 @@ export function SetupWizard({ open, onComplete, onRegister }: SetupWizardProps) 
                         onChange={(e) => saveSettings({ videoInput: e.target.value })}
                         className="w-full px-4 py-3 rounded-xl bg-white/6 border border-white/10 text-white text-sm focus:outline-none focus:border-white/30 transition-colors appearance-none cursor-pointer"
                       >
-                        <option value="" className="bg-zinc-900">System Default</option>
+                        <option value="" className="bg-black">System Default</option>
                         {videoInputs.map((d) => (
-                          <option key={d.deviceId} value={d.deviceId} className="bg-zinc-900">
+                          <option key={d.deviceId} value={d.deviceId} className="bg-black">
                             {d.label || `Camera ${d.deviceId.slice(0, 8)}`}
                           </option>
                         ))}
@@ -551,9 +551,9 @@ export function SetupWizard({ open, onComplete, onRegister }: SetupWizardProps) 
                         onChange={(e) => saveSettings({ audioInput: e.target.value })}
                         className="w-full px-4 py-3 rounded-xl bg-white/6 border border-white/10 text-white text-sm focus:outline-none focus:border-white/30 transition-colors appearance-none cursor-pointer"
                       >
-                        <option value="" className="bg-zinc-900">System Default</option>
+                        <option value="" className="bg-black">System Default</option>
                         {audioInputs.map((d) => (
-                          <option key={d.deviceId} value={d.deviceId} className="bg-zinc-900">
+                          <option key={d.deviceId} value={d.deviceId} className="bg-black">
                             {d.label || `Microphone ${d.deviceId.slice(0, 8)}`}
                           </option>
                         ))}
@@ -580,9 +580,9 @@ export function SetupWizard({ open, onComplete, onRegister }: SetupWizardProps) 
                           onChange={(e) => saveSettings({ audioOutput: e.target.value })}
                           className="flex-1 px-4 py-3 rounded-xl bg-white/6 border border-white/10 text-white text-sm focus:outline-none focus:border-white/30 transition-colors appearance-none cursor-pointer"
                         >
-                          <option value="" className="bg-zinc-900">System Default</option>
+                          <option value="" className="bg-black">System Default</option>
                           {audioOutputs.map((d) => (
-                            <option key={d.deviceId} value={d.deviceId} className="bg-zinc-900">
+                            <option key={d.deviceId} value={d.deviceId} className="bg-black">
                               {d.label || `Speaker ${d.deviceId.slice(0, 8)}`}
                             </option>
                           ))}

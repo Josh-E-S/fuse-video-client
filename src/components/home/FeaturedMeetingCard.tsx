@@ -99,7 +99,7 @@ export function FeaturedMeetingCard({
             whileTap={{ scale: 0.98 }}
             style={{
               borderLeftColor: 'var(--theme-accent)',
-              background: 'linear-gradient(to right, color-mix(in srgb, var(--theme-accent) 10%, transparent), transparent 70%)',
+              background: 'linear-gradient(to right, color-mix(in srgb, var(--theme-accent) 15%, transparent), color-mix(in srgb, var(--theme-accent) 5%, transparent) 98%, transparent)',
             }}
           >
             {provider && (

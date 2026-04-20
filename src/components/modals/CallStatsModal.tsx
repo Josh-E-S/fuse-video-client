@@ -135,7 +135,7 @@ export function CallStatsModal({ open, onClose, getStats }: CallStatsModalProps)
       style={{
         left: position.x,
         top: position.y,
-        background: 'rgba(12, 18, 32, 0.92)',
+        background: 'rgba(var(--theme-surface-base), 0.92)',
         backdropFilter: 'blur(24px)',
       }}
     >

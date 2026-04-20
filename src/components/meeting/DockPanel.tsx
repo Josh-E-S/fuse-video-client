@@ -343,7 +343,7 @@ export function DockPanel({
         <div
           className="flex flex-col w-[320px] ml-2 h-full rounded-2xl border border-white/8 overflow-hidden"
           style={{
-            background: 'rgba(12, 18, 32, 0.95)',
+            background: 'rgba(var(--theme-surface-base), 0.95)',
             backdropFilter: 'blur(20px)',
           }}
         >
@@ -363,7 +363,7 @@ export function DockPanel({
       transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
       className="shrink-0 flex flex-col rounded-t-2xl border-t border-x border-white/8 overflow-hidden"
       style={{
-        background: 'rgba(12, 18, 32, 0.95)',
+        background: 'rgba(var(--theme-surface-base), 0.95)',
         backdropFilter: 'blur(20px)',
       }}
     >

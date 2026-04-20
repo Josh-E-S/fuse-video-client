@@ -56,7 +56,7 @@ export function DTMFModal({ open, onClose, onSendDTMF }: DTMFModalProps) {
             transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
             className="fixed z-[201] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[280px] rounded-2xl border border-white/8 overflow-hidden shadow-2xl"
             style={{
-              background: 'rgba(12, 18, 32, 0.95)',
+              background: 'rgba(var(--theme-surface-base), 0.95)',
               backdropFilter: 'blur(40px)',
             }}
           >

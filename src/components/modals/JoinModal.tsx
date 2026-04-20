@@ -289,7 +289,7 @@ export function JoinModal({
               <button
                 type="submit"
                 disabled={!alias.trim() || loading}
-                className="w-full mt-2 py-4 rounded-xl bg-white text-black font-semibold text-sm flex items-center justify-center gap-2 hover:bg-zinc-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                className="w-full mt-2 py-4 rounded-xl bg-white text-black font-semibold text-sm flex items-center justify-center gap-2 hover:brightness-90 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 {loading ? (
                   'Connecting...'

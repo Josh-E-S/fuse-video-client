@@ -24,8 +24,8 @@ const themeScript = `
     if (t !== 'cosmicDeep' && t !== 'arcticWhite') t = 'cosmicDeep';
     document.documentElement.setAttribute('data-theme', t);
     var themes = {
-      cosmicDeep:{tb:'255,255,255',sb:'0,0,0',bg:'radial-gradient(ellipse at 30% 20%, #0d1f3c 0%, #060d1a 50%, #030810 100%)',tp:'#eef4f8'},
-      arcticWhite:{tb:'26,26,46',sb:'255,255,255',bg:'#f8f9fb',tp:'#1a1a2e'}
+      cosmicDeep:{tb:'255,255,255',sb:'0,0,0',bg:'radial-gradient(ellipse at 30% 20%, #0d1f3c 0%, #0a1628 50%, #071020 100%)',tp:'#eef4f8'},
+      arcticWhite:{tb:'26,26,46',sb:'255,255,255',bg:'#eef1f5',tp:'#1a1a2e'}
     };
     var d = themes[t];
     var s = document.documentElement.style;
