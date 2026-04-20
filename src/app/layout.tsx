@@ -25,7 +25,7 @@ const themeScript = `
     document.documentElement.setAttribute('data-theme', t);
     var themes = {
       cosmicDeep:{tb:'255,255,255',sb:'0,0,0',bg:'radial-gradient(ellipse at 30% 20%, #0d1f3c 0%, #060d1a 50%, #030810 100%)',tp:'#eef4f8'},
-      arcticWhite:{tb:'15,23,42',sb:'255,255,255',bg:'radial-gradient(ellipse at 50% 20%, #f8fafc 0%, #f0f5fa 50%, #e8f0f8 100%)',tp:'#0f172a'}
+      arcticWhite:{tb:'26,26,46',sb:'255,255,255',bg:'#f8f9fb',tp:'#1a1a2e'}
     };
     var d = themes[t];
     var s = document.documentElement.style;
@@ -52,22 +52,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </RegistrationProvider>
         </PexipProvider>
         <Toaster
-          theme="dark"
+          theme="system"
           position="bottom-center"
           offset={80}
           toastOptions={{
             className:
               '!bg-black/60 !border !border-white/8 !backdrop-blur-2xl !rounded-2xl !shadow-2xl !text-white/90 !text-[13px] !font-medium',
             descriptionClassName: '!text-white/40 !text-[11px]',
-            actionButtonStyle: {
-              background: 'rgba(255,255,255,0.12)',
-              border: '1px solid rgba(255,255,255,0.1)',
-              color: 'rgba(255,255,255,0.9)',
-              borderRadius: '0.75rem',
-              fontSize: '12px',
-              fontWeight: '600',
-              padding: '6px 14px',
-            },
           }}
         />
       </body>

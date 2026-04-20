@@ -83,6 +83,9 @@ export function FeaturedMeetingCard({
 
   return (
     <div className="mt-8">
+      <div className="text-[11px] font-semibold tracking-[0.08em] uppercase text-white/50 mb-3 pl-1">
+        My Meetings
+      </div>
       <div>
         <AnimatePresence mode="wait">
           <motion.div
@@ -91,7 +94,9 @@ export function FeaturedMeetingCard({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -6 }}
             transition={{ duration: 0.2 }}
-            className="p-6 flex items-center gap-4 border-l-[5px] border-transparent"
+            className="px-6 py-8 flex items-center gap-4 border-l-[5px] border-transparent cursor-pointer"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             style={{
               borderLeftColor: 'var(--theme-accent)',
               background: 'linear-gradient(to right, color-mix(in srgb, var(--theme-accent) 10%, transparent), transparent 70%)',
@@ -140,10 +145,10 @@ export function FeaturedMeetingCard({
               <button
                 onClick={onJoin}
                 disabled={isBusy}
-                className="px-6 py-3 rounded-xl flex items-center justify-center cursor-pointer transition-all hover:brightness-110 active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0 text-[14px] font-semibold text-white"
+                className="px-6 py-3 rounded-xl flex items-center justify-center cursor-pointer transition-all hover:scale-105 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0 text-[14px] font-semibold text-emerald-500"
                 style={{
-                  background: 'rgba(52,211,153,0.2)',
-                  border: '1px solid rgba(52,211,153,0.3)',
+                  background: 'rgba(52,211,153,0.15)',
+                  border: '1px solid rgba(52,211,153,0.25)',
                   boxShadow: '0 4px 20px rgba(52,211,153,0.1)',
                 }}
                 title="Join meeting"
@@ -219,10 +224,10 @@ export function FeaturedMeetingCard({
                   onClick={() => { setShowUpcoming(true); onExpandChange?.(true) }}
                   className="w-full py-2 flex items-center justify-center gap-1.5 cursor-pointer hover:bg-white/2 rounded-lg transition-colors mt-1 pt-1"
                 >
-                  <span className="text-[12px] text-white/35 font-medium">
+                  <span className="text-[12px] text-white/50 font-medium">
                     {overflowMeetings.length} more
                   </span>
-                  <ChevronDown size={12} className="text-white/25" strokeWidth={1.5} />
+                  <ChevronDown size={12} className="text-white/40" strokeWidth={1.5} />
                 </button>
               )}
             </div>
@@ -270,7 +275,7 @@ function ScheduleModal({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 10 }}
             transition={{ duration: 0.2 }}
-            className="relative w-full max-w-[380px] mx-4 rounded-2xl bg-[#0d1520]/95 backdrop-blur-2xl border border-white/8 shadow-2xl overflow-hidden"
+            className="relative w-full max-w-[380px] mx-4 rounded-2xl bg-black/95 backdrop-blur-2xl border border-white/8 shadow-2xl overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between px-5 pt-5 pb-3">

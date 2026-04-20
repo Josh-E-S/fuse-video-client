@@ -18,6 +18,8 @@ export function applyThemeToDocument(theme: CosmeticTheme, doc: Document = docum
   el.style.setProperty('--theme-text-secondary', theme.textSecondary)
   el.style.setProperty('--theme-card-bg', theme.cardBg)
   el.style.setProperty('--theme-btn-text', theme.btnText)
+  el.style.setProperty('--theme-surface-base', theme.surfaceBase)
+  el.style.setProperty('--theme-header-bg', theme.headerBg)
   // Override Tailwind's color tokens so all opacity-based classes adapt to the theme
   el.style.setProperty('--color-white', `rgb(${theme.textBase})`)
   el.style.setProperty('--color-black', `rgb(${theme.surfaceBase})`)

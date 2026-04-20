@@ -56,10 +56,22 @@ export function useSettings() {
       audioInput: localStorage.getItem(STORAGE_KEYS.audioInput) ?? '',
       audioOutput: localStorage.getItem(STORAGE_KEYS.audioOutput) ?? '',
       videoInput: localStorage.getItem(STORAGE_KEYS.videoInput) ?? '',
-      otjClientId: localStorage.getItem(STORAGE_KEYS.otjClientId) ?? '',
-      otjClientSecret: localStorage.getItem(STORAGE_KEYS.otjClientSecret) ?? '',
-      pexipCustomerId: localStorage.getItem(STORAGE_KEYS.pexipCustomerId) ?? '',
-      googleDomain: localStorage.getItem(STORAGE_KEYS.googleDomain) ?? '',
+      otjClientId:
+        localStorage.getItem(STORAGE_KEYS.otjClientId) ??
+        process.env.NEXT_PUBLIC_DEFAULT_OTJ_CLIENT_ID ??
+        '',
+      otjClientSecret:
+        localStorage.getItem(STORAGE_KEYS.otjClientSecret) ??
+        process.env.NEXT_PUBLIC_DEFAULT_OTJ_CLIENT_SECRET ??
+        '',
+      pexipCustomerId:
+        localStorage.getItem(STORAGE_KEYS.pexipCustomerId) ??
+        process.env.NEXT_PUBLIC_DEFAULT_PEXIP_CUSTOMER_ID ??
+        '',
+      googleDomain:
+        localStorage.getItem(STORAGE_KEYS.googleDomain) ??
+        process.env.NEXT_PUBLIC_GOOGLE_DOMAIN ??
+        '',
     }
   }
 

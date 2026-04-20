@@ -15,7 +15,6 @@ import { SettingsModal } from '@/components/modals/SettingsModal'
 import { IncomingCallModal } from '@/components/modals/IncomingCallModal'
 import { GradientBackground } from '@/components/home/GradientBackground'
 import { TopBar } from '@/components/home/TopBar'
-import { ClockDisplay } from '@/components/home/ClockDisplay'
 import { FeaturedMeetingCard } from '@/components/home/FeaturedMeetingCard'
 import { AdHocJoin } from '@/components/home/AdHocJoin'
 import { useQuickJoin } from '@/hooks/useQuickJoin'
@@ -415,11 +414,9 @@ export default function HomePage() {
         />
 
         <div
-          className={`flex-1 min-h-0 overflow-y-auto [scrollbar-width:none] w-full mx-auto px-6 ${isExpanded ? 'max-w-[700px]' : 'max-w-[430px]'} ${isElectron ? 'pt-20' : 'pt-12'}`}
+          className={`flex-1 min-h-0 overflow-y-auto [scrollbar-width:none] w-full mx-auto px-6 ${isExpanded ? 'max-w-[700px]' : 'max-w-[430px]'} ${isElectron ? 'pt-36' : 'pt-28'}`}
         >
-          <div style={{ height: !isElectron && pip.isActive ? '2vh' : '5vh' }} />
-
-          <ClockDisplay />
+          <div style={{ height: !isElectron && pip.isActive ? '1vh' : '1vh' }} />
 
           {featuredMeeting && (
             <FeaturedMeetingCard

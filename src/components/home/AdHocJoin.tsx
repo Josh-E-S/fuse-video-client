@@ -1,9 +1,10 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Phone, Grid3X3, History, ChevronDown } from 'lucide-react'
+import { Phone, Grid3X3, History, X } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { getProviderById, getMeetingProvider } from '@/utils/meetingProvider'
+import { useEscapeKey } from '@/hooks/useEscapeKey'
 import type { RecentCall } from '@/hooks/useRecentCalls'
 
 interface VisibleProvider {
@@ -69,56 +70,101 @@ export function AdHocJoin({
                 className="opacity-90 group-hover:opacity-100 transition-opacity"
               />
             </div>
-            <span className="text-[11px] font-medium text-white/55 group-hover:text-white/80 transition-colors">
-              {p.label}
-            </span>
           </button>
         ))}
       </div>
         </>
       )}
 
-      <div className="flex items-center gap-3 mt-5">
-        <button
-          onClick={onCallClick}
-          className="flex items-center gap-2.5 px-8 py-3 rounded-2xl transition-all hover:brightness-110 active:scale-[0.97]"
+      <div className="flex items-center justify-center mt-5">
+        <div
+          className="flex items-center rounded-2xl overflow-hidden transition-all hover:scale-105 active:scale-95"
           style={{
-            background: 'rgba(52,211,153,0.12)',
-            border: '1px solid rgba(52,211,153,0.18)',
-            boxShadow: '0 4px 20px rgba(52,211,153,0.08)',
+            background: 'rgba(52,211,153,0.15)',
+            border: '1px solid rgba(52,211,153,0.25)',
+            boxShadow: '0 4px 20px rgba(52,211,153,0.1)',
           }}
         >
-          <Grid3X3 size={16} className="text-emerald-400" />
-          <span className="text-[14px] font-semibold text-emerald-400">Dial</span>
-        </button>
-
-        {recentCalls.length > 0 && (
           <button
-            onClick={() => { setShowRecents(!showRecents); onExpandChange?.(!showRecents) }}
-            className="flex items-center gap-1.5 px-3 py-2.5 rounded-full bg-white/4 border border-white/6 hover:bg-white/8 transition-all"
+            onClick={onCallClick}
+            className="flex items-center gap-2.5 px-8 py-3 transition-all hover:bg-emerald-500/15 active:scale-[0.97]"
           >
-            <History size={13} className="text-white/35" strokeWidth={1.5} />
-            <motion.div
-              animate={{ rotate: showRecents ? 180 : 0 }}
-              transition={{ duration: 0.2 }}
-            >
-              <ChevronDown size={12} className="text-white/25" strokeWidth={1.5} />
-            </motion.div>
+            <Phone size={16} className="text-emerald-500" />
+            <span className="text-[14px] font-semibold text-emerald-500">Dial</span>
           </button>
-        )}
+
+          {recentCalls.length > 0 && (
+            <>
+              <div className="w-px self-stretch bg-emerald-500/40" />
+              <button
+                onClick={() => { setShowRecents(true); onExpandChange?.(true) }}
+                className="flex items-center px-3 py-3 transition-all hover:bg-emerald-500/15 active:scale-[0.97]"
+              >
+                <History size={15} className="text-emerald-500" strokeWidth={1.5} />
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
-      <AnimatePresence>
-        {showRecents && recentCalls.length > 0 && (
+      <RecentsModal
+        open={showRecents}
+        recentCalls={recentCalls}
+        isBusy={isBusy}
+        onClose={() => { setShowRecents(false); onExpandChange?.(false) }}
+        onRecentCallClick={(alias) => { setShowRecents(false); onExpandChange?.(false); onRecentCallClick(alias) }}
+      />
+    </div>
+  )
+}
+
+function RecentsModal({
+  open,
+  recentCalls,
+  isBusy,
+  onClose,
+  onRecentCallClick,
+}: {
+  open: boolean
+  recentCalls: RecentCall[]
+  isBusy: boolean
+  onClose: () => void
+  onRecentCallClick: (alias: string) => void
+}) {
+  useEscapeKey(onClose, open)
+
+  return (
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          onClick={onClose}
+        >
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
           <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.25, ease: [0.25, 0.1, 0.25, 1] }}
-            className="w-full max-w-[320px] overflow-hidden rounded-2xl bg-white/3 border border-white/6"
+            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+            transition={{ duration: 0.2 }}
+            className="relative w-full max-w-[380px] mx-4 rounded-2xl bg-black/95 backdrop-blur-2xl border border-white/8 shadow-2xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex flex-col gap-0.5 p-2 max-h-[150px] overflow-y-auto [scrollbar-width:none]">
-              {recentCalls.slice(0, 10).map((call) => {
+            <div className="flex items-center justify-between px-5 pt-5 pb-3">
+              <span className="text-[13px] font-semibold text-white/70">Recent Calls</span>
+              <button
+                onClick={onClose}
+                className="w-7 h-7 rounded-lg flex items-center justify-center text-white/30 hover:text-white/60 hover:bg-white/6 transition-all"
+                aria-label="Close recent calls"
+              >
+                <X size={14} />
+              </button>
+            </div>
+            <div className="px-3 pb-4 max-h-[50vh] overflow-y-auto [scrollbar-width:none]">
+              {recentCalls.slice(0, 15).map((call) => {
                 const prov =
                   getProviderById(call.providerId) || getMeetingProvider(call.alias)
                 return (
@@ -126,29 +172,27 @@ export function AdHocJoin({
                     key={call.alias}
                     onClick={() => onRecentCallClick(call.alias)}
                     disabled={isBusy}
-                    className="flex items-center gap-3 w-full rounded-xl px-3 py-2.5 hover:bg-white/6 transition-colors cursor-pointer text-left group disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="flex items-center gap-3 w-full rounded-xl px-3 py-2.5 hover:bg-white/4 transition-colors cursor-pointer text-left group disabled:opacity-40 disabled:cursor-not-allowed"
                   >
-                    <div className="w-8 h-8 rounded-full bg-white/4 flex items-center justify-center shrink-0 group-hover:bg-white/8 transition-colors">
-                      {prov ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={prov.icon}
-                          alt=""
-                          width={14}
-                          height={14}
-                          className="opacity-70 group-hover:opacity-100"
-                        />
-                      ) : (
-                        <Phone
-                          size={12}
-                          className="text-white/40 group-hover:text-white/70"
-                        />
-                      )}
-                    </div>
-                    <span className="flex-1 text-[13px] text-white/50 group-hover:text-white/70 transition-colors truncate min-w-0">
+                    {prov ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={prov.icon}
+                        alt=""
+                        width={16}
+                        height={16}
+                        className="opacity-70 group-hover:opacity-100 flex-shrink-0"
+                      />
+                    ) : (
+                      <Phone
+                        size={14}
+                        className="text-white/40 group-hover:text-white/70 flex-shrink-0"
+                      />
+                    )}
+                    <span className="flex-1 text-[13px] text-white/60 group-hover:text-white/80 transition-colors truncate min-w-0">
                       {call.alias}
                     </span>
-                    <span className="text-[11px] font-semibold text-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity uppercase tracking-wider shrink-0">
+                    <span className="text-[11px] font-semibold text-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity uppercase tracking-wider shrink-0">
                       Dial
                     </span>
                   </button>
@@ -156,8 +200,8 @@ export function AdHocJoin({
               })}
             </div>
           </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   )
 }

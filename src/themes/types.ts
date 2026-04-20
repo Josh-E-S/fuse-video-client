@@ -15,4 +15,5 @@ export interface CosmeticTheme {
   btnText: string
   textBase: string // RGB triplet for opacity-based text (e.g. "255,255,255" or "0,0,0")
   surfaceBase: string // RGB triplet for opacity-based surfaces/borders
+  headerBg: string // solid background color for the top bar
 }
