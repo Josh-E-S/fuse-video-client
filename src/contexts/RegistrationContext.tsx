@@ -180,7 +180,7 @@ export function RegistrationProvider({ children }: { children: React.ReactNode }
       setError(null)
 
       try {
-        const basicAuth = btoa(`${credentials.username}:${credentials.password}`)
+        const basicAuth = btoa(String.fromCodePoint(...new TextEncoder().encode(`${credentials.username}:${credentials.password}`)))
         const res = await fetch(
           `https://${node}/api/client/v2/registrations/${encodeURIComponent(credentials.alias)}/request_token`,
           {

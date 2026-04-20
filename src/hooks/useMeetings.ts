@@ -5,6 +5,7 @@ import { pexipOTJ } from '@/services/pexipOTJ'
 import type { CalendarMeeting } from '@/types/meetings'
 
 const DEFAULT_POLL_INTERVAL = 60_000
+const MAX_MEETINGS = 20
 
 interface UseMeetingsOptions {
   pollInterval?: number
@@ -26,7 +27,7 @@ export function useMeetings({
     setLoading(true)
     try {
       const raw = await pexipOTJ.getMeetings(otjClientId, otjClientSecret)
-      const transformed = pexipOTJ.transformMeetings(raw)
+      const transformed = pexipOTJ.transformMeetings(raw).slice(0, MAX_MEETINGS)
       setMeetings(transformed)
       setError(null)
 

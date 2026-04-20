@@ -37,10 +37,10 @@ export function ClockDisplay() {
 
   return (
     <div className="text-center pb-1">
-      <div className="text-[88px] font-extralight tracking-[-0.04em] leading-none text-white/90">
+      <div className="text-[56px] font-extralight tracking-[-0.04em] leading-none text-white/90">
         {clockStr}
       </div>
-      <div className="text-sm text-white/28 mt-2">{dateStr}</div>
+      <div className="text-sm text-white/28 mt-1.5">{dateStr}</div>
     </div>
   )
 }

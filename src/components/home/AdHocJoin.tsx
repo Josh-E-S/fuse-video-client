@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Phone, History, ChevronDown } from 'lucide-react'
+import { Phone, Grid3X3, History, ChevronDown } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { getProviderById, getMeetingProvider } from '@/utils/meetingProvider'
 import type { RecentCall } from '@/hooks/useRecentCalls'
@@ -48,28 +48,28 @@ export function AdHocJoin({
       <span className="text-[11px] font-semibold tracking-[0.08em] uppercase text-white/50">
         Quick Join
       </span>
-      <div className="flex items-center gap-5">
+      <div className="flex items-center gap-6">
         {providers.map((p) => (
           <button
             key={p.id}
             onClick={() => onProviderClick(p)}
             disabled={isBusy}
-            className="group flex flex-col items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+            className="group flex flex-col items-center gap-2.5 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <div
-              className="w-12 h-12 rounded-full flex items-center justify-center transition-all group-hover:scale-105 group-active:scale-95 glass-button"
+              className="w-[60px] h-[60px] rounded-2xl flex items-center justify-center transition-all group-hover:scale-105 group-active:scale-95 glass-button"
               style={{ background: cardBg }}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={p.icon}
                 alt={p.label}
-                width={28}
-                height={28}
-                className="opacity-85 group-hover:opacity-100 transition-opacity"
+                width={32}
+                height={32}
+                className="opacity-90 group-hover:opacity-100 transition-opacity"
               />
             </div>
-            <span className="text-[10px] text-white/50 group-hover:text-white/70 transition-colors">
+            <span className="text-[11px] font-medium text-white/55 group-hover:text-white/80 transition-colors">
               {p.label}
             </span>
           </button>
@@ -78,14 +78,18 @@ export function AdHocJoin({
         </>
       )}
 
-      <div className="flex items-center gap-3 mt-4">
+      <div className="flex items-center gap-3 mt-5">
         <button
           onClick={onCallClick}
-          className="flex items-center gap-2.5 px-6 py-2.5 glass-pill"
-          style={{ background: cardBg }}
+          className="flex items-center gap-2.5 px-8 py-3 rounded-2xl transition-all hover:brightness-110 active:scale-[0.97]"
+          style={{
+            background: 'rgba(52,211,153,0.12)',
+            border: '1px solid rgba(52,211,153,0.18)',
+            boxShadow: '0 4px 20px rgba(52,211,153,0.08)',
+          }}
         >
-          <Phone size={15} className="text-emerald-400" />
-          <span className="text-[13px] font-medium text-white/70">Call</span>
+          <Grid3X3 size={16} className="text-emerald-400" />
+          <span className="text-[14px] font-semibold text-emerald-400">Dial</span>
         </button>
 
         {recentCalls.length > 0 && (

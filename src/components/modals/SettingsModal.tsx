@@ -32,8 +32,7 @@ import { getElectronBridge } from '@/hooks/useElectron'
 import { useQuickJoin } from '@/hooks/useQuickJoin'
 import { useEscapeKey } from '@/hooks/useEscapeKey'
 import type { RegistrationStatus, RegistrationCredentials } from '@/contexts/RegistrationContext'
-import { THEMES, CATEGORY_ORDER } from '@/themes/themes'
-import type { CosmeticTheme } from '@/themes/types'
+import { THEMES } from '@/themes/themes'
 
 interface SettingsModalProps {
   open: boolean
@@ -759,61 +758,51 @@ export function SettingsModal({
 
               {tab === 'appearance' && (
                 <div className="space-y-5 pb-2">
-                  {CATEGORY_ORDER.map((category) => {
-                    const categoryThemes = Object.values(THEMES).filter(
-                      (t) => t.category === category,
-                    )
-                    if (categoryThemes.length === 0) return null
-                    return (
-                      <div key={category}>
-                        <div className="text-[10px] font-bold uppercase tracking-widest text-white/20 mb-2 pl-1">
-                          {category}
-                        </div>
-                        <div className="space-y-1.5">
-                          {categoryThemes.map((t) => {
-                            const selected = themeId === t.id
-                            return (
-                              <button
-                                key={t.id}
-                                onClick={() => onThemeChange(t.id)}
-                                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-all text-left ${
-                                  selected
-                                    ? 'border-white/20 bg-white/8'
-                                    : 'border-transparent hover:bg-white/4'
-                                }`}
-                              >
-                                <div className="flex gap-1.5 shrink-0">
-                                  {t.preview.map((color, i) => (
-                                    <div
-                                      key={i}
-                                      className="w-3 h-3 rounded-full border border-white/10"
-                                      style={{ backgroundColor: color }}
-                                    />
-                                  ))}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <div
-                                    className={`text-xs font-semibold ${selected ? 'text-white' : 'text-white/60'}`}
-                                  >
-                                    {t.label}
-                                  </div>
-                                  <div className="text-[10px] text-white/25 mt-0.5">
-                                    {t.description}
-                                  </div>
-                                </div>
-                                {selected && (
-                                  <div
-                                    className="w-1.5 h-1.5 rounded-full shrink-0"
-                                    style={{ backgroundColor: t.accentColor }}
-                                  />
-                                )}
-                              </button>
-                            )
-                          })}
-                        </div>
-                      </div>
-                    )
-                  })}
+                  <div className="text-[10px] font-bold uppercase tracking-widest text-white/20 mb-2 pl-1">
+                    Theme
+                  </div>
+                  <div className="space-y-1.5">
+                    {Object.values(THEMES).map((t) => {
+                      const selected = themeId === t.id
+                      return (
+                        <button
+                          key={t.id}
+                          onClick={() => onThemeChange(t.id)}
+                          className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-all text-left ${
+                            selected
+                              ? 'border-white/20 bg-white/8'
+                              : 'border-transparent hover:bg-white/4'
+                          }`}
+                        >
+                          <div className="flex gap-1.5 shrink-0">
+                            {t.preview.map((color, i) => (
+                              <div
+                                key={i}
+                                className="w-3 h-3 rounded-full border border-white/10"
+                                style={{ backgroundColor: color }}
+                              />
+                            ))}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div
+                              className={`text-xs font-semibold ${selected ? 'text-white' : 'text-white/60'}`}
+                            >
+                              {t.label}
+                            </div>
+                            <div className="text-[10px] text-white/25 mt-0.5">
+                              {t.description}
+                            </div>
+                          </div>
+                          {selected && (
+                            <div
+                              className="w-1.5 h-1.5 rounded-full shrink-0"
+                              style={{ backgroundColor: t.accentColor }}
+                            />
+                          )}
+                        </button>
+                      )
+                    })}
+                  </div>
                 </div>
               )}
             </div>

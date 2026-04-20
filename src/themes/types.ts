@@ -1,7 +1,7 @@
 export interface CosmeticTheme {
   id: string
   label: string
-  category: 'Dark' | 'Light' | 'Luxury Dark' | 'Luxury Light'
+  category: 'Dark' | 'Light'
   description: string
   preview: [string, string, string]
   bg: string

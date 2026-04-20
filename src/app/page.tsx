@@ -415,9 +415,9 @@ export default function HomePage() {
         />
 
         <div
-          className={`flex-1 min-h-0 overflow-y-auto [scrollbar-width:none] w-full max-w-[430px] mx-auto px-6 ${isElectron ? 'pt-20' : 'pt-12'}`}
+          className={`flex-1 min-h-0 overflow-y-auto [scrollbar-width:none] w-full mx-auto px-6 ${isExpanded ? 'max-w-[700px]' : 'max-w-[430px]'} ${isElectron ? 'pt-20' : 'pt-12'}`}
         >
-          <div style={{ height: !isElectron && pip.isActive ? '4vh' : '10vh' }} />
+          <div style={{ height: !isElectron && pip.isActive ? '2vh' : '5vh' }} />
 
           <ClockDisplay />
 
@@ -446,7 +446,7 @@ export default function HomePage() {
           )}
 
           {meetings.length === 0 && (
-            <div className="mt-12 text-center space-y-2">
+            <div className="mt-8 text-center space-y-2">
               {settings.otjClientId && settings.otjClientSecret ? (
                 <p className="text-sm text-white/20">No upcoming meetings</p>
               ) : (
@@ -498,12 +498,6 @@ export default function HomePage() {
         <div className="pb-6" />
       </div>
 
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <div className="fixed bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1.5 pointer-events-none z-10 opacity-20">
-        <span className="text-[15px] font-semibold tracking-[0.25em] uppercase" style={{ color: '#B08D57' }}>Fuse</span>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/logo-1.png" alt="" width={90} height={27} />
-      </div>
 
       <JoinModal
         open={showJoin}
@@ -709,14 +703,19 @@ export default function HomePage() {
             {/* Meeting info */}
             {(() => {
               const m = meetings[miniIdx]
-              if (!m) return <div className="flex-1 text-center"><span className="text-[11px] text-white/25">No upcoming meetings</span></div>
+              if (!m) return <div className="flex-1 text-center"><span className="text-[12px] text-white/25">No upcoming meetings</span></div>
               const countdown = getMeetingCountdown(m)
+              const miniProvider = getMeetingProvider(m.alias)
               return (
-                <div className="flex-1 flex flex-col items-center justify-center gap-1 min-w-0 px-1">
-                  <span className="text-[10px] text-white/30 truncate max-w-full">
+                <div className="flex-1 flex flex-col items-center justify-center gap-1.5 min-w-0 px-1">
+                  <span className="text-[11px] text-white/30 truncate max-w-full">
                     {countdown || (m.isNow ? 'Live now' : '')}
                   </span>
-                  <span className="text-[12px] font-medium text-white/80 truncate max-w-full text-center leading-tight">
+                  {miniProvider && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={miniProvider.icon} alt={miniProvider.label} width={20} height={20} className="opacity-70" />
+                  )}
+                  <span className="text-[13px] font-medium text-white/85 truncate max-w-full text-center leading-tight">
                     {m.title}
                   </span>
                   {canJoinMeeting(m) && m.alias && (
@@ -729,7 +728,7 @@ export default function HomePage() {
                         }
                       }}
                       disabled={isBusy}
-                      className="mt-0.5 px-3 py-1 rounded-md text-[10px] font-semibold text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 hover:bg-emerald-400/20 transition-colors disabled:opacity-40"
+                      className="mt-0.5 px-4 py-1.5 rounded-lg text-[11px] font-semibold text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 hover:bg-emerald-400/20 transition-colors disabled:opacity-40"
                     >
                       Join
                     </button>

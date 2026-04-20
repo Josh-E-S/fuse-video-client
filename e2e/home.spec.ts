@@ -42,11 +42,11 @@ test.describe('Home Page', () => {
 
   test('theme can be changed and persists', async ({ page }) => {
     await page.evaluate(() => {
-      localStorage.setItem('fuse_theme', 'deepForest')
+      localStorage.setItem('fuse_theme', 'arcticWhite')
     })
     await page.reload()
     const theme = await page.evaluate(() => document.documentElement.getAttribute('data-theme'))
-    expect(theme).toBe('deepForest')
+    expect(theme).toBe('arcticWhite')
   })
 })
 

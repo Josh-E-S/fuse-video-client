@@ -39,8 +39,12 @@ function buildDomainMap(): [string, MeetingProvider][] {
 export function getMeetingProvider(alias: string | null | undefined): MeetingProvider | null {
   if (!alias) return null
   const lower = alias.toLowerCase()
-  for (const [domain, provider] of buildDomainMap()) {
-    if (lower.includes(domain)) return provider
+  // Extract domain after @ if present, otherwise use the full alias
+  const atIdx = lower.indexOf('@')
+  const domainPart = atIdx >= 0 ? lower.slice(atIdx + 1) : lower
+  for (const [rawDomain, provider] of buildDomainMap()) {
+    const domain = rawDomain.replace(/^\.+/, '')
+    if (domainPart === domain || domainPart.endsWith('.' + domain)) return provider
   }
   return null
 }
