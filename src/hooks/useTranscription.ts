@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { log } from '@/utils/logger'
 
 export interface TranscriptEntry {
   id: string
@@ -155,8 +156,8 @@ export function useTranscription(options: UseTranscriptionOptions = {}) {
           } else if (msg.type === 'status' && msg.status) {
             setStatus(msg.status)
           }
-        } catch {
-          // ignore unparseable
+        } catch (err) {
+          log.transcription.warn('Ignoring unparseable WebSocket transcription message')
         }
       }
 
@@ -171,7 +172,8 @@ export function useTranscription(options: UseTranscriptionOptions = {}) {
       ws.onerror = () => {}
 
       wsRef.current = ws
-    } catch {
+    } catch (err) {
+      log.transcription.error('WebSocket connection to transcription agent failed', err)
       scheduleReconnect()
     }
   }, [sipUri, nodeDomain, apiUrl, maxEntries, scheduleReconnect])

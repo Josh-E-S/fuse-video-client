@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { log } from '@/utils/logger'
 
 const AUTH_URL = process.env.PEXIP_OTJ_AUTH_URL || 'https://auth.otj.pexip.io'
 const API_URL = process.env.PEXIP_OTJ_API_URL || 'https://otj.pexip.io'
@@ -62,7 +63,8 @@ export async function GET(request: Request) {
 
     const data = await response.json()
     return NextResponse.json(data)
-  } catch {
+  } catch (err) {
+    log.api.error('Failed to fetch OTJ meetings', err)
     return NextResponse.json({ meetings: [] }, { status: 500 })
   }
 }

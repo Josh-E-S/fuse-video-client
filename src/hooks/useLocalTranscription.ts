@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import type { TranscriptEntry } from '@/hooks/useTranscription'
 import { getElectronBridge } from '@/hooks/useElectron'
+import { log } from '@/utils/logger'
 
 interface UseLocalTranscriptionOptions {
   autoConnect?: boolean
@@ -119,7 +120,8 @@ export function useLocalTranscription(options: UseLocalTranscriptionOptions = {}
 
       setIsConnected(true)
       setStatus('connected')
-    } catch {
+    } catch (err) {
+      log.transcription.error('Local transcription audio setup failed', err)
       setStatus('mic_error')
       activeRef.current = false
       bridge.transcriptionStop()

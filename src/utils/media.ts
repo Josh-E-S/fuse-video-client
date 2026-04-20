@@ -1,3 +1,5 @@
+import { log } from '@/utils/logger'
+
 interface MediaSettings {
   audioInput?: string
   videoInput?: string
@@ -16,13 +18,15 @@ export async function acquireUserMedia(settings: MediaSettings): Promise<MediaSt
       audio: audioConstraint,
       video: videoConstraint,
     })
-  } catch {
+  } catch (err) {
+    log.media.warn('getUserMedia with video failed, trying audio-only fallback')
     try {
       return await navigator.mediaDevices.getUserMedia({
         audio: audioConstraint,
         video: false,
       })
-    } catch {
+    } catch (err) {
+      log.media.warn('Audio-only getUserMedia fallback also failed')
       return undefined
     }
   }

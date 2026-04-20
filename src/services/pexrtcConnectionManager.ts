@@ -1,5 +1,6 @@
 import { pexRTCLoader } from './pexrtcLoader'
 import { PexRTCInstance, ChatMessage, Participant } from '@/types/pexrtc'
+import { log } from '@/utils/logger'
 
 export interface ConnectionConfig {
   nodeDomain: string
@@ -199,15 +200,15 @@ class PexRTCConnectionManager {
       if (this.currentConfig?.audioOff) {
         try {
           this.pexrtc!.muteAudio(true)
-        } catch {
-          /* ignore */
+        } catch (err) {
+          log.pexrtc.warn('Failed to apply initial audio mute after connect')
         }
       }
       if (this.currentConfig?.videoOff) {
         try {
           this.pexrtc!.muteVideo(true)
-        } catch {
-          /* ignore */
+        } catch (err) {
+          log.pexrtc.warn('Failed to apply initial video mute after connect')
         }
       }
 
@@ -288,8 +289,8 @@ class PexRTCConnectionManager {
       if (this.pexrtc) {
         try {
           this.pexrtc.disconnect(reason)
-        } catch {
-          // ignore disconnect errors
+        } catch (err) {
+          log.pexrtc.warn('Error during disconnect')
         }
       }
       this.cleanup()
@@ -301,8 +302,8 @@ class PexRTCConnectionManager {
     if (this.pexrtc) {
       try {
         this.pexrtc.disconnect()
-      } catch {
-        // ignore
+      } catch (err) {
+        log.pexrtc.warn('Error during force disconnect')
       }
     }
     this.cleanup()
@@ -406,8 +407,8 @@ class PexRTCConnectionManager {
       // Video acquisition failed, try audio-only
       try {
         stream = await navigator.mediaDevices.getUserMedia({ audio: audioConstraint, video: false })
-      } catch {
-        // Both audio+video and audio-only failed
+      } catch (err) {
+        log.pexrtc.warn('switchMediaDevices: both audio+video and audio-only getUserMedia failed')
       }
     }
 
@@ -477,8 +478,8 @@ class PexRTCConnectionManager {
           this.pexrtc.call.localStream.addTrack(hdTrack)
         }
       }
-    } catch {
-      // HD upgrade failed — keep the existing track
+    } catch (err) {
+      log.pexrtc.warn('HD video upgrade failed, keeping existing track')
     }
   }
 
@@ -508,7 +509,8 @@ class PexRTCConnectionManager {
     if (!this.pexrtc || !this.isConnected) return null
     try {
       return this.pexrtc.getMediaStatistics() as unknown as Record<string, unknown>
-    } catch {
+    } catch (err) {
+      log.pexrtc.warn('Failed to get media statistics')
       return null
     }
   }

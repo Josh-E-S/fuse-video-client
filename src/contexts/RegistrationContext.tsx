@@ -1,6 +1,7 @@
 'use client'
 
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react'
+import { log } from '@/utils/logger'
 
 const STORAGE_KEYS = {
   alias: 'fuse_reg_alias',
@@ -121,8 +122,8 @@ export function RegistrationProvider({ children }: { children: React.ReactNode }
           remoteDisplayName: data.remote_display_name || data.display_name || 'Unknown Caller',
           token: data.token || '',
         })
-      } catch {
-        // Ignore unparseable SSE events
+      } catch (err) {
+        log.registration.debug('Ignoring unparseable SSE event')
       }
     })
 
@@ -148,7 +149,8 @@ export function RegistrationProvider({ children }: { children: React.ReactNode }
         if (!res.ok) throw new Error(`Refresh failed: ${res.status}`)
         const data = await res.json()
         tokenRef.current = data.result.token
-      } catch {
+      } catch (err) {
+        log.registration.error('Registration heartbeat lost', err)
         stopHeartbeat()
         stopEventSource()
         tokenRef.current = null
@@ -236,7 +238,9 @@ export function RegistrationProvider({ children }: { children: React.ReactNode }
             body: JSON.stringify({}),
           },
         )
-      } catch {}
+      } catch (err) {
+        log.registration.warn('Failed to release registration token during unregister')
+      }
     }
     tokenRef.current = null
     clearCredentials()
