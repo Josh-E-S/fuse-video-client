@@ -15,6 +15,7 @@ import {
 import { useSettings } from '@/hooks/useSettings'
 import { useMediaDevices, useSpeakerTest } from '@/hooks/useMediaDevices'
 import { getMeetingProvider } from '@/utils/meetingProvider'
+import { useEscapeKey } from '@/hooks/useEscapeKey'
 
 interface PreflightModalProps {
   open: boolean
@@ -25,6 +26,7 @@ interface PreflightModalProps {
 }
 
 export function PreflightModal({ open, alias, connecting, onClose, onJoin }: PreflightModalProps) {
+  useEscapeKey(onClose, open)
   const { settings, saveSettings } = useSettings()
   const provider = getMeetingProvider(alias)
 

@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { X, ArrowUp, ArrowDown } from 'lucide-react'
+import { useEscapeKey } from '@/hooks/useEscapeKey'
 
 interface CallStatsModalProps {
   open: boolean
@@ -45,6 +46,7 @@ function formatLoss(pct: number | string | undefined): string {
 }
 
 export function CallStatsModal({ open, onClose, getStats }: CallStatsModalProps) {
+  useEscapeKey(onClose, open)
   const [stats, setStats] = useState<PexStats | null>(null)
   const [position, setPosition] = useState({ x: 16, y: 80 })
   const dragRef = useRef<{ startX: number; startY: number; origX: number; origY: number } | null>(

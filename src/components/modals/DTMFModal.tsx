@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Delete } from 'lucide-react'
+import { useEscapeKey } from '@/hooks/useEscapeKey'
 
 interface DTMFModalProps {
   open: boolean
@@ -18,6 +19,7 @@ const keys = [
 ]
 
 export function DTMFModal({ open, onClose, onSendDTMF }: DTMFModalProps) {
+  useEscapeKey(onClose, open)
   const [input, setInput] = useState('')
 
   useEffect(() => {

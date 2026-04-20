@@ -6,6 +6,7 @@ import { X, ChevronRight, Lock, History, ChevronDown, Phone } from 'lucide-react
 import { getProviderById, getMeetingProvider } from '@/utils/meetingProvider'
 import { useRecentCalls } from '@/hooks/useRecentCalls'
 import { useSettings } from '@/hooks/useSettings'
+import { useEscapeKey } from '@/hooks/useEscapeKey'
 
 // Per-provider field configuration
 const PROVIDER_FIELDS: Record<
@@ -78,6 +79,7 @@ export function JoinModal({
   pinRequested,
   initialAlias,
 }: JoinModalProps) {
+  useEscapeKey(onClose, open)
   const [alias, setAlias] = useState('')
   const [pin, setPin] = useState('')
   const [showRecents, setShowRecents] = useState(false)
