@@ -73,13 +73,18 @@ export function VideoLayout({
   const isAudioOnly = !isAudioMuted && isVideoMuted
   const showPresentation = !!presentationStream && !presentationPopped
 
+  // In collapsed mode during a presentation, always use focus layout
+  // (content on top, remote full-width with self as draggable PiP overlay).
+  // The gallery/side-by-side 3-stack is too cramped in portrait windows.
+  const effectiveLayout = showPresentation && !isExpanded ? 'focus' : layout
+
   return (
     <main
       ref={mainVideoRef}
       className={`relative min-h-0 flex-1 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] ${
-        layout === 'focus'
+        effectiveLayout === 'focus'
           ? 'flex flex-col justify-center'
-          : layout === 'gallery'
+          : effectiveLayout === 'gallery'
             ? 'flex flex-col gap-3'
             : 'flex flex-row gap-4'
       }`}
@@ -88,8 +93,8 @@ export function VideoLayout({
       {showPresentation && (
         <GlassPanel
           className={`relative flex items-center justify-center bg-black/50 ${
-            layout === 'focus' ? 'flex-1 min-h-0 w-full'
-            : layout === 'gallery' ? 'flex-1 min-h-0 w-full'
+            effectiveLayout === 'focus' ? 'flex-1 min-h-0 w-full'
+            : effectiveLayout === 'gallery' ? 'flex-1 min-h-0 w-full'
             : 'flex-[2] h-full'
           }`}
           hoverEffect={false}
@@ -104,7 +109,7 @@ export function VideoLayout({
         </GlassPanel>
       )}
 
-      {layout === 'focus' ? (
+      {effectiveLayout === 'focus' ? (
         <FocusLayout
           remoteStream={remoteStream}
           localStream={localStream}
@@ -118,7 +123,7 @@ export function VideoLayout({
           setRemoteVideoRef={setRemoteVideoRef}
           setLocalVideoRef={setLocalVideoRef}
         />
-      ) : layout === 'gallery' ? (
+      ) : effectiveLayout === 'gallery' ? (
         <GalleryLayout
           remoteStream={remoteStream}
           localStream={localStream}

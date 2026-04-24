@@ -31,8 +31,12 @@ export function useVideoRefs({
 
   const setLocalVideoRef = useCallback(
     (el: HTMLVideoElement | null) => {
-      ;(localVideoRef as React.MutableRefObject<HTMLVideoElement | null>).current = el
-      if (el && localStream) {
+      const ref = localVideoRef as React.MutableRefObject<HTMLVideoElement | null>
+      // Ignore null calls from elements that aren't the currently-attached one
+      // (can happen during layout transitions when old and new trees briefly coexist).
+      if (el === null && ref.current && ref.current.isConnected) return
+      ref.current = el
+      if (el && localStream && el.srcObject !== localStream) {
         el.srcObject = localStream
       }
     },
@@ -62,8 +66,9 @@ export function useVideoRefs({
   }, [presentationStream])
 
   useEffect(() => {
-    if (localVideoRef.current && localStream) {
-      localVideoRef.current.srcObject = localStream
+    const el = localVideoRef.current
+    if (el && el.isConnected && localStream && el.srcObject !== localStream) {
+      el.srcObject = localStream
     }
   }, [localStream, isVideoMuted])
 

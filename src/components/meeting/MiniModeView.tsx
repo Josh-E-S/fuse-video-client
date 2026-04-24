@@ -10,6 +10,9 @@ import {
   Maximize2,
   MonitorUp,
   FileText,
+  MonitorPlay,
+  Users,
+  ScreenShare,
 } from 'lucide-react'
 import { getElectronBridge } from '@/hooks/useElectron'
 import type { CosmeticTheme } from '@/themes/types'
@@ -22,6 +25,7 @@ interface MiniModeViewProps {
   presentationStream: MediaStream | null
   isAudioMuted: boolean
   isVideoMuted: boolean
+  isPresenting: boolean
   selfViewVisible: boolean
   transcriptionEnabled: boolean
   setTranscriptionEnabled: (v: boolean) => void
@@ -31,6 +35,7 @@ interface MiniModeViewProps {
   onToggleMini: () => void
   onMuteAudio: (muted: boolean) => void
   onMuteVideo: (muted: boolean) => void
+  onToggleShare: () => void
   onTogglePresentationPopout: () => void
   onLeave: () => void
 }
@@ -41,6 +46,7 @@ export function MiniModeView({
   localStream,
   isAudioMuted,
   isVideoMuted,
+  isPresenting,
   selfViewVisible,
   transcriptionEnabled,
   setTranscriptionEnabled,
@@ -51,24 +57,43 @@ export function MiniModeView({
   onToggleMini,
   onMuteAudio,
   onMuteVideo,
+  onToggleShare,
   onTogglePresentationPopout,
   onLeave,
 }: MiniModeViewProps) {
-  const miniVideoRef = useRef<HTMLVideoElement>(null)
+  const miniRemoteRef = useRef<HTMLVideoElement>(null)
+  const miniContentRef = useRef<HTMLVideoElement>(null)
   const miniSelfRef = useRef<HTMLVideoElement>(null)
-
-  useEffect(() => {
-    if (miniVideoRef.current && remoteStream) {
-      miniVideoRef.current.srcObject = remoteStream
-    }
-    if (miniSelfRef.current && localStream) {
-      miniSelfRef.current.srcObject = localStream
-    }
-  }, [remoteStream, localStream, isVideoMuted])
 
   const [miniHover, setMiniHover] = useState(false)
   const miniHoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [miniTranscript, setMiniTranscript] = useState(false)
+  const [miniView, setMiniView] = useState<'far' | 'content'>('far')
+
+  // When the local user starts sharing, auto-flip to content view so they see what they're presenting.
+  // Only on the rising edge — user can still manually flip back to far-end.
+  const wasPresentingRef = useRef(isPresenting)
+  useEffect(() => {
+    if (isPresenting && !wasPresentingRef.current) {
+      setMiniView('content')
+    }
+    wasPresentingRef.current = isPresenting
+  }, [isPresenting])
+
+  // showContent is derived — when no presentation, we always show the far end regardless of miniView.
+  const showContent = miniView === 'content' && !!presentationStream && !presentationPopped
+
+  useEffect(() => {
+    if (miniRemoteRef.current && remoteStream) {
+      miniRemoteRef.current.srcObject = remoteStream
+    }
+    if (miniContentRef.current && presentationStream) {
+      miniContentRef.current.srcObject = presentationStream
+    }
+    if (miniSelfRef.current && localStream) {
+      miniSelfRef.current.srcObject = localStream
+    }
+  }, [remoteStream, localStream, presentationStream, isVideoMuted, showContent])
 
   function handleMiniEnter() {
     if (miniHoverTimer.current) clearTimeout(miniHoverTimer.current)
@@ -82,11 +107,11 @@ export function MiniModeView({
     const bridge = getElectronBridge()
     if (!bridge) return
     if (miniTranscript) {
-      await bridge.adjustWidth(-320)
+      await bridge.adjustWidth(-640)
       setMiniTranscript(false)
     } else {
       if (!transcriptionEnabled) setTranscriptionEnabled(true)
-      await bridge.adjustWidth(320)
+      await bridge.adjustWidth(640)
       setMiniTranscript(true)
     }
   }
@@ -99,21 +124,31 @@ export function MiniModeView({
       onMouseLeave={handleMiniLeave}
     >
       {/* Video side */}
-      <div className="relative w-[320px] shrink-0 h-full">
-        <div className="absolute top-0 left-0 right-0 h-8 z-20" style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}>
+      <div className="relative w-[640px] shrink-0 h-full">
+        <div className="absolute top-0 left-0 right-0 h-10 z-20" style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}>
           <button
             onClick={onToggleMini}
-            className={`absolute top-1.5 ${miniTranscript ? 'left-2' : 'right-2'} w-6 h-6 rounded-md flex items-center justify-center text-white/30 hover:text-white/70 hover:bg-white/10 transition-all duration-300 ${miniHover ? 'opacity-100' : 'opacity-0'}`}
+            className={`absolute top-2 ${miniTranscript ? 'left-2' : 'right-2'} h-7 px-3 rounded-lg flex items-center gap-1.5 bg-black/70 hover:bg-black/90 border border-white/15 text-white text-[12px] font-medium shadow-lg transition-colors`}
             style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
             title="Exit mini mode"
           >
-            <Maximize2 size={11} />
+            <Maximize2 size={13} />
+            <span>Exit</span>
           </button>
         </div>
 
-        {remoteStream ? (
+        {/* Main video: remote OR presentation depending on miniView */}
+        {showContent ? (
           <video
-            ref={miniVideoRef}
+            ref={miniContentRef}
+            autoPlay
+            playsInline
+            muted
+            className="absolute inset-0 w-full h-full object-contain bg-black"
+          />
+        ) : remoteStream ? (
+          <video
+            ref={miniRemoteRef}
             autoPlay
             playsInline
             className="absolute inset-0 w-full h-full object-cover"
@@ -125,7 +160,7 @@ export function MiniModeView({
         )}
 
         {selfViewVisible && localStream && (
-          <div className={`absolute bottom-1.5 right-1.5 w-[64px] h-[48px] rounded-lg overflow-hidden border border-white/10 shadow-lg bg-black/60 z-10 transition-all duration-300 ${isVideoMuted ? 'opacity-0 pointer-events-none' : miniHover ? 'opacity-100 bottom-[52px]' : 'opacity-100'}`}>
+          <div className={`absolute bottom-3 right-3 w-[128px] h-[96px] rounded-xl overflow-hidden border border-white/10 shadow-lg bg-black/60 z-10 transition-all duration-300 ${isVideoMuted ? 'opacity-0 pointer-events-none' : miniHover ? 'opacity-100 bottom-[72px]' : 'opacity-100'}`}>
             <video
               ref={miniSelfRef}
               autoPlay
@@ -170,6 +205,30 @@ export function MiniModeView({
           >
             <FileText size={15} />
           </button>
+          <button
+            onClick={onToggleShare}
+            className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors ${
+              isPresenting
+                ? 'bg-amber-500/20 text-amber-400'
+                : 'bg-white/8 text-white/70 hover:bg-white/12'
+            }`}
+            title={isPresenting ? 'Stop sharing' : 'Share content'}
+          >
+            <ScreenShare size={15} />
+          </button>
+          {presentationStream && !presentationPopped && (
+            <button
+              onClick={() => setMiniView((v) => (v === 'far' ? 'content' : 'far'))}
+              className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors ${
+                miniView === 'content'
+                  ? 'bg-amber-500/20 text-amber-400'
+                  : 'bg-white/8 text-white/70 hover:bg-white/12'
+              }`}
+              title={miniView === 'content' ? 'Show far end' : 'Show content'}
+            >
+              {miniView === 'content' ? <Users size={15} /> : <MonitorPlay size={15} />}
+            </button>
+          )}
           {presentationStream && (
             <button
               onClick={onTogglePresentationPopout}
@@ -178,6 +237,7 @@ export function MiniModeView({
                   ? 'bg-blue-500/20 text-blue-400'
                   : 'bg-white/8 text-white/70 hover:bg-white/12'
               }`}
+              title={presentationPopped ? 'Close popout' : 'Pop out content'}
             >
               <MonitorUp size={15} />
             </button>
@@ -193,7 +253,7 @@ export function MiniModeView({
 
       {/* Transcript sidecar */}
       {miniTranscript && (
-        <div className="w-[320px] h-full flex flex-col border-l border-white/6 shrink-0">
+        <div className="w-[640px] h-full flex flex-col border-l border-white/6 shrink-0">
           <div className="h-8 flex items-end px-3 pb-0.5" style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}>
             <span className="text-[9px] font-semibold uppercase tracking-[0.1em] text-white/30">Live Captions</span>
           </div>

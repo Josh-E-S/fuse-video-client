@@ -8,6 +8,7 @@ interface ElectronBridge {
   getExpanded: () => Promise<boolean>
   toggleMini: () => Promise<boolean>
   getMini: () => Promise<boolean>
+  resizeToState: (state: { expanded?: boolean; sideDockOpen?: boolean }) => Promise<void>
   adjustWidth: (delta: number) => Promise<void>
   transcriptionAvailable: () => Promise<boolean>
   transcriptionStart: () => Promise<boolean>

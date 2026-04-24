@@ -6,6 +6,7 @@ contextBridge.exposeInMainWorld("electron", {
   getExpanded: () => ipcRenderer.invoke("get-expanded"),
   toggleMini: () => ipcRenderer.invoke("toggle-mini"),
   getMini: () => ipcRenderer.invoke("get-mini"),
+  resizeToState: (state) => ipcRenderer.invoke("resize-to-state", state),
   adjustWidth: (delta) => ipcRenderer.invoke("adjust-width", delta),
 
   // Local transcription

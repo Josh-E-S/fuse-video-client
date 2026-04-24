@@ -4,9 +4,21 @@ const path = require("path");
 const net = require("net");
 const { registerTranscriptionHandlers, registerModelHandlers } = require("./transcription");
 
-const COMPACT_SIZE = { width: 500, height: 900 };
-const EXPANDED_SIZE = { width: 1220, height: 900 };
-const MINI_SIZE = { width: 320, height: 180 };
+// Window size matrix — keyed by (expanded, sideDockOpen).
+// Uniform height (941) across all non-mini states so mode toggles never jump vertically.
+// At this height, expanded video area ≈ 1200x675 = true 16:9; collapsed ≈ 510x675 stays portrait.
+const SIDE_DOCK_WIDTH = 336;
+const COLLAPSED_SIZE = { width: 510, height: 941 };
+const EXPANDED_SIZE = { width: 1224, height: 941 };
+const MINI_SIZE = { width: 640, height: 360 };
+
+function getTargetSize(expanded, sideDockOpen) {
+  const base = expanded ? EXPANDED_SIZE : COLLAPSED_SIZE;
+  return {
+    width: base.width + (sideDockOpen ? SIDE_DOCK_WIDTH : 0),
+    height: base.height,
+  };
+}
 
 const FIXED_PORT = 14032;
 
@@ -15,6 +27,7 @@ let nextProcess;
 let serverPort;
 let isExpanded = false;
 let isMini = false;
+let sideDockOpen = false;
 let preMiniBounds = null;
 
 const isDev = !app.isPackaged;
@@ -163,8 +176,8 @@ async function createWindow(port) {
   });
 
   mainWindow = new BrowserWindow({
-    width: 500,
-    height: 900,
+    width: COLLAPSED_SIZE.width,
+    height: COLLAPSED_SIZE.height,
     minWidth: 280,
     minHeight: 180,
     titleBarStyle: "hiddenInset",
@@ -219,9 +232,8 @@ async function createWindow(port) {
   ipcMain.handle("toggle-expand", () => {
     if (!mainWindow) return false;
     isExpanded = !isExpanded;
-    const size = isExpanded ? EXPANDED_SIZE : COMPACT_SIZE;
     const [currentX, currentY] = mainWindow.getPosition();
-    mainWindow.setBounds({ x: currentX, y: currentY, ...size }, true);
+    mainWindow.setBounds({ x: currentX, y: currentY, ...getTargetSize(isExpanded, sideDockOpen) }, true);
     return isExpanded;
   });
 
@@ -247,9 +259,8 @@ async function createWindow(port) {
         mainWindow.setBounds(preMiniBounds, true);
         preMiniBounds = null;
       } else {
-        const size = isExpanded ? EXPANDED_SIZE : COMPACT_SIZE;
         const [currentX, currentY] = mainWindow.getPosition();
-        mainWindow.setBounds({ x: currentX, y: currentY, ...size }, true);
+        mainWindow.setBounds({ x: currentX, y: currentY, ...getTargetSize(isExpanded, sideDockOpen) }, true);
       }
     }
     return isMini;
@@ -257,6 +268,8 @@ async function createWindow(port) {
 
   ipcMain.handle("get-mini", () => isMini);
 
+  // Mini-mode-only width tweak (transcript panel). The main (expanded/sideDock) matrix
+  // uses resize-to-state instead.
   ipcMain.handle("adjust-width", (_event, delta) => {
     if (!mainWindow) return;
     if (typeof delta !== "number" || !Number.isFinite(delta) || Math.abs(delta) > 1000) {
@@ -266,6 +279,24 @@ async function createWindow(port) {
     const [x, y] = mainWindow.getPosition();
     const [w, h] = mainWindow.getSize();
     mainWindow.setBounds({ x, y, width: w + delta, height: h }, true);
+  });
+
+  // Snap window to the canonical size for the given (expanded, sideDockOpen) state.
+  // Source of truth is main — renderer passes whether the side dock should be open.
+  ipcMain.handle("resize-to-state", (_event, state) => {
+    if (!mainWindow) return;
+    if (!state || typeof state !== "object") {
+      console.warn("Rejected invalid resize-to-state payload:", state);
+      return;
+    }
+    const nextExpanded = typeof state.expanded === "boolean" ? state.expanded : isExpanded;
+    const nextSideDockOpen = typeof state.sideDockOpen === "boolean" ? state.sideDockOpen : sideDockOpen;
+    isExpanded = nextExpanded;
+    sideDockOpen = nextSideDockOpen;
+    // Don't resize during mini — mini restore handles it via preMiniBounds.
+    if (isMini) return;
+    const [currentX, currentY] = mainWindow.getPosition();
+    mainWindow.setBounds({ x: currentX, y: currentY, ...getTargetSize(isExpanded, sideDockOpen) }, true);
   });
 
   session.defaultSession.setDisplayMediaRequestHandler(

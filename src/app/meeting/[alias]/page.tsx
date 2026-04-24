@@ -150,30 +150,20 @@ export default function MeetingPage() {
     setMessageText,
   })
 
-  const SIDE_DOCK_WIDTH = 336
-
-  // Extend/shrink Electron window for side dock
-  const sideDockOpenRef = useRef(false)
+  // Snap Electron window to the canonical size whenever side-dock state changes.
+  // Main process owns the matrix; we just tell it the new side-dock state.
   useEffect(() => {
     const bridge = getElectronBridge()
     if (!bridge) return
     const shouldBeOpen = dockMode === 'side' && dockTab !== null
-    if (shouldBeOpen && !sideDockOpenRef.current) {
-      sideDockOpenRef.current = true
-      bridge.adjustWidth(SIDE_DOCK_WIDTH)
-    } else if (!shouldBeOpen && sideDockOpenRef.current) {
-      sideDockOpenRef.current = true
-      bridge.adjustWidth(-SIDE_DOCK_WIDTH)
-      sideDockOpenRef.current = false
-    }
+    bridge.resizeToState({ sideDockOpen: shouldBeOpen })
   }, [dockMode, dockTab])
 
+  // On unmount, ensure the window returns to a no-side-dock size.
   useEffect(() => {
     return () => {
-      if (sideDockOpenRef.current) {
-        const bridge = getElectronBridge()
-        bridge?.adjustWidth(-SIDE_DOCK_WIDTH)
-      }
+      const bridge = getElectronBridge()
+      bridge?.resizeToState({ sideDockOpen: false })
     }
   }, [])
 
@@ -257,6 +247,7 @@ export default function MeetingPage() {
         presentationStream={presentationStream}
         isAudioMuted={isAudioMuted}
         isVideoMuted={isVideoMuted}
+        isPresenting={isPresenting}
         selfViewVisible={selfViewVisible}
         transcriptionEnabled={transcription.transcriptionEnabled}
         setTranscriptionEnabled={transcription.setTranscriptionEnabled}
@@ -266,6 +257,7 @@ export default function MeetingPage() {
         onToggleMini={toggleMini}
         onMuteAudio={muteAudio}
         onMuteVideo={muteVideo}
+        onToggleShare={() => (isPresenting ? stopScreenShare() : startScreenShare())}
         onTogglePresentationPopout={handleTogglePresentationPopout}
         onLeave={handleLeave}
       />
