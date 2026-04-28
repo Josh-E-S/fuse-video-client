@@ -8,6 +8,7 @@ interface IncomingCallModalProps {
   callerName: string
   conferenceAlias: string
   ringtone: string
+  scribeActive?: boolean
   onAnswer: () => void
   onDecline: () => void
 }
@@ -16,13 +17,14 @@ export function IncomingCallModal({
   callerName,
   conferenceAlias,
   ringtone,
+  scribeActive,
   onAnswer,
   onDecline,
 }: IncomingCallModalProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
   useEffect(() => {
-    let cancelled = false
+    if (scribeActive) return
     const audio = new Audio(`/${ringtone}`)
     audio.loop = true
     audio.volume = 0.6
@@ -33,12 +35,11 @@ export function IncomingCallModal({
     })
 
     return () => {
-      cancelled = true
       audio.pause()
       audio.currentTime = 0
       audioRef.current = null
     }
-  }, [ringtone])
+  }, [ringtone, scribeActive])
 
   function stopAudio() {
     if (audioRef.current) {
@@ -83,14 +84,21 @@ export function IncomingCallModal({
           <p className="text-sm text-white/30 mt-1">{conferenceAlias}</p>
         </div>
 
+        {scribeActive && (
+          <p className="text-[12px] text-amber-300/80 text-center px-3 leading-relaxed">
+            Stop scribing to answer this call.
+          </p>
+        )}
+
         <div className="flex items-center gap-6 mt-2">
           <button
             onClick={() => {
               stopAudio()
               onDecline()
             }}
-            className="w-16 h-16 rounded-full bg-rose-600 flex items-center justify-center text-white hover:bg-rose-500 transition-colors shadow-lg shadow-rose-600/30"
-            title="Decline"
+            disabled={scribeActive}
+            className="w-16 h-16 rounded-full bg-rose-600 flex items-center justify-center text-white hover:bg-rose-500 transition-colors shadow-lg shadow-rose-600/30 disabled:opacity-40 disabled:cursor-not-allowed"
+            title={scribeActive ? 'Stop scribing first' : 'Decline'}
           >
             <PhoneOff size={22} />
           </button>
@@ -100,8 +108,9 @@ export function IncomingCallModal({
               stopAudio()
               onAnswer()
             }}
-            className="w-16 h-16 rounded-full bg-emerald-600 flex items-center justify-center text-white hover:bg-emerald-500 transition-colors shadow-lg shadow-emerald-600/30"
-            title="Answer"
+            disabled={scribeActive}
+            className="w-16 h-16 rounded-full bg-emerald-600 flex items-center justify-center text-white hover:bg-emerald-500 transition-colors shadow-lg shadow-emerald-600/30 disabled:opacity-40 disabled:cursor-not-allowed"
+            title={scribeActive ? 'Stop scribing first' : 'Answer'}
           >
             <Phone size={22} />
           </button>

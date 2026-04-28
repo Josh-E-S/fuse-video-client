@@ -29,6 +29,7 @@ import {
 import { useSettings } from '@/hooks/useSettings'
 import { useMediaDevices, useSpeakerTest } from '@/hooks/useMediaDevices'
 import { getElectronBridge } from '@/hooks/useElectron'
+import { useModelStatus } from '@/hooks/useModelStatus'
 import { useQuickJoin } from '@/hooks/useQuickJoin'
 import { useEscapeKey } from '@/hooks/useEscapeKey'
 import type { RegistrationStatus, RegistrationCredentials } from '@/contexts/RegistrationContext'
@@ -72,7 +73,7 @@ export function SettingsModal({
   const [regUsername, setRegUsername] = useState('')
   const [regPassword, setRegPassword] = useState('')
   const [isElectron, setIsElectron] = useState(false)
-  const [modelsDownloaded, setModelsDownloaded] = useState(false)
+  const { downloaded: modelsDownloaded, refresh: refreshModelStatus } = useModelStatus()
   const [modelDownloadBusy, setModelDownloadBusy] = useState(false)
   const [modelDownloadStatus, setModelDownloadStatus] = useState('')
   const [modelDownloadProgress, setModelDownloadProgress] = useState(0)
@@ -102,9 +103,9 @@ export function SettingsModal({
       )
       const bridge = getElectronBridge()
       setIsElectron(!!bridge)
-      bridge?.modelsStatus().then((s) => setModelsDownloaded(s.downloaded)).catch(() => {})
+      refreshModelStatus()
     }
-  }, [open, settings.nodeDomain, settings.displayName])
+  }, [open, settings.nodeDomain, settings.displayName, refreshModelStatus])
 
   const {
     audioInputs,
@@ -185,6 +186,17 @@ export function SettingsModal({
   }, [open])
 
   const [regBusy, setRegBusy] = useState(false)
+  const [isNarrow, setIsNarrow] = useState(false)
+
+  useEffect(() => {
+    if (!open) return
+    function check() {
+      setIsNarrow(window.innerWidth < 360)
+    }
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [open])
 
   function handleBlurSave() {
     saveSettings({ nodeDomain, displayName })
@@ -224,7 +236,7 @@ export function SettingsModal({
     cleanup()
     setModelDownloadBusy(false)
     if (result.success) {
-      setModelsDownloaded(true)
+      refreshModelStatus()
       setModelDownloadProgress(100)
       setModelDownloadStatus('')
     } else {
@@ -241,7 +253,8 @@ export function SettingsModal({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.15 }}
-          className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm"
+          className={`fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm ${isNarrow ? 'p-2' : 'p-6'}`}
+          style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
           onPointerDown={(e) => {
             if (e.target === e.currentTarget) onClose()
           }}
@@ -252,29 +265,35 @@ export function SettingsModal({
             exit={{ scale: 0.95, y: 10, opacity: 0, filter: 'blur(4px)' }}
             transition={{ type: 'spring', damping: 28, stiffness: 260 }}
             onClick={(e) => e.stopPropagation()}
-            className="relative w-full max-w-md h-[640px] flex flex-col rounded-2xl bg-white/4 border border-white/10 backdrop-blur-3xl shadow-2xl p-8"
+            className={`relative w-full flex flex-col rounded-2xl bg-white/4 border border-white/10 backdrop-blur-3xl shadow-2xl ${
+              isNarrow ? 'max-w-full h-[calc(100vh-16px)] px-4 pb-4 pt-12' : 'max-w-md h-[640px] p-8'
+            }`}
           >
             <button
               onClick={onClose}
-              className="absolute top-6 right-6 w-8 h-8 rounded-full flex items-center justify-center text-white/30 hover:text-white hover:bg-white/10 transition-colors"
+              className={`absolute w-8 h-8 rounded-full flex items-center justify-center text-white/30 hover:text-white hover:bg-white/10 transition-colors ${
+                isNarrow ? 'top-11 right-3' : 'top-6 right-6'
+              }`}
             >
               <X size={16} />
             </button>
 
-            <h2 className="text-2xl font-light text-white/90 mb-1">Settings</h2>
-            <p className="text-sm text-white/30 mb-8">
-              {tab === 'connection'
-                ? 'Configure your Pexip connection'
-                : tab === 'meetings'
-                  ? 'Calendar and provider settings'
-                  : tab === 'devices'
-                    ? 'Camera, mic, speakers, and ringtone'
-                    : tab === 'transcription'
-                      ? 'Local speech-to-text models'
-                      : 'Choose your theme'}
-            </p>
+            <h2 className={`font-light text-white/90 mb-1 ${isNarrow ? 'text-lg' : 'text-2xl'}`}>Settings</h2>
+            {!isNarrow && (
+              <p className="text-sm text-white/30 mb-8">
+                {tab === 'connection'
+                  ? 'Configure your Pexip connection'
+                  : tab === 'meetings'
+                    ? 'Calendar and provider settings'
+                    : tab === 'devices'
+                      ? 'Camera, mic, speakers, and ringtone'
+                      : tab === 'transcription'
+                        ? 'Local speech-to-text models'
+                        : 'Choose your theme'}
+              </p>
+            )}
 
-            <div className="flex gap-1 p-1 rounded-2xl bg-white/4 border border-white/6 mb-6">
+            <div className={`flex gap-1 p-1 rounded-2xl bg-white/4 border border-white/6 ${isNarrow ? 'mb-4 mt-3' : 'mb-6'}`}>
               {[
                 { id: 'connection' as const, icon: Globe, label: 'Connection' },
                 { id: 'meetings' as const, icon: CalendarDays, label: 'Meetings' },
@@ -289,12 +308,14 @@ export function SettingsModal({
                   <button
                     key={t.id}
                     onClick={() => setTab(t.id)}
-                    className={`flex-1 flex flex-col items-center gap-1 py-2.5 rounded-xl transition-all ${
-                      active ? 'bg-white/10 text-white' : 'text-white/30 hover:text-white/50'
-                    }`}
+                    title={t.label}
+                    aria-label={t.label}
+                    className={`flex-1 flex flex-col items-center gap-1 rounded-xl transition-all ${
+                      isNarrow ? 'py-2' : 'py-2.5'
+                    } ${active ? 'bg-white/10 text-white' : 'text-white/30 hover:text-white/50'}`}
                   >
                     <t.icon size={16} strokeWidth={1.5} />
-                    <span className="text-[10px] font-medium tracking-wide">{t.label}</span>
+                    {!isNarrow && <span className="text-[10px] font-medium tracking-wide">{t.label}</span>}
                   </button>
                 )
               })}

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { log } from '@/utils/logger'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronDown, Copy, Check, Info, X } from 'lucide-react'
+import { ChevronDown, Copy, Check, Info, X, CalendarDays } from 'lucide-react'
 import { getMeetingProvider } from '@/utils/meetingProvider'
 import { formatMeetingTime, getDayLabel } from '@/utils/meetingDate'
 import type { CalendarMeeting } from '@/types/meetings'
@@ -18,6 +18,7 @@ interface FeaturedMeetingCardProps {
   isBusy: boolean
   cardBg: string
   expanded?: boolean
+  compact?: boolean
   onExpandChange?: (expanded: boolean) => void
   onJoin: () => void
   onSelectMeeting: (meetingId: string) => void
@@ -31,6 +32,7 @@ export function FeaturedMeetingCard({
   isBusy,
   cardBg,
   expanded,
+  compact,
   onExpandChange,
   onJoin,
   onSelectMeeting,
@@ -43,6 +45,26 @@ export function FeaturedMeetingCard({
   const [copied, setCopied] = useState(false)
   const provider = getMeetingProvider(meeting.alias)
   const { settings } = useSettings()
+
+  const [clockStr, setClockStr] = useState('')
+  const [dateStr, setDateStr] = useState('')
+
+  useEffect(() => {
+    if (!compact) return
+    function tick() {
+      const now = new Date()
+      let h = now.getHours()
+      const m = String(now.getMinutes()).padStart(2, '0')
+      h = h % 12 || 12
+      setClockStr(`${h}:${m}`)
+      const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+      setDateStr(`${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()}`)
+    }
+    tick()
+    const interval = setInterval(tick, 10_000)
+    return () => clearInterval(interval)
+  }, [compact])
 
   async function handleCopy() {
     const lines = [
@@ -82,7 +104,15 @@ export function FeaturedMeetingCard({
   }
 
   return (
-    <div className="mt-8">
+    <div className={compact ? 'mt-6' : 'mt-8'}>
+      {compact && (
+        <div className="flex flex-col items-center mb-5 mt-1">
+          <span className="text-[11px] text-white/35">{dateStr}</span>
+          <span className="text-[28px] font-light text-white/85 tabular-nums tracking-tight leading-none mt-0.5">
+            {clockStr}
+          </span>
+        </div>
+      )}
       <div className="text-[11px] font-semibold tracking-[0.08em] uppercase text-white/50 mb-3 pl-1">
         My Meetings
       </div>
@@ -94,49 +124,72 @@ export function FeaturedMeetingCard({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -6 }}
             transition={{ duration: 0.2 }}
-            className="px-6 py-8 flex items-center gap-4 border-l-[5px] border-transparent cursor-pointer"
-            whileHover={{ scale: 1.02 }}
+            className={`flex items-center cursor-pointer ${
+              compact
+                ? 'px-3 py-3 gap-3 border-l-[3px] rounded-r-lg'
+                : 'px-6 py-8 gap-4 border-l-[5px]'
+            } border-transparent`}
+            whileHover={compact ? { scale: 1.01 } : { scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             style={{
               borderLeftColor: 'var(--theme-accent)',
               background: 'linear-gradient(to right, color-mix(in srgb, var(--theme-accent) 15%, transparent), color-mix(in srgb, var(--theme-accent) 5%, transparent) 98%, transparent)',
             }}
           >
-            {provider && (
-              <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center shrink-0">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={provider.icon} alt={provider.label} width={24} height={24} />
+            {(provider || compact) && (
+              <div
+                className={`rounded-lg bg-white/5 flex items-center justify-center shrink-0 ${
+                  compact ? 'w-8 h-8' : 'w-10 h-10 rounded-xl'
+                }`}
+              >
+                {provider ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={provider.icon}
+                    alt={provider.label}
+                    width={compact ? 18 : 24}
+                    height={compact ? 18 : 24}
+                  />
+                ) : (
+                  <CalendarDays size={16} className="text-white/45" strokeWidth={1.5} />
+                )}
               </div>
             )}
             <div className="flex-1 min-w-0">
               {meeting.isNow ? (
-                <div className="flex items-center gap-1.5 mb-1.5">
+                <div className="flex items-center gap-1.5 mb-0.5">
                   <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  <span className="text-[11px] font-semibold text-emerald-400 uppercase tracking-wide">
+                  <span className={`font-semibold text-emerald-400 uppercase tracking-wide ${compact ? 'text-[10px]' : 'text-[11px]'}`}>
                     Live now
                   </span>
                 </div>
               ) : countdown ? (
-                <div className="text-xs font-semibold text-blue-400/85 mb-1.5 tracking-wide">
+                <div className={`font-semibold text-blue-400/85 tracking-wide ${compact ? 'text-[10px] mb-0.5' : 'text-xs mb-1.5'}`}>
                   {countdown}
                 </div>
               ) : null}
-              <div className="text-xl font-semibold text-white/95 tracking-[-0.015em] leading-snug">
+              <div
+                className={`font-semibold text-white/95 tracking-[-0.015em] leading-snug ${
+                  compact ? 'text-[13px] line-clamp-2' : 'text-xl'
+                }`}
+              >
                 {meeting.title}
               </div>
-              <div className="flex items-center gap-2 mt-1.5">
-                <span className="text-[13px] text-white/55">
+              <div className={`flex items-center gap-1.5 ${compact ? 'mt-0.5' : 'mt-1.5 gap-2'}`}>
+                <span className={`text-white/55 ${compact ? 'text-[11px]' : 'text-[13px]'}`}>
                   {formatMeetingTime(meeting.startTime)} - {formatMeetingTime(meeting.endTime)}
                 </span>
                 <button
                   onClick={handleCopy}
-                  className="ml-1 w-6 h-6 rounded-lg flex items-center justify-center text-white/25 hover:text-white/60 hover:bg-white/6 transition-all"
+                  className={`rounded-lg flex items-center justify-center text-white/25 hover:text-white/60 hover:bg-white/6 transition-all ${
+                    compact ? 'w-5 h-5 ml-0.5' : 'w-6 h-6 ml-1'
+                  }`}
                   title="Copy meeting info"
                 >
                   {copied ? (
-                    <Check size={11} className="text-emerald-400" />
+                    <Check size={compact ? 10 : 11} className="text-emerald-400" />
                   ) : (
-                    <Copy size={11} />
+                    <Copy size={compact ? 10 : 11} />
                   )}
                 </button>
               </div>
@@ -145,7 +198,9 @@ export function FeaturedMeetingCard({
               <button
                 onClick={onJoin}
                 disabled={isBusy}
-                className="px-6 py-3 rounded-xl flex items-center justify-center cursor-pointer transition-all hover:scale-105 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0 text-[14px] font-semibold text-emerald-500"
+                className={`rounded-xl flex items-center justify-center cursor-pointer transition-all hover:scale-105 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0 font-semibold text-emerald-500 ${
+                  compact ? 'px-3 py-1.5 text-[12px]' : 'px-6 py-3 text-[14px]'
+                }`}
                 style={{
                   background: 'rgba(52,211,153,0.15)',
                   border: '1px solid rgba(52,211,153,0.25)',
@@ -157,8 +212,8 @@ export function FeaturedMeetingCard({
               </button>
             ) : !meeting.alias ? (
               <div className="relative group flex-shrink-0">
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white/20 group-hover:text-white/45 transition-colors">
-                  <Info size={15} strokeWidth={1.5} />
+                <div className={`rounded-lg flex items-center justify-center text-white/20 group-hover:text-white/45 transition-colors ${compact ? 'w-6 h-6' : 'w-8 h-8'}`}>
+                  <Info size={compact ? 13 : 15} strokeWidth={1.5} />
                 </div>
                 <div className="absolute bottom-full right-0 mb-2 px-2.5 py-1.5 rounded-lg bg-black/80 backdrop-blur-sm border border-white/10 text-[11px] text-white/70 whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity">
                   No dial info found
@@ -169,12 +224,50 @@ export function FeaturedMeetingCard({
         </AnimatePresence>
 
         {laterMeetings.length > 0 && (() => {
-          const VISIBLE_COUNT = 3
+          const VISIBLE_COUNT = compact ? 8 : 3
           const visibleMeetings = laterMeetings.slice(0, VISIBLE_COUNT)
           const overflowMeetings = laterMeetings.slice(VISIBLE_COUNT)
 
           function renderMeetingRow(m: CalendarMeeting, showDayHeader: boolean, day: string) {
             const prov = getMeetingProvider(m.alias)
+            if (compact) {
+              return (
+                <div key={m.id}>
+                  {showDayHeader && (
+                    <div className="text-[10px] font-bold uppercase tracking-widest text-white/20 pt-3 pb-1.5">
+                      {day}
+                    </div>
+                  )}
+                  <button
+                    onClick={() => onSelectMeeting(m.id)}
+                    className="flex items-center cursor-pointer text-left w-full px-3 py-3 gap-3 border-l-[3px] border-white/10 rounded-r-lg hover:bg-white/3 hover:border-white/20 transition-colors"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-white/3 flex items-center justify-center shrink-0">
+                      {prov ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={prov.icon}
+                          alt={prov.label}
+                          width={18}
+                          height={18}
+                          className="opacity-60"
+                        />
+                      ) : (
+                        <CalendarDays size={15} className="text-white/35" strokeWidth={1.5} />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[13px] font-semibold text-white/65 tracking-[-0.015em] leading-snug line-clamp-2">
+                        {m.title}
+                      </div>
+                      <div className="text-[11px] text-white/35 mt-0.5">
+                        {formatMeetingTime(m.startTime)} - {formatMeetingTime(m.endTime)}
+                      </div>
+                    </div>
+                  </button>
+                </div>
+              )
+            }
             return (
               <div key={m.id}>
                 {showDayHeader && (
@@ -211,7 +304,7 @@ export function FeaturedMeetingCard({
 
           let lastDay = ''
           return (
-            <div className="px-5 pb-3 pt-1">
+            <div className={compact ? 'pb-2 pt-2 space-y-1.5' : 'px-5 pb-3 pt-1'}>
               {visibleMeetings.map((m) => {
                 const day = getDayLabel(m.startTime)
                 const showHeader = day !== lastDay

@@ -8,6 +8,10 @@ interface ElectronBridge {
   getExpanded: () => Promise<boolean>
   toggleMini: () => Promise<boolean>
   getMini: () => Promise<boolean>
+  toggleSidebar: () => Promise<boolean>
+  getSidebar: () => Promise<boolean>
+  promoteFromSidebar: () => Promise<boolean>
+  restoreSidebar: () => Promise<boolean>
   resizeToState: (state: { expanded?: boolean; sideDockOpen?: boolean }) => Promise<void>
   adjustWidth: (delta: number) => Promise<void>
   transcriptionAvailable: () => Promise<boolean>
@@ -31,6 +35,7 @@ export function useElectron() {
   const [isElectron, setIsElectron] = useState(false)
   const [isExpanded, setIsExpanded] = useState(false)
   const [isMini, setIsMini] = useState(false)
+  const [isSidebar, setIsSidebar] = useState(false)
 
   useEffect(() => {
     const bridge = getElectronBridge()
@@ -38,6 +43,7 @@ export function useElectron() {
       setIsElectron(true)
       bridge.getExpanded().then(setIsExpanded).catch(() => {})
       bridge.getMini().then(setIsMini).catch(() => {})
+      bridge.getSidebar?.().then(setIsSidebar).catch(() => {})
     }
   }, [])
 
@@ -46,6 +52,7 @@ export function useElectron() {
     if (!bridge) return false
     const expanded = await bridge.toggleExpand()
     setIsExpanded(expanded)
+    setIsSidebar(false)
     return expanded
   }, [])
 
@@ -54,8 +61,44 @@ export function useElectron() {
     if (!bridge) return false
     const mini = await bridge.toggleMini()
     setIsMini(mini)
+    setIsSidebar(false)
     return mini
   }, [])
 
-  return { isElectron, isExpanded, isMini, toggleExpand, toggleMini }
+  const toggleSidebar = useCallback(async () => {
+    const bridge = getElectronBridge()
+    if (!bridge) return false
+    const sidebar = await bridge.toggleSidebar()
+    setIsSidebar(sidebar)
+    if (sidebar) setIsMini(false)
+    return sidebar
+  }, [])
+
+  const promoteFromSidebar = useCallback(async () => {
+    const bridge = getElectronBridge()
+    if (!bridge) return false
+    const ok = await bridge.promoteFromSidebar()
+    if (ok) setIsSidebar(false)
+    return ok
+  }, [])
+
+  const restoreSidebar = useCallback(async () => {
+    const bridge = getElectronBridge()
+    if (!bridge) return false
+    const ok = await bridge.restoreSidebar()
+    if (ok) setIsSidebar(true)
+    return ok
+  }, [])
+
+  return {
+    isElectron,
+    isExpanded,
+    isMini,
+    isSidebar,
+    toggleExpand,
+    toggleMini,
+    toggleSidebar,
+    promoteFromSidebar,
+    restoreSidebar,
+  }
 }

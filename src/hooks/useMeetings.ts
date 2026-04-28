@@ -20,7 +20,9 @@ export function useMeetings({
 }: UseMeetingsOptions = {}) {
   const [meetings, setMeetings] = useState<CalendarMeeting[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
-  const [loading, setLoading] = useState(false)
+  // Start true — the effect below kicks off a fetch on mount, so the first
+  // render should already reflect "loading" rather than "settled empty".
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   const fetchMeetings = useCallback(async () => {

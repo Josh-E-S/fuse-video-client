@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Settings, Pin, Maximize2, Minimize2, PictureInPicture2 } from 'lucide-react'
+import { Settings, Pin, Maximize2, Minimize2, PictureInPicture2, PanelLeft } from 'lucide-react'
 import type { RegistrationStatus } from '@/contexts/RegistrationContext'
 
 interface TopBarProps {
@@ -10,11 +10,13 @@ interface TopBarProps {
   regStatus: RegistrationStatus
   isElectron: boolean
   isExpanded: boolean
+  isSidebar?: boolean
   isBusy: boolean
   pipSupported: boolean
   onSettings: () => void
   onToggleExpand: () => void
   onToggleMini?: () => void
+  onToggleSidebar?: () => void
   onOpenPip: () => void
 }
 
@@ -24,11 +26,13 @@ export function TopBar({
   regStatus,
   isElectron,
   isExpanded,
+  isSidebar,
   isBusy,
   pipSupported,
   onSettings,
   onToggleExpand,
   onToggleMini,
+  onToggleSidebar,
   onOpenPip,
 }: TopBarProps) {
   const regRingColor =
@@ -92,13 +96,17 @@ export function TopBar({
             <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-white/20 border-2 border-black" />
           )}
         </div>
+
       </div>
 
-      {/* Center: clock */}
-      <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center">
-        <span className="text-[12px] text-white/35">{dateStr}</span>
-        <span className="text-[32px] font-light text-white/80 tabular-nums tracking-tight leading-none mt-0.5">{clockStr}</span>
-      </div>
+      {!isSidebar && (
+        <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center">
+          <span className="text-[12px] text-white/35">{dateStr}</span>
+          <span className="text-[32px] font-light text-white/80 tabular-nums tracking-tight leading-none mt-0.5">
+            {clockStr}
+          </span>
+        </div>
+      )}
 
       {/* Right: expand/compact toggle (Electron) or PiP (web) + settings */}
       <div
@@ -107,6 +115,18 @@ export function TopBar({
       >
         {isElectron ? (
           <>
+            {onToggleSidebar && (
+              <button
+                onClick={onToggleSidebar}
+                className={`w-8 h-8 rounded-full flex items-center justify-center glass-button ${
+                  isSidebar ? 'text-blue-400' : 'text-white/60 hover:text-white/85'
+                }`}
+                title={isSidebar ? 'Exit sidebar mode' : 'Sidebar mode'}
+                aria-label={isSidebar ? 'Exit sidebar mode' : 'Sidebar mode'}
+              >
+                <PanelLeft size={14} strokeWidth={1.5} />
+              </button>
+            )}
             {onToggleMini && (
               <button
                 onClick={onToggleMini}

@@ -92,7 +92,18 @@ export default function HomePage() {
   useMeetingNotifications(meetings, handleNotificationJoin)
 
   const pip = usePip()
-  const { isElectron, isExpanded, isMini, toggleExpand, toggleMini } = useElectron()
+  const {
+    isElectron,
+    isExpanded,
+    isMini,
+    isSidebar,
+    toggleExpand,
+    toggleMini,
+    toggleSidebar,
+    promoteFromSidebar,
+    restoreSidebar,
+  } = useElectron()
+  const sidebarRestoreRef = useRef(false)
 
   const [showJoin, setShowJoin] = useState(false)
   const [joinProvider, setJoinProvider] = useState<{
@@ -162,6 +173,19 @@ export default function HomePage() {
       }
     }
   }, [connectionState, pendingAlias, router, previewStream, pip.isActive, isElectron])
+
+  // Auto-promote out of sidebar when a call begins, and auto-restore when it ends.
+  useEffect(() => {
+    if (connectionState === 'connecting' && isSidebar) {
+      sidebarRestoreRef.current = true
+      promoteFromSidebar()
+      return
+    }
+    if (connectionState === 'disconnected' && sidebarRestoreRef.current) {
+      sidebarRestoreRef.current = false
+      restoreSidebar()
+    }
+  }, [connectionState, isSidebar, promoteFromSidebar, restoreSidebar])
 
   useEffect(() => {
     if ((connectionState === 'pin_required' || connectionState === 'pin_optional') && !showJoin && !isMini) {
@@ -445,16 +469,20 @@ export default function HomePage() {
           regStatus={regStatus}
           isElectron={isElectron}
           isExpanded={isExpanded}
+          isSidebar={isSidebar}
           isBusy={isBusy}
           pipSupported={pip.isSupported}
           onSettings={() => setShowSettings(true)}
           onToggleExpand={toggleExpand}
           onToggleMini={toggleMini}
+          onToggleSidebar={toggleSidebar}
           onOpenPip={() => pip.openPip()}
         />
 
         <div
-          className={`flex-1 min-h-0 overflow-y-auto [scrollbar-width:none] w-full mx-auto px-6 ${isExpanded ? 'max-w-[700px]' : 'max-w-[430px]'} ${isElectron ? 'pt-36' : 'pt-28'}`}
+          className={`flex-1 min-h-0 overflow-y-auto [scrollbar-width:none] w-full mx-auto px-6 ${
+            isSidebar ? 'max-w-[280px]' : isExpanded ? 'max-w-[700px]' : 'max-w-[430px]'
+          } ${isSidebar ? 'pt-24' : isElectron ? 'pt-36' : 'pt-28'}`}
         >
           <div style={{ height: !isElectron && pip.isActive ? '1vh' : '1vh' }} />
 
@@ -466,6 +494,7 @@ export default function HomePage() {
               canJoin={canJoinMeeting(featuredMeeting)}
               isBusy={isBusy}
               cardBg={cosmeticTheme.cardBg}
+              compact={isSidebar}
               expanded={calendarExpanded}
               onExpandChange={(v) => {
                 setCalendarExpanded(v)
@@ -514,6 +543,7 @@ export default function HomePage() {
             recentCalls={recentCalls}
             providers={quickJoin.visibleProviders}
             expanded={recentsExpanded}
+            compact={isSidebar}
             onExpandChange={(v) => {
               setRecentsExpanded(v)
               if (v) setCalendarExpanded(false)

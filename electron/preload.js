@@ -6,6 +6,10 @@ contextBridge.exposeInMainWorld("electron", {
   getExpanded: () => ipcRenderer.invoke("get-expanded"),
   toggleMini: () => ipcRenderer.invoke("toggle-mini"),
   getMini: () => ipcRenderer.invoke("get-mini"),
+  toggleSidebar: () => ipcRenderer.invoke("toggle-sidebar"),
+  getSidebar: () => ipcRenderer.invoke("get-sidebar"),
+  promoteFromSidebar: () => ipcRenderer.invoke("promote-from-sidebar"),
+  restoreSidebar: () => ipcRenderer.invoke("restore-sidebar"),
   resizeToState: (state) => ipcRenderer.invoke("resize-to-state", state),
   adjustWidth: (delta) => ipcRenderer.invoke("adjust-width", delta),
 

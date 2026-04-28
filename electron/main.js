@@ -11,6 +11,7 @@ const SIDE_DOCK_WIDTH = 336;
 const COLLAPSED_SIZE = { width: 510, height: 941 };
 const EXPANDED_SIZE = { width: 1224, height: 941 };
 const MINI_SIZE = { width: 640, height: 360 };
+const SIDEBAR_WIDTH = 300;
 
 function getTargetSize(expanded, sideDockOpen) {
   const base = expanded ? EXPANDED_SIZE : COLLAPSED_SIZE;
@@ -20,6 +21,13 @@ function getTargetSize(expanded, sideDockOpen) {
   };
 }
 
+function getSidebarBounds() {
+  const { screen } = require("electron");
+  const display = screen.getPrimaryDisplay();
+  const { x, y, height } = display.workArea;
+  return { x, y, width: SIDEBAR_WIDTH, height };
+}
+
 const FIXED_PORT = 14032;
 
 let mainWindow;
@@ -27,8 +35,11 @@ let nextProcess;
 let serverPort;
 let isExpanded = false;
 let isMini = false;
+let isSidebar = false;
 let sideDockOpen = false;
 let preMiniBounds = null;
+let preSidebarBounds = null;
+let preSidebarExpanded = false;
 
 const isDev = !app.isPackaged;
 
@@ -231,6 +242,11 @@ async function createWindow(port) {
   // IPC handlers
   ipcMain.handle("toggle-expand", () => {
     if (!mainWindow) return false;
+    // Manual mid-call resize cancels any auto-restore-to-sidebar intent.
+    preSidebarBounds = null;
+    if (isSidebar) {
+      isSidebar = false;
+    }
     isExpanded = !isExpanded;
     const [currentX, currentY] = mainWindow.getPosition();
     mainWindow.setBounds({ x: currentX, y: currentY, ...getTargetSize(isExpanded, sideDockOpen) }, true);
@@ -241,6 +257,10 @@ async function createWindow(port) {
 
   ipcMain.handle("toggle-mini", () => {
     if (!mainWindow) return false;
+    if (isSidebar) {
+      isSidebar = false;
+      preSidebarBounds = null;
+    }
     isMini = !isMini;
     if (isMini) {
       preMiniBounds = mainWindow.getBounds();
@@ -293,10 +313,61 @@ async function createWindow(port) {
     const nextSideDockOpen = typeof state.sideDockOpen === "boolean" ? state.sideDockOpen : sideDockOpen;
     isExpanded = nextExpanded;
     sideDockOpen = nextSideDockOpen;
-    // Don't resize during mini — mini restore handles it via preMiniBounds.
-    if (isMini) return;
+    // Don't resize while in sidebar/mini — those modes own their own bounds.
+    if (isMini || isSidebar) return;
     const [currentX, currentY] = mainWindow.getPosition();
     mainWindow.setBounds({ x: currentX, y: currentY, ...getTargetSize(isExpanded, sideDockOpen) }, true);
+  });
+
+  ipcMain.handle("toggle-sidebar", () => {
+    if (!mainWindow) return false;
+    if (!isSidebar) {
+      // Entering sidebar — snapshot current bounds + expanded flag for later restore.
+      preSidebarBounds = mainWindow.getBounds();
+      preSidebarExpanded = isExpanded;
+      isSidebar = true;
+      isMini = false;
+      mainWindow.setBounds(getSidebarBounds(), true);
+    } else {
+      // Exiting sidebar — restore previous bounds (or fall back to canonical size).
+      isSidebar = false;
+      if (preSidebarBounds) {
+        mainWindow.setBounds(preSidebarBounds, true);
+        preSidebarBounds = null;
+      } else {
+        isExpanded = preSidebarExpanded;
+        const [currentX, currentY] = mainWindow.getPosition();
+        mainWindow.setBounds({ x: currentX, y: currentY, ...getTargetSize(isExpanded, sideDockOpen) }, true);
+      }
+    }
+    return isSidebar;
+  });
+
+  ipcMain.handle("get-sidebar", () => isSidebar);
+
+  // Promote out of sidebar (for an incoming/outgoing call). Remembers we came from
+  // sidebar so the matching restore-sidebar handler can put us back when the call ends.
+  ipcMain.handle("promote-from-sidebar", () => {
+    if (!mainWindow || !isSidebar) return false;
+    isSidebar = false;
+    isExpanded = preSidebarExpanded;
+    if (preSidebarBounds) {
+      mainWindow.setBounds(preSidebarBounds, true);
+    } else {
+      const [currentX, currentY] = mainWindow.getPosition();
+      mainWindow.setBounds({ x: currentX, y: currentY, ...getTargetSize(isExpanded, sideDockOpen) }, true);
+    }
+    return true;
+  });
+
+  ipcMain.handle("restore-sidebar", () => {
+    if (!mainWindow) return false;
+    if (isSidebar) return true;
+    if (!preSidebarBounds) return false;
+    isSidebar = true;
+    isMini = false;
+    mainWindow.setBounds(getSidebarBounds(), true);
+    return true;
   });
 
   session.defaultSession.setDisplayMediaRequestHandler(

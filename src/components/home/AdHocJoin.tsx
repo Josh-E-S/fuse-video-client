@@ -20,6 +20,7 @@ interface AdHocJoinProps {
   recentCalls: RecentCall[]
   providers: VisibleProvider[]
   expanded?: boolean
+  compact?: boolean
   onExpandChange?: (expanded: boolean) => void
   onProviderClick: (provider: { id: string; icon: string; label: string }) => void
   onCallClick: () => void
@@ -33,6 +34,7 @@ export function AdHocJoin({
   recentCalls,
   providers,
   expanded,
+  compact,
   onExpandChange,
   onProviderClick,
   onCallClick,
@@ -46,13 +48,13 @@ export function AdHocJoin({
   }, [expanded])
 
   return (
-    <div className="mt-10 flex flex-col items-center gap-4">
+    <div className={`flex flex-col items-center gap-4 ${compact ? 'mt-6' : 'mt-10'}`}>
       {providers.length > 0 && (
         <>
       <span className="text-[11px] font-semibold tracking-[0.08em] uppercase text-white/50">
         Quick Join
       </span>
-      <div className="flex items-center gap-6">
+      <div className={compact ? 'grid grid-cols-2 gap-x-6 gap-y-4 place-items-center w-full max-w-[200px]' : 'flex items-center gap-6'}>
         {providers.map((p) => (
           <button
             key={p.id}
@@ -79,7 +81,7 @@ export function AdHocJoin({
         </>
       )}
 
-      <div className="flex items-center justify-center mt-5">
+      <div className={`flex items-center justify-center ${compact ? 'mt-8' : 'mt-5'}`}>
         <div
           className="flex items-center rounded-2xl overflow-hidden transition-all hover:scale-105 active:scale-95"
           style={{
@@ -111,7 +113,7 @@ export function AdHocJoin({
       </div>
 
       {onScribe && (
-        <div className="flex items-center justify-center mt-2">
+        <div className={`flex items-center justify-center ${compact ? 'mt-4' : 'mt-2'}`}>
           <ScribeButton onClick={onScribe} />
         </div>
       )}
