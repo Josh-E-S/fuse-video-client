@@ -570,13 +570,20 @@ export function SettingsModal({
                         Camera unavailable
                       </div>
                     ) : (
-                      <video
-                        ref={videoPreviewRef}
-                        autoPlay
-                        playsInline
-                        muted
-                        className="w-full h-full object-cover -scale-x-100"
-                      />
+                      <>
+                        <video
+                          ref={videoPreviewRef}
+                          autoPlay
+                          playsInline
+                          muted
+                          className="w-full h-full object-cover -scale-x-100"
+                        />
+                        {!previewStream && (
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="w-8 h-8 border-[3px] border-white/10 border-t-white/60 rounded-full animate-spin" />
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
 

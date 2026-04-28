@@ -12,7 +12,7 @@ import {
   PinOff,
   Eye,
   EyeOff,
-  GalleryThumbnails,
+  LayoutGrid,
   Share,
   FileText,
   MessageSquare,
@@ -22,9 +22,12 @@ import {
   Check,
   MoreVertical,
   Grid3X3,
+  PanelBottom,
+  PanelRight,
+  Captions,
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
-import type { DockTab } from '@/components/meeting/DockPanel'
+import type { DockTab, DockMode } from '@/components/meeting/DockPanel'
 import { useElectron } from '@/hooks/useElectron'
 
 // Device info for the picker
@@ -42,6 +45,7 @@ interface ControlBarProps {
   transcriptionEnabled?: boolean
   captionsVisible?: boolean
   activeDockTab?: DockTab | null
+  dockMode?: DockMode
   layout?: 'focus' | 'gallery' | 'side-by-side'
   selfViewVisible?: boolean
   onToggleSelfView?: () => void
@@ -60,6 +64,7 @@ interface ControlBarProps {
   onToggleCaptions?: () => void
   onDockTab?: (tab: DockTab) => void
   onDockClose?: () => void
+  onDockModeChange?: (mode: DockMode) => void
   onSettings?: () => void
   onDTMF?: () => void
   onLeave: () => void
@@ -223,28 +228,204 @@ function SplitButton({
   )
 }
 
-// 3-dot options menu
+// Segmented Panels pill: chat / people / transcript in one container.
+// Click a tab to open it (or close if already active). Long-press any tab to
+// flip dock mode (side <-> bottom).
+function PanelsPill({
+  activeDockTab,
+  dockMode,
+  onOpen,
+  onClose,
+  onModeChange,
+  iconSize,
+  height,
+}: {
+  activeDockTab: DockTab | null | undefined
+  dockMode: DockMode
+  onOpen: (tab: DockTab) => void
+  onClose: () => void
+  onModeChange?: (mode: DockMode) => void
+  iconSize: number
+  height: number
+}) {
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const longPressed = useRef(false)
+
+  function startLongPress() {
+    longPressed.current = false
+    longPressTimer.current = setTimeout(() => {
+      longPressed.current = true
+      onModeChange?.(dockMode === 'side' ? 'bottom' : 'side')
+    }, 500)
+  }
+
+  function clearLongPress() {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current)
+      longPressTimer.current = null
+    }
+  }
+
+  function handleClick(tab: DockTab) {
+    if (longPressed.current) {
+      longPressed.current = false
+      return
+    }
+    if (activeDockTab === tab) onClose()
+    else onOpen(tab)
+  }
+
+  const segments: { id: DockTab; icon: React.ReactNode; label: string }[] = [
+    { id: 'chat', icon: <MessageSquare size={iconSize} />, label: 'Chat' },
+    { id: 'people', icon: <Users size={iconSize} />, label: 'Participants' },
+    { id: 'transcript', icon: <ScrollText size={iconSize} />, label: 'Transcript' },
+  ]
+
+  const dockHint = onModeChange
+    ? ` · long-press to ${dockMode === 'side' ? 'dock bottom' : 'dock side'}`
+    : ''
+
+  return (
+    <div
+      className="flex items-center gap-0.5 px-1 rounded-xl bg-white/4 border border-white/8"
+      style={{ height }}
+    >
+      {segments.map((seg) => {
+        const active = activeDockTab === seg.id
+        return (
+          <button
+            key={seg.id}
+            onClick={() => handleClick(seg.id)}
+            onPointerDown={startLongPress}
+            onPointerUp={clearLongPress}
+            onPointerLeave={clearLongPress}
+            onPointerCancel={clearLongPress}
+            onContextMenu={(e) => {
+              if (!onModeChange) return
+              e.preventDefault()
+              onModeChange(dockMode === 'side' ? 'bottom' : 'side')
+            }}
+            className={`flex items-center justify-center rounded-lg transition-all duration-150 ${
+              active
+                ? 'bg-blue-400/15 text-blue-400'
+                : 'text-white/55 hover:text-white/85 hover:bg-white/6'
+            }`}
+            style={{ width: height - 8, height: height - 8 }}
+            title={`${active ? `Close ${seg.label.toLowerCase()}` : seg.label}${dockHint}`}
+          >
+            {seg.icon}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+// Expanded options menu — view preferences, captions, dialpad.
 function OptionsMenu({
   onDTMF,
+  onToggleSelfView,
+  selfViewVisible,
+  onToggleLayout,
+  layout,
+  onToggleCaptions,
+  captionsVisible,
+  transcriptionEnabled,
+  onDockModeChange,
+  dockMode,
 }: {
   onDTMF?: () => void
+  onToggleSelfView?: () => void
+  selfViewVisible?: boolean
+  onToggleLayout?: () => void
+  layout?: 'focus' | 'gallery' | 'side-by-side'
+  onToggleCaptions?: () => void
+  captionsVisible?: boolean
+  transcriptionEnabled?: boolean
+  onDockModeChange?: (mode: DockMode) => void
+  dockMode?: DockMode
 }) {
+  const layoutLabel =
+    layout === 'gallery' ? 'Gallery' : layout === 'side-by-side' ? 'Side-by-side' : 'Focus'
+
+  const itemClass =
+    'w-full text-left px-4 py-2.5 text-[13px] text-white/70 hover:text-white hover:bg-white/6 transition-colors flex items-center gap-3'
+
+  const sectionLabel =
+    'px-4 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-white/30'
+
+  const showViewSection = !!(onToggleSelfView || onToggleLayout || onDockModeChange)
+  const showCaptionsItem = !!(onToggleCaptions && transcriptionEnabled)
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 8, scale: 0.95 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: 8, scale: 0.95 }}
       transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
-      className="absolute bottom-full mb-3 right-0 min-w-[180px] py-1.5 rounded-xl bg-black/90 border border-white/10 backdrop-blur-[40px] shadow-2xl z-50"
+      className="absolute bottom-full mb-3 right-0 min-w-[220px] py-1.5 rounded-xl bg-black/90 border border-white/10 backdrop-blur-[40px] shadow-2xl z-50"
     >
+      {showViewSection && (
+        <>
+          <div className={sectionLabel}>View</div>
+          {onToggleSelfView && (
+            <button onClick={onToggleSelfView} className={itemClass}>
+              {selfViewVisible ? (
+                <Eye size={15} className="opacity-60" />
+              ) : (
+                <EyeOff size={15} className="opacity-60" />
+              )}
+              <span className="flex-1">Self-view</span>
+              <span className="text-[11px] text-white/35">{selfViewVisible ? 'On' : 'Off'}</span>
+            </button>
+          )}
+          {onToggleLayout && (
+            <button onClick={onToggleLayout} className={itemClass}>
+              <LayoutGrid size={15} className="opacity-60" />
+              <span className="flex-1">Layout</span>
+              <span className="text-[11px] text-white/35">{layoutLabel}</span>
+            </button>
+          )}
+          {onDockModeChange && dockMode && (
+            <button
+              onClick={() => onDockModeChange(dockMode === 'side' ? 'bottom' : 'side')}
+              className={itemClass}
+            >
+              {dockMode === 'side' ? (
+                <PanelRight size={15} className="opacity-60" />
+              ) : (
+                <PanelBottom size={15} className="opacity-60" />
+              )}
+              <span className="flex-1">Panel position</span>
+              <span className="text-[11px] text-white/35">
+                {dockMode === 'side' ? 'Side' : 'Bottom'}
+              </span>
+            </button>
+          )}
+        </>
+      )}
+
+      {showCaptionsItem && (
+        <>
+          <div className={sectionLabel}>Captions</div>
+          <button onClick={onToggleCaptions} className={itemClass}>
+            <Captions size={15} className="opacity-60" />
+            <span className="flex-1">Show captions</span>
+            <span className="text-[11px] text-white/35">{captionsVisible ? 'On' : 'Off'}</span>
+          </button>
+        </>
+      )}
+
       {onDTMF && (
-        <button
-          onClick={onDTMF}
-          className="w-full text-left px-4 py-2.5 text-[13px] text-white/70 hover:text-white hover:bg-white/6 transition-colors flex items-center gap-3"
-        >
-          <Grid3X3 size={15} className="opacity-60" />
-          Dialpad (DTMF)
-        </button>
+        <>
+          {(showViewSection || showCaptionsItem) && (
+            <div className={sectionLabel}>Other</div>
+          )}
+          <button onClick={onDTMF} className={itemClass}>
+            <Grid3X3 size={15} className="opacity-60" />
+            <span className="flex-1">Dialpad (DTMF)</span>
+          </button>
+        </>
       )}
     </motion.div>
   )
@@ -254,15 +435,24 @@ function OptionsMenu({
 function OptionsButton({
   showOptions,
   setShowOptions,
-  onDTMF,
   className,
   iconSize,
+  ...menuProps
 }: {
   showOptions: boolean
   setShowOptions: (v: boolean) => void
-  onDTMF?: () => void
   className: string
   iconSize: number
+  onDTMF?: () => void
+  onToggleSelfView?: () => void
+  selfViewVisible?: boolean
+  onToggleLayout?: () => void
+  layout?: 'focus' | 'gallery' | 'side-by-side'
+  onToggleCaptions?: () => void
+  captionsVisible?: boolean
+  transcriptionEnabled?: boolean
+  onDockModeChange?: (mode: DockMode) => void
+  dockMode?: DockMode
 }) {
   const containerRef = useRef<HTMLDivElement>(null)
 
@@ -277,6 +467,15 @@ function OptionsButton({
     return () => document.removeEventListener('mousedown', handleClick)
   }, [showOptions, setShowOptions])
 
+  // Wrap each handler to close the menu after invocation
+  const wrap = <T extends (...args: never[]) => void>(fn: T | undefined) =>
+    fn
+      ? ((...args: Parameters<T>) => {
+          fn(...args)
+          setShowOptions(false)
+        })
+      : undefined
+
   return (
     <div className="relative" ref={containerRef}>
       <button
@@ -289,10 +488,16 @@ function OptionsButton({
       <AnimatePresence>
         {showOptions && (
           <OptionsMenu
-            onDTMF={() => {
-              onDTMF?.()
-              setShowOptions(false)
-            }}
+            onDTMF={wrap(menuProps.onDTMF)}
+            onToggleSelfView={wrap(menuProps.onToggleSelfView)}
+            selfViewVisible={menuProps.selfViewVisible}
+            onToggleLayout={wrap(menuProps.onToggleLayout)}
+            layout={menuProps.layout}
+            onToggleCaptions={wrap(menuProps.onToggleCaptions)}
+            captionsVisible={menuProps.captionsVisible}
+            transcriptionEnabled={menuProps.transcriptionEnabled}
+            onDockModeChange={menuProps.onDockModeChange}
+            dockMode={menuProps.dockMode}
           />
         )}
       </AnimatePresence>
@@ -309,6 +514,7 @@ export function ControlBar({
   transcriptionEnabled,
   captionsVisible,
   activeDockTab,
+  dockMode = 'bottom',
   layout,
   selfViewVisible,
   onToggleSelfView,
@@ -325,6 +531,7 @@ export function ControlBar({
   onToggleCaptions,
   onDockTab,
   onDockClose,
+  onDockModeChange,
   onSettings,
   onDTMF,
   onLeave,
@@ -365,16 +572,6 @@ export function ControlBar({
     navigator.mediaDevices.addEventListener('devicechange', enumerateDevices)
     return () => navigator.mediaDevices.removeEventListener('devicechange', enumerateDevices)
   }, [enumerateDevices])
-
-  // Open the dock on the given tab, or close it if already on that tab.
-  // Dock mode (side vs bottom) is preserved — the dock panel has its own mode toggle.
-  function handleOpenDockTab(tab: DockTab) {
-    if (activeDockTab === tab) {
-      onDockClose?.()
-    } else {
-      onDockTab?.(tab)
-    }
-  }
 
   const micColor = isMuted ? stateClass(true, 'red') : stateClass(true, 'green')
   const camColor = isVideoOff ? stateClass(true, 'red') : stateClass(true, 'blue')
@@ -423,34 +620,6 @@ export function ControlBar({
             </button>
           )}
 
-          {/* Self-view toggle */}
-          {onToggleSelfView && (
-            <button
-              onClick={onToggleSelfView}
-              className={`${btn} w-[44px] h-[44px] rounded-xl border ${stateClass(!!selfViewVisible, 'blue')}`}
-              title={selfViewVisible ? 'Hide self-view' : 'Show self-view'}
-            >
-              {selfViewVisible ? <Eye size={17} /> : <EyeOff size={17} />}
-            </button>
-          )}
-
-          {/* Layout */}
-          {onToggleLayout && (
-            <button
-              onClick={onToggleLayout}
-              className={`${btn} w-[44px] h-[44px] rounded-xl border ${stateClass(false, 'neutral')}`}
-              title={
-                layout === 'focus'
-                  ? 'Gallery view'
-                  : layout === 'gallery'
-                    ? 'Side-by-side view'
-                    : 'Focus view'
-              }
-            >
-              <GalleryThumbnails size={17} />
-            </button>
-          )}
-
           {/* Transcription */}
           {onToggleTranscription && (
             <button
@@ -462,48 +631,17 @@ export function ControlBar({
             </button>
           )}
 
-          {/* CC */}
-          {onToggleCaptions && (
-            <button
-              onClick={onToggleCaptions}
-              className={`${btn} w-[44px] h-[44px] rounded-xl border ${stateClass(!!captionsVisible && !!transcriptionEnabled, 'blue')}`}
-              title={captionsVisible ? 'Hide captions' : 'Show captions'}
-            >
-              <span className="text-[13px] font-bold tracking-tight">CC</span>
-            </button>
-          )}
-
-          {/* Chat */}
+          {/* Panels: chat / people / transcript (long-press to flip dock mode) */}
           {onDockTab && (
-            <button
-              onClick={() => handleOpenDockTab('chat')}
-              className={`${btn} w-[44px] h-[44px] rounded-xl border ${stateClass(activeDockTab === 'chat', 'blue')}`}
-              title={activeDockTab === 'chat' ? 'Close chat' : 'Chat'}
-            >
-              <MessageSquare size={17} />
-            </button>
-          )}
-
-          {/* People */}
-          {onDockTab && (
-            <button
-              onClick={() => handleOpenDockTab('people')}
-              className={`${btn} w-[44px] h-[44px] rounded-xl border ${stateClass(activeDockTab === 'people', 'blue')}`}
-              title={activeDockTab === 'people' ? 'Close participants' : 'Participants'}
-            >
-              <Users size={17} />
-            </button>
-          )}
-
-          {/* Transcript panel */}
-          {onDockTab && (
-            <button
-              onClick={() => handleOpenDockTab('transcript')}
-              className={`${btn} w-[44px] h-[44px] rounded-xl border ${stateClass(activeDockTab === 'transcript', 'blue')}`}
-              title={activeDockTab === 'transcript' ? 'Close transcript' : 'Transcript'}
-            >
-              <ScrollText size={17} />
-            </button>
+            <PanelsPill
+              activeDockTab={activeDockTab ?? null}
+              dockMode={dockMode}
+              onOpen={(tab) => onDockTab(tab)}
+              onClose={() => onDockClose?.()}
+              onModeChange={onDockModeChange}
+              iconSize={14}
+              height={40}
+            />
           )}
 
           {/* Options (3-dot) */}
@@ -511,6 +649,15 @@ export function ControlBar({
             showOptions={showOptions}
             setShowOptions={setShowOptions}
             onDTMF={onDTMF}
+            onToggleSelfView={onToggleSelfView}
+            selfViewVisible={selfViewVisible}
+            onToggleLayout={onToggleLayout}
+            layout={layout}
+            onToggleCaptions={onToggleCaptions}
+            captionsVisible={captionsVisible}
+            transcriptionEnabled={transcriptionEnabled}
+            onDockModeChange={onDockTab ? onDockModeChange : undefined}
+            dockMode={dockMode}
             className={`${btn} w-[44px] h-[44px] rounded-xl border ${stateClass(showOptions, 'blue')}`}
             iconSize={17}
           />
@@ -580,76 +727,17 @@ export function ControlBar({
           </button>
         )}
 
-        {/* CC -- toggle caption visibility */}
-        {onToggleCaptions && (
-          <button
-            onClick={onToggleCaptions}
-            className={`${btnLg} ${stateClass(!!captionsVisible && !!transcriptionEnabled, 'blue')}`}
-            title={captionsVisible ? 'Hide captions' : 'Show captions'}
-          >
-            <span className="text-[14px] font-bold tracking-tight">CC</span>
-          </button>
-        )}
-
-        {/* Chat */}
+        {/* Panels: chat / people / transcript (long-press to flip dock mode) */}
         {onDockTab && (
-          <button
-            onClick={() => handleOpenDockTab('chat')}
-            className={`${btnLg} ${stateClass(activeDockTab === 'chat', 'blue')}`}
-            title={activeDockTab === 'chat' ? 'Close chat' : 'Chat'}
-          >
-            <MessageSquare size={20} />
-          </button>
-        )}
-
-        {/* People */}
-        {onDockTab && (
-          <button
-            onClick={() => handleOpenDockTab('people')}
-            className={`${btnLg} ${stateClass(activeDockTab === 'people', 'blue')}`}
-            title={activeDockTab === 'people' ? 'Close participants' : 'Participants'}
-          >
-            <Users size={20} />
-          </button>
-        )}
-
-        {/* Transcript panel */}
-        {onDockTab && (
-          <button
-            onClick={() => handleOpenDockTab('transcript')}
-            className={`${btnLg} ${stateClass(activeDockTab === 'transcript', 'blue')}`}
-            title={activeDockTab === 'transcript' ? 'Close transcript' : 'Transcript'}
-          >
-            <ScrollText size={20} />
-          </button>
-        )}
-
-        {/* Self-view toggle */}
-        {onToggleSelfView && (
-          <button
-            onClick={onToggleSelfView}
-            className={`${btnLg} ${stateClass(!!selfViewVisible, 'blue')}`}
-            title={selfViewVisible ? 'Hide self-view' : 'Show self-view'}
-          >
-            {selfViewVisible ? <Eye size={20} /> : <EyeOff size={20} />}
-          </button>
-        )}
-
-        {/* Layout */}
-        {onToggleLayout && (
-          <button
-            onClick={onToggleLayout}
-            className={`${btnLg} ${stateClass(false, 'neutral')}`}
-            title={
-              layout === 'focus'
-                ? 'Gallery view'
-                : layout === 'gallery'
-                  ? 'Side-by-side view'
-                  : 'Focus view'
-            }
-          >
-            <GalleryThumbnails size={20} />
-          </button>
+          <PanelsPill
+            activeDockTab={activeDockTab ?? null}
+            dockMode={dockMode}
+            onOpen={(tab) => onDockTab(tab)}
+            onClose={() => onDockClose?.()}
+            onModeChange={onDockModeChange}
+            iconSize={17}
+            height={48}
+          />
         )}
 
         {/* Options (3-dot) */}
@@ -657,6 +745,15 @@ export function ControlBar({
           showOptions={showOptions}
           setShowOptions={setShowOptions}
           onDTMF={onDTMF}
+          onToggleSelfView={onToggleSelfView}
+          selfViewVisible={selfViewVisible}
+          onToggleLayout={onToggleLayout}
+          layout={layout}
+          onToggleCaptions={onToggleCaptions}
+          captionsVisible={captionsVisible}
+          transcriptionEnabled={transcriptionEnabled}
+          onDockModeChange={onDockTab ? onDockModeChange : undefined}
+          dockMode={dockMode}
           className={`${btnLg} ${stateClass(showOptions, 'blue')}`}
           iconSize={20}
         />

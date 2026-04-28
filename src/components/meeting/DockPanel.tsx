@@ -26,7 +26,6 @@ interface DockPanelProps {
   mode: DockMode
   onTabChange: (tab: DockTab) => void
   onClose: () => void
-  onToggleMode: () => void
 
   chatMessages: ChatMessage[]
   participants: Participant[]
@@ -57,7 +56,6 @@ export function DockPanel({
   mode,
   onTabChange,
   onClose,
-  onToggleMode,
   chatMessages,
   participants,
   message,
@@ -117,11 +115,11 @@ export function DockPanel({
         })}
       </div>
       <button
-        onClick={onToggleMode}
+        onClick={onClose}
         className="w-7 h-7 rounded-lg flex items-center justify-center text-white/30 hover:text-white/60 hover:bg-white/6 transition-colors"
-        title={isBottom ? 'Switch to side panel' : 'Switch to bottom panel'}
+        title="Close panel"
       >
-        {isBottom ? <PanelRightClose size={14} /> : <PanelBottomClose size={14} />}
+        {isBottom ? <PanelBottomClose size={14} /> : <PanelRightClose size={14} />}
       </button>
     </div>
   )
@@ -343,8 +341,9 @@ export function DockPanel({
         <div
           className="flex flex-col w-[320px] ml-2 h-full rounded-2xl border border-white/8 overflow-hidden"
           style={{
-            background: 'rgba(var(--theme-surface-base), 0.95)',
-            backdropFilter: 'blur(20px)',
+            background: 'rgba(var(--theme-surface-base), 0.55)',
+            backdropFilter: 'blur(60px)',
+            WebkitBackdropFilter: 'blur(60px)',
           }}
         >
           {tabBar}
@@ -363,8 +362,9 @@ export function DockPanel({
       transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
       className="shrink-0 flex flex-col rounded-t-2xl border-t border-x border-white/8 overflow-hidden"
       style={{
-        background: 'rgba(var(--theme-surface-base), 0.95)',
-        backdropFilter: 'blur(20px)',
+        background: 'rgba(var(--theme-surface-base), 0.55)',
+        backdropFilter: 'blur(60px)',
+        WebkitBackdropFilter: 'blur(60px)',
       }}
     >
       {tabBar}

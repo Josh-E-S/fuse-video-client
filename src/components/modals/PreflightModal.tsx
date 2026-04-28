@@ -126,7 +126,7 @@ export function PreflightModal({ open, alias, connecting, onClose, onJoin }: Pre
                   !videoOff && previewStream && !cameraError ? 'opacity-100' : 'opacity-0'
                 }`}
               />
-              {(videoOff || cameraError || !previewStream) && (
+              {(videoOff || cameraError) && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
                   <div className="w-20 h-20 rounded-full bg-white/6 border border-white/8 flex items-center justify-center">
                     {videoOff ? (
@@ -136,8 +136,13 @@ export function PreflightModal({ open, alias, connecting, onClose, onJoin }: Pre
                     )}
                   </div>
                   <span className="text-sm text-white/30">
-                    {videoOff ? 'Camera is off' : cameraError ? 'Camera unavailable' : ''}
+                    {videoOff ? 'Camera is off' : 'Camera unavailable'}
                   </span>
+                </div>
+              )}
+              {!videoOff && !cameraError && !previewStream && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-10 h-10 border-[3px] border-white/10 border-t-white/60 rounded-full animate-spin" />
                 </div>
               )}
 
