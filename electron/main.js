@@ -1,4 +1,4 @@
-const { app, BrowserWindow, session, ipcMain, systemPreferences, desktopCapturer, utilityProcess } = require("electron");
+const { app, BrowserWindow, session, ipcMain, systemPreferences, desktopCapturer, utilityProcess, powerMonitor } = require("electron");
 const { spawn, fork } = require("child_process");
 const path = require("path");
 const net = require("net");
@@ -327,6 +327,16 @@ app.whenReady().then(async () => {
 
   registerTranscriptionHandlers();
   registerModelHandlers();
+
+  // Notify renderer when the OS resumes from sleep or the screen is unlocked,
+  // so it can re-establish the Pexip registration after suspend kills its socket.
+  const sendPowerResume = () => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send("power:resume");
+    }
+  };
+  powerMonitor.on("resume", sendPowerResume);
+  powerMonitor.on("unlock-screen", sendPowerResume);
 
   serverPort = isDev ? await getFreePort() : FIXED_PORT;
   console.log(`Starting Next.js on port ${serverPort}...`);

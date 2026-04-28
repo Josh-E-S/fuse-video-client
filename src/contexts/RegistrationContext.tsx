@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react'
 import { log } from '@/utils/logger'
+import { getElectronBridge } from '@/hooks/useElectron'
 
 const STORAGE_KEYS = {
   alias: 'fuse_reg_alias',
@@ -45,6 +46,11 @@ export function RegistrationProvider({ children }: { children: React.ReactNode }
   const tokenRef = useRef<string | null>(null)
   const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const eventSourceRef = useRef<EventSource | null>(null)
+  const statusRef = useRef<RegistrationStatus>('unregistered')
+
+  useEffect(() => {
+    statusRef.current = status
+  }, [status])
 
   const [nodeDomain, setNodeDomain] = useState<string>(
     process.env.NEXT_PUBLIC_DEFAULT_NODE_DOMAIN || '',
@@ -131,7 +137,15 @@ export function RegistrationProvider({ children }: { children: React.ReactNode }
       setIncomingCall(null)
     })
 
-    es.onerror = () => {}
+    // EventSource auto-reconnects on transient network blips, but a stale token
+    // (e.g. after sleep) means readyState stays CLOSED. Surface that as an error
+    // state so the wake/online recovery effect knows to re-register.
+    es.onerror = () => {
+      if (es.readyState === EventSource.CLOSED) {
+        setStatus('error')
+        setError('Connection lost')
+      }
+    }
   }
 
   function startHeartbeat(alias: string) {
@@ -273,6 +287,39 @@ export function RegistrationProvider({ children }: { children: React.ReactNode }
       stopEventSource()
     }
   }, [getStoredCredentials, register, nodeDomain])
+
+  // Recover the registration after the OS resumes from sleep, the network comes
+  // back, or the window becomes visible again. Suspend kills the SSE socket and
+  // expires the token server-side; without this the user appears "offline" until
+  // they manually re-register.
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    const recover = () => {
+      const current = statusRef.current
+      if (current === 'registered' || current === 'connecting') return
+      if (!nodeDomainRef.current) return
+      if (!getStoredCredentials()) return
+      log.registration.debug('Recovering registration after resume/online')
+      register()
+    }
+
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') recover()
+    }
+
+    window.addEventListener('online', recover)
+    document.addEventListener('visibilitychange', onVisibility)
+
+    const bridge = getElectronBridge()
+    const offPower = bridge?.onPowerResume(recover)
+
+    return () => {
+      window.removeEventListener('online', recover)
+      document.removeEventListener('visibilitychange', onVisibility)
+      offPower?.()
+    }
+  }, [getStoredCredentials, register])
 
   return (
     <RegistrationContext.Provider

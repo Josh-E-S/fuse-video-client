@@ -30,4 +30,11 @@ contextBridge.exposeInMainWorld("electron", {
     ipcRenderer.on("transcription:download-progress", listener);
     return () => ipcRenderer.removeListener("transcription:download-progress", listener);
   },
+
+  // Fired when the OS resumes from sleep or the screen unlocks.
+  onPowerResume: (callback) => {
+    const listener = () => callback();
+    ipcRenderer.on("power:resume", listener);
+    return () => ipcRenderer.removeListener("power:resume", listener);
+  },
 });

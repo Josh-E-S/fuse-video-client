@@ -18,6 +18,7 @@ interface ElectronBridge {
   modelsStatus: () => Promise<{ downloaded: boolean }>
   downloadModels: () => Promise<{ success: boolean; error?: string }>
   onDownloadProgress: (callback: (line: string) => void) => () => void
+  onPowerResume: (callback: () => void) => () => void
 }
 
 export function getElectronBridge(): ElectronBridge | null {
