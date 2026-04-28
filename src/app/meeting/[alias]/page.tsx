@@ -397,7 +397,6 @@ export default function MeetingPage() {
             transcriptionEnabled={transcription.transcriptionEnabled}
             captionsVisible={transcription.captionsVisible}
             activeDockTab={dockTab}
-            dockMode={dockMode}
             layout={effectiveLayout}
             selfViewVisible={selfViewVisible}
             onToggleSelfView={() => setSelfViewVisible((v) => !v)}
@@ -428,7 +427,6 @@ export default function MeetingPage() {
             }}
             onDockTab={(tab: DockTab) => setDockTab((prev) => (prev === tab ? null : tab))}
             onDockClose={() => setDockTab(null)}
-            onDockMode={setDockMode}
             onSettings={() => setShowSettings(true)}
             onDTMF={() => setShowDTMF(true)}
             onLeave={handleLeave}

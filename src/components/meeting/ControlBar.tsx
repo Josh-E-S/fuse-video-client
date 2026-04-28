@@ -15,8 +15,9 @@ import {
   GalleryThumbnails,
   Share,
   FileText,
-  PanelBottom,
-  PanelRight,
+  MessageSquare,
+  Users,
+  ScrollText,
   ChevronDown,
   Check,
   MoreVertical,
@@ -41,7 +42,6 @@ interface ControlBarProps {
   transcriptionEnabled?: boolean
   captionsVisible?: boolean
   activeDockTab?: DockTab | null
-  dockMode?: 'bottom' | 'side'
   layout?: 'focus' | 'gallery' | 'side-by-side'
   selfViewVisible?: boolean
   onToggleSelfView?: () => void
@@ -60,7 +60,6 @@ interface ControlBarProps {
   onToggleCaptions?: () => void
   onDockTab?: (tab: DockTab) => void
   onDockClose?: () => void
-  onDockMode?: (mode: 'bottom' | 'side') => void
   onSettings?: () => void
   onDTMF?: () => void
   onLeave: () => void
@@ -310,7 +309,6 @@ export function ControlBar({
   transcriptionEnabled,
   captionsVisible,
   activeDockTab,
-  dockMode,
   layout,
   selfViewVisible,
   onToggleSelfView,
@@ -327,7 +325,6 @@ export function ControlBar({
   onToggleCaptions,
   onDockTab,
   onDockClose,
-  onDockMode,
   onSettings,
   onDTMF,
   onLeave,
@@ -369,14 +366,13 @@ export function ControlBar({
     return () => navigator.mediaDevices.removeEventListener('devicechange', enumerateDevices)
   }, [enumerateDevices])
 
-  const dockOpen = activeDockTab !== null && activeDockTab !== undefined
-
-  function handleDockToggle(mode: 'bottom' | 'side') {
-    if (dockOpen && dockMode === mode) {
+  // Open the dock on the given tab, or close it if already on that tab.
+  // Dock mode (side vs bottom) is preserved — the dock panel has its own mode toggle.
+  function handleOpenDockTab(tab: DockTab) {
+    if (activeDockTab === tab) {
       onDockClose?.()
     } else {
-      onDockMode?.(mode)
-      if (!dockOpen) onDockTab?.('transcript')
+      onDockTab?.(tab)
     }
   }
 
@@ -387,23 +383,6 @@ export function ControlBar({
   if (isElectron) {
     return (
       <div className="relative z-[100] flex flex-col items-center w-full">
-        <div className="flex items-center gap-1 mb-2 px-2 py-1.5 rounded-xl bg-white/4 border border-white/6 backdrop-blur-xl">
-          <button
-            onClick={() => handleDockToggle('bottom')}
-            className={`${btn} w-8 h-7 rounded-lg transition-all duration-200 ${dockOpen && dockMode === 'bottom' ? 'text-blue-400 bg-blue-400/10' : 'text-white/40 hover:text-white/70 hover:bg-white/6'}`}
-            title={dockOpen && dockMode === 'bottom' ? 'Close bottom panel' : 'Open bottom panel'}
-          >
-            <PanelBottom size={15} />
-          </button>
-          <button
-            onClick={() => handleDockToggle('side')}
-            className={`${btn} w-8 h-7 rounded-lg transition-all duration-200 ${dockOpen && dockMode === 'side' ? 'text-blue-400 bg-blue-400/10' : 'text-white/40 hover:text-white/70 hover:bg-white/6'}`}
-            title={dockOpen && dockMode === 'side' ? 'Close side panel' : 'Open side panel'}
-          >
-            <PanelRight size={15} />
-          </button>
-        </div>
-
         <div className="flex items-center gap-[6px] px-3 py-2.5 rounded-[22px] bg-black/60 border border-white/8 backdrop-blur-[120px] shadow-2xl">
           {/* Mic split button */}
           <SplitButton
@@ -494,6 +473,39 @@ export function ControlBar({
             </button>
           )}
 
+          {/* Chat */}
+          {onDockTab && (
+            <button
+              onClick={() => handleOpenDockTab('chat')}
+              className={`${btn} w-[44px] h-[44px] rounded-xl border ${stateClass(activeDockTab === 'chat', 'blue')}`}
+              title={activeDockTab === 'chat' ? 'Close chat' : 'Chat'}
+            >
+              <MessageSquare size={17} />
+            </button>
+          )}
+
+          {/* People */}
+          {onDockTab && (
+            <button
+              onClick={() => handleOpenDockTab('people')}
+              className={`${btn} w-[44px] h-[44px] rounded-xl border ${stateClass(activeDockTab === 'people', 'blue')}`}
+              title={activeDockTab === 'people' ? 'Close participants' : 'Participants'}
+            >
+              <Users size={17} />
+            </button>
+          )}
+
+          {/* Transcript panel */}
+          {onDockTab && (
+            <button
+              onClick={() => handleOpenDockTab('transcript')}
+              className={`${btn} w-[44px] h-[44px] rounded-xl border ${stateClass(activeDockTab === 'transcript', 'blue')}`}
+              title={activeDockTab === 'transcript' ? 'Close transcript' : 'Transcript'}
+            >
+              <ScrollText size={17} />
+            </button>
+          )}
+
           {/* Options (3-dot) */}
           <OptionsButton
             showOptions={showOptions}
@@ -519,23 +531,6 @@ export function ControlBar({
   // Browser full-width layout
   return (
     <div className="relative z-[100] flex flex-col items-center w-full">
-      <div className="flex items-center gap-1 mb-2 px-2 py-1.5 rounded-xl bg-white/4 border border-white/6 backdrop-blur-xl">
-        <button
-          onClick={() => handleDockToggle('bottom')}
-          className={`${btn} w-8 h-7 rounded-lg transition-all duration-200 ${dockOpen && dockMode === 'bottom' ? 'text-blue-400 bg-blue-400/10' : 'text-white/40 hover:text-white/70 hover:bg-white/6'}`}
-          title={dockOpen && dockMode === 'bottom' ? 'Close bottom panel' : 'Open bottom panel'}
-        >
-          <PanelBottom size={16} />
-        </button>
-        <button
-          onClick={() => handleDockToggle('side')}
-          className={`${btn} w-8 h-7 rounded-lg transition-all duration-200 ${dockOpen && dockMode === 'side' ? 'text-blue-400 bg-blue-400/10' : 'text-white/40 hover:text-white/70 hover:bg-white/6'}`}
-          title={dockOpen && dockMode === 'side' ? 'Close side panel' : 'Open side panel'}
-        >
-          <PanelRight size={16} />
-        </button>
-      </div>
-
       <div className="flex items-center gap-2 px-5 py-3 rounded-[22px] bg-black/60 border border-white/8 backdrop-blur-[120px] shadow-2xl">
         {/* Mic split button */}
         <SplitButton
@@ -593,6 +588,39 @@ export function ControlBar({
             title={captionsVisible ? 'Hide captions' : 'Show captions'}
           >
             <span className="text-[14px] font-bold tracking-tight">CC</span>
+          </button>
+        )}
+
+        {/* Chat */}
+        {onDockTab && (
+          <button
+            onClick={() => handleOpenDockTab('chat')}
+            className={`${btnLg} ${stateClass(activeDockTab === 'chat', 'blue')}`}
+            title={activeDockTab === 'chat' ? 'Close chat' : 'Chat'}
+          >
+            <MessageSquare size={20} />
+          </button>
+        )}
+
+        {/* People */}
+        {onDockTab && (
+          <button
+            onClick={() => handleOpenDockTab('people')}
+            className={`${btnLg} ${stateClass(activeDockTab === 'people', 'blue')}`}
+            title={activeDockTab === 'people' ? 'Close participants' : 'Participants'}
+          >
+            <Users size={20} />
+          </button>
+        )}
+
+        {/* Transcript panel */}
+        {onDockTab && (
+          <button
+            onClick={() => handleOpenDockTab('transcript')}
+            className={`${btnLg} ${stateClass(activeDockTab === 'transcript', 'blue')}`}
+            title={activeDockTab === 'transcript' ? 'Close transcript' : 'Transcript'}
+          >
+            <ScrollText size={20} />
           </button>
         )}
 

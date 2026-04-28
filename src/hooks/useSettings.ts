@@ -32,7 +32,7 @@ export function useSettings() {
   const [settings, setSettings] = useState<Settings>({
     nodeDomain: '',
     displayName: '',
-    ringtone: 'ringtone2.mp3',
+    ringtone: 'ringtone3.mp3',
     audioInput: '',
     audioOutput: '',
     videoInput: '',
@@ -52,7 +52,7 @@ export function useSettings() {
         localStorage.getItem(STORAGE_KEYS.displayName) ??
         process.env.NEXT_PUBLIC_DEFAULT_DISPLAY_NAME ??
         '',
-      ringtone: localStorage.getItem(STORAGE_KEYS.ringtone) ?? 'ringtone2.mp3',
+      ringtone: localStorage.getItem(STORAGE_KEYS.ringtone) ?? 'ringtone3.mp3',
       audioInput: localStorage.getItem(STORAGE_KEYS.audioInput) ?? '',
       audioOutput: localStorage.getItem(STORAGE_KEYS.audioOutput) ?? '',
       videoInput: localStorage.getItem(STORAGE_KEYS.videoInput) ?? '',

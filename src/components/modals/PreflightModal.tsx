@@ -190,6 +190,16 @@ export function PreflightModal({ open, alias, connecting, onClose, onJoin }: Pre
 
               <div className="border-t border-white/6" />
 
+              {/* Camera */}
+              <DeviceRow
+                label="Camera"
+                devices={videoInputs}
+                selectedId={settings.videoInput}
+                onSelect={(id) => saveSettings({ videoInput: id })}
+                showMenu={showVideoMenu}
+                setShowMenu={setShowVideoMenu}
+              />
+
               {/* Microphone */}
               <DeviceRow
                 label="Microphone"
@@ -234,16 +244,6 @@ export function PreflightModal({ open, alias, connecting, onClose, onJoin }: Pre
                   {speakerTest.testing ? 'Stop' : 'Test'}
                 </button>
               </div>
-
-              {/* Camera */}
-              <DeviceRow
-                label="Camera"
-                devices={videoInputs}
-                selectedId={settings.videoInput}
-                onSelect={(id) => saveSettings({ videoInput: id })}
-                showMenu={showVideoMenu}
-                setShowMenu={setShowVideoMenu}
-              />
 
               {/* Join button */}
               {(() => {

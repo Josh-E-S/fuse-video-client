@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Maximize2, ChevronLeft, ChevronRight, Lock } from 'lucide-react'
+import { Maximize2, ChevronLeft, ChevronRight, Lock, AlertCircle } from 'lucide-react'
 import { getMeetingProvider } from '@/utils/meetingProvider'
 import { getMeetingCountdown } from '@/utils/meetingDate'
 import { acquireUserMedia } from '@/utils/media'
@@ -93,6 +93,7 @@ export default function HomePage() {
 
   const isVideoOff = isVideoMuted
   const [isJoining, setIsJoining] = useState(false)
+  const [callError, setCallError] = useState(false)
   const isBusy = isJoining || connectionState === 'connecting'
 
   // Camera preview: request/release getUserMedia based on video toggle or device change
@@ -192,9 +193,18 @@ export default function HomePage() {
       ringingAudioRef.current = null
     }
 
-    if (connectionState === 'disconnected') {
+    if (connectionState === 'disconnected' || connectionState === 'error') {
       isInboundAnswerRef.current = false
       setIsJoining(false)
+
+      const wasInCall = !!(preflightAlias || pendingAlias)
+      setPreflightAlias(null)
+      setPreflightPin(undefined)
+      setPendingAlias(null)
+
+      if (wasInCall && error) {
+        setCallError(true)
+      }
     }
 
     return () => {
@@ -572,6 +582,45 @@ export default function HomePage() {
             onAnswer={handleAnswerIncoming}
             onDecline={declineCall}
           />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {callError && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-50 flex items-center justify-center"
+            onClick={() => setCallError(false)}
+          >
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              transition={{ duration: 0.2 }}
+              className="relative w-full max-w-[320px] mx-4 rounded-2xl bg-black/95 backdrop-blur-2xl border border-white/8 shadow-2xl p-8 flex flex-col items-center gap-4 text-center"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="w-12 h-12 rounded-full bg-rose-500/10 border border-rose-500/20 flex items-center justify-center">
+                <AlertCircle size={24} className="text-rose-400" />
+              </div>
+              <div>
+                <h3 className="text-[15px] font-semibold text-white/90">Call failed to connect</h3>
+                <p className="text-[13px] text-white/40 mt-1.5 leading-relaxed">
+                  Please check your dial string or meeting URI format and try again.
+                </p>
+              </div>
+              <button
+                onClick={() => setCallError(false)}
+                className="w-full mt-2 py-3 rounded-xl bg-white/8 border border-white/10 text-white/70 font-medium text-sm hover:bg-white/12 transition-colors"
+              >
+                OK
+              </button>
+            </motion.div>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>

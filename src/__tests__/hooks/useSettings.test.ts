@@ -11,7 +11,7 @@ describe('useSettings', () => {
     const { result } = renderHook(() => useSettings())
     expect(result.current.settings.nodeDomain).toBe('')
     expect(result.current.settings.displayName).toBe('')
-    expect(result.current.settings.ringtone).toBe('ringtone2.mp3')
+    expect(result.current.settings.ringtone).toBe('ringtone3.mp3')
   })
 
   it('reads values from localStorage on mount', () => {
@@ -32,7 +32,7 @@ describe('useSettings', () => {
 
     expect(result.current.settings.nodeDomain).toBe('node.example.com')
     expect(localStorage.getItem('fuse_node_domain')).toBe('node.example.com')
-    expect(result.current.settings.ringtone).toBe('ringtone2.mp3')
+    expect(result.current.settings.ringtone).toBe('ringtone3.mp3')
   })
 
   it('saves multiple settings at once', () => {

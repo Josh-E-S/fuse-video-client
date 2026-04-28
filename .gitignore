@@ -49,8 +49,12 @@ next-env.d.ts
 
 # local config and docs
 .claude/
+.superpowers/
+AGENTS.md
+CLAUDE.md
 api-reference-docs/
 instructions.txt
+/test-results/
 /docs/*
 !/docs/connection-flow.svg
 !/docs/join-flow.svg

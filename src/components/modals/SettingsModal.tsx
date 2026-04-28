@@ -135,9 +135,8 @@ export function SettingsModal({
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
   const ringtones = [
-    { id: 'ringtone2.mp3', name: 'Modern Chime' },
-    { id: 'ringtone1.mp3', name: 'Classic Ring' },
     { id: 'ringtone3.mp3', name: 'Digital Beep' },
+    { id: 'ringtone2.mp3', name: 'Modern Chime' },
     { id: 'ringtone4.mp3', name: 'Soft Bell' },
     { id: 'ringtone5.mp3', name: 'Vibrant Tone' },
     { id: 'ringtone6.mp3', name: 'Minimal Alert' },

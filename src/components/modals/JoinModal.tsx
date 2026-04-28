@@ -37,17 +37,17 @@ const PROVIDER_FIELDS: Record<
     secondaryField: { label: 'Passcode', placeholder: 'e.g. wMv4Nr12 (case sensitive)' },
   },
   pexip: {
-    subtitle: 'Enter the conference alias to connect',
-    idLabel: 'Meeting ID',
+    subtitle: 'Enter the Pexip conference alias',
+    idLabel: 'Conference Alias',
     idPlaceholder: 'e.g. meet.alice',
     secondaryField: { label: 'PIN (optional)', placeholder: 'Leave blank if no PIN required' },
   },
 }
 
 const DEFAULT_FIELDS = {
-  subtitle: 'Enter the conference alias to connect',
-  idLabel: 'Conference Alias',
-  idPlaceholder: 'e.g. global-design-strategy',
+  subtitle: 'Enter a Pexip alias or full SIP URI',
+  idLabel: 'Dial String',
+  idPlaceholder: 'e.g. meet.room or 12345@zoomcrc.com',
   secondaryField: { label: 'PIN (optional)', placeholder: 'Leave blank if no PIN required' } as {
     label: string
     placeholder: string
@@ -193,8 +193,19 @@ export function JoinModal({
       return
     }
 
+    const trimmed = alias.trim()
+
+    // If no @ in the dial string, it's a Pexip alias — needs a node domain configured
+    if (!trimmed.includes('@')) {
+      const nodeDomain = settings.nodeDomain || localStorage.getItem('fuse_node_domain') || ''
+      if (!nodeDomain) {
+        setValidationError('No Pexip node configured. Include a full SIP URI (user@domain) or set your node domain in Settings.')
+        return
+      }
+    }
+
     setValidationError(null)
-    onJoin(alias.trim(), pin.trim() || undefined)
+    onJoin(trimmed, pin.trim() || undefined)
   }
 
   return (
