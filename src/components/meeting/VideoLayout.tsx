@@ -1,12 +1,14 @@
 'use client'
 
-import { type RefObject } from 'react'
+import { useCallback, useState, type RefObject } from 'react'
 import { motion, type MotionValue } from 'framer-motion'
 import { VideoOff } from 'lucide-react'
 import { GlassPanel } from '@/components/meeting/GlassPanel'
+import type { ConnectionState } from '@/types/pexrtc'
 
 interface VideoLayoutProps {
   layout: 'focus' | 'gallery' | 'side-by-side'
+  connectionState: ConnectionState
   remoteStream: MediaStream | null
   localStream: MediaStream | null
   presentationStream: MediaStream | null
@@ -24,11 +26,79 @@ interface VideoLayoutProps {
   setPresentationVideoRef: (el: HTMLVideoElement | null) => void
 }
 
-function RemoteVideoPlaceholder() {
+function RemoteStatusOverlay({
+  message,
+  showSpinner,
+}: {
+  message: string
+  showSpinner: boolean
+}) {
   return (
-    <div className="absolute inset-0 flex items-center justify-center text-white/20 text-sm">
-      Waiting for conference feed...
+    <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-white/40 pointer-events-none">
+      {showSpinner && (
+        <div className="w-9 h-9 border-[3px] border-white/10 border-t-white/60 rounded-full animate-spin" />
+      )}
+      <span className="text-sm">{message}</span>
     </div>
+  )
+}
+
+function RemoteVideoTile({
+  stream,
+  connectionState,
+  setVideoRef,
+  videoClassName,
+}: {
+  stream: MediaStream | null
+  connectionState: ConnectionState
+  setVideoRef: (el: HTMLVideoElement | null) => void
+  videoClassName: string
+}) {
+  const [hasFrames, setHasFrames] = useState(false)
+
+  const refCallback = useCallback(
+    (el: HTMLVideoElement | null) => {
+      setVideoRef(el)
+      if (!el) {
+        setHasFrames(false)
+        return
+      }
+      setHasFrames(el.videoWidth > 0 && el.videoHeight > 0)
+      const onReady = () => {
+        if (el.videoWidth > 0 && el.videoHeight > 0) setHasFrames(true)
+      }
+      const onEmptied = () => setHasFrames(false)
+      el.addEventListener('loadedmetadata', onReady)
+      el.addEventListener('playing', onReady)
+      el.addEventListener('emptied', onEmptied)
+      return () => {
+        el.removeEventListener('loadedmetadata', onReady)
+        el.removeEventListener('playing', onReady)
+        el.removeEventListener('emptied', onEmptied)
+      }
+    },
+    [setVideoRef],
+  )
+
+  if (!stream) {
+    const isConnecting = connectionState === 'connecting'
+    const isConnected = connectionState === 'connected'
+    const message = isConnecting
+      ? 'Connecting to conference…'
+      : isConnected
+        ? 'Connecting media…'
+        : 'Waiting for conference feed…'
+    const showSpinner = isConnecting || isConnected
+    return <RemoteStatusOverlay message={message} showSpinner={showSpinner} />
+  }
+
+  return (
+    <>
+      <video ref={refCallback} autoPlay playsInline className={videoClassName} />
+      {!hasFrames && (
+        <RemoteStatusOverlay message="Receiving video…" showSpinner />
+      )}
+    </>
   )
 }
 
@@ -53,6 +123,7 @@ function SelfViewOffDetailed() {
 
 export function VideoLayout({
   layout,
+  connectionState,
   remoteStream,
   localStream,
   presentationStream,
@@ -111,6 +182,7 @@ export function VideoLayout({
 
       {effectiveLayout === 'focus' ? (
         <FocusLayout
+          connectionState={connectionState}
           remoteStream={remoteStream}
           localStream={localStream}
           isVideoMuted={isVideoMuted}
@@ -125,6 +197,7 @@ export function VideoLayout({
         />
       ) : effectiveLayout === 'gallery' ? (
         <GalleryLayout
+          connectionState={connectionState}
           remoteStream={remoteStream}
           localStream={localStream}
           isVideoMuted={isVideoMuted}
@@ -138,6 +211,7 @@ export function VideoLayout({
         />
       ) : (
         <SideBySideLayout
+          connectionState={connectionState}
           remoteStream={remoteStream}
           localStream={localStream}
           isVideoMuted={isVideoMuted}
@@ -155,6 +229,7 @@ export function VideoLayout({
 }
 
 function FocusLayout({
+  connectionState,
   remoteStream,
   localStream,
   isVideoMuted,
@@ -167,6 +242,7 @@ function FocusLayout({
   setRemoteVideoRef,
   setLocalVideoRef,
 }: {
+  connectionState: ConnectionState
   remoteStream: MediaStream | null
   localStream: MediaStream | null
   isVideoMuted: boolean
@@ -182,16 +258,12 @@ function FocusLayout({
   return (
     <div className={`relative ${showPresentation ? 'flex-1 min-h-0' : 'h-full'} w-full`}>
       <GlassPanel className="relative h-full w-full" hoverEffect={false}>
-        {remoteStream ? (
-          <video
-            ref={setRemoteVideoRef}
-            autoPlay
-            playsInline
-            className="w-full h-full object-cover rounded-2xl"
-          />
-        ) : (
-          <RemoteVideoPlaceholder />
-        )}
+        <RemoteVideoTile
+          stream={remoteStream}
+          connectionState={connectionState}
+          setVideoRef={setRemoteVideoRef}
+          videoClassName="w-full h-full object-cover rounded-2xl"
+        />
       </GlassPanel>
       {selfViewVisible && (
         <motion.div
@@ -230,6 +302,7 @@ function FocusLayout({
 }
 
 function TwoTileRow({
+  connectionState,
   remoteStream,
   localStream,
   isVideoMuted,
@@ -240,6 +313,7 @@ function TwoTileRow({
   setLocalVideoRef,
   direction,
 }: {
+  connectionState: ConnectionState
   remoteStream: MediaStream | null
   localStream: MediaStream | null
   isVideoMuted: boolean
@@ -253,16 +327,12 @@ function TwoTileRow({
   return (
     <div className={`flex-1 flex ${direction === 'row' ? 'flex-row' : 'flex-col'} gap-3 min-h-0`}>
       <GlassPanel className="relative flex-1 min-h-0" hoverEffect={false}>
-        {remoteStream ? (
-          <video
-            ref={setRemoteVideoRef}
-            autoPlay
-            playsInline
-            className="absolute inset-0 w-full h-full object-cover rounded-2xl"
-          />
-        ) : (
-          <RemoteVideoPlaceholder />
-        )}
+        <RemoteVideoTile
+          stream={remoteStream}
+          connectionState={connectionState}
+          setVideoRef={setRemoteVideoRef}
+          videoClassName="absolute inset-0 w-full h-full object-cover rounded-2xl"
+        />
       </GlassPanel>
       {selfViewVisible && (
         <GlassPanel className="relative flex-1 min-h-0" isActive={isBroadcasting} isAudioOnly={isAudioOnly} hoverEffect={false}>
@@ -285,6 +355,7 @@ function TwoTileRow({
 }
 
 function GalleryLayout({
+  connectionState,
   remoteStream,
   localStream,
   isVideoMuted,
@@ -296,6 +367,7 @@ function GalleryLayout({
   setRemoteVideoRef,
   setLocalVideoRef,
 }: {
+  connectionState: ConnectionState
   remoteStream: MediaStream | null
   localStream: MediaStream | null
   isVideoMuted: boolean
@@ -310,6 +382,7 @@ function GalleryLayout({
   if (isExpanded && showPresentation) {
     return (
       <TwoTileRow
+        connectionState={connectionState}
         remoteStream={remoteStream}
         localStream={localStream}
         isVideoMuted={isVideoMuted}
@@ -326,16 +399,12 @@ function GalleryLayout({
   return (
     <>
       <GlassPanel className="relative flex-1 min-h-0 w-full" hoverEffect={false}>
-        {remoteStream ? (
-          <video
-            ref={setRemoteVideoRef}
-            autoPlay
-            playsInline
-            className="absolute inset-0 w-full h-full object-cover rounded-2xl"
-          />
-        ) : (
-          <RemoteVideoPlaceholder />
-        )}
+        <RemoteVideoTile
+          stream={remoteStream}
+          connectionState={connectionState}
+          setVideoRef={setRemoteVideoRef}
+          videoClassName="absolute inset-0 w-full h-full object-cover rounded-2xl"
+        />
       </GlassPanel>
       {selfViewVisible && (
         <GlassPanel
@@ -363,6 +432,7 @@ function GalleryLayout({
 }
 
 function SideBySideLayout({
+  connectionState,
   remoteStream,
   localStream,
   isVideoMuted,
@@ -374,6 +444,7 @@ function SideBySideLayout({
   setRemoteVideoRef,
   setLocalVideoRef,
 }: {
+  connectionState: ConnectionState
   remoteStream: MediaStream | null
   localStream: MediaStream | null
   isVideoMuted: boolean
@@ -388,6 +459,7 @@ function SideBySideLayout({
   if (isExpanded && showPresentation) {
     return (
       <TwoTileRow
+        connectionState={connectionState}
         remoteStream={remoteStream}
         localStream={localStream}
         isVideoMuted={isVideoMuted}
@@ -404,16 +476,12 @@ function SideBySideLayout({
   return (
     <>
       <GlassPanel className="relative flex-1 h-full" hoverEffect={false}>
-        {remoteStream ? (
-          <video
-            ref={setRemoteVideoRef}
-            autoPlay
-            playsInline
-            className="absolute inset-0 w-full h-full object-cover rounded-2xl"
-          />
-        ) : (
-          <RemoteVideoPlaceholder />
-        )}
+        <RemoteVideoTile
+          stream={remoteStream}
+          connectionState={connectionState}
+          setVideoRef={setRemoteVideoRef}
+          videoClassName="absolute inset-0 w-full h-full object-cover rounded-2xl"
+        />
       </GlassPanel>
       {selfViewVisible && (
         <GlassPanel

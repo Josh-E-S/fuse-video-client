@@ -308,6 +308,7 @@ export default function MeetingPage() {
 
         <VideoLayout
           layout={effectiveLayout}
+          connectionState={connectionState}
           remoteStream={remoteStream}
           localStream={localStream}
           presentationStream={presentationStream}
