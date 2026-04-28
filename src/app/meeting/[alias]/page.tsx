@@ -212,6 +212,9 @@ export default function MeetingPage() {
     interimText: transcription.interimText,
     interimSpeaker: transcription.interimSpeaker,
     isTranscriptionConnected: transcription.isTranscriptionConnected,
+    transcriptionEnabled: transcription.transcriptionEnabled,
+    onToggleTranscription: () =>
+      transcription.setTranscriptionEnabled(!transcription.transcriptionEnabled),
   }
 
   // PiP mode

@@ -14,6 +14,8 @@ import {
   Share2,
   PanelRightClose,
   PanelBottomClose,
+  Play,
+  Square,
 } from 'lucide-react'
 import type { ChatMessage, Participant } from '@/types/pexrtc'
 import type { TranscriptEntry } from '@/hooks/useTranscription'
@@ -37,6 +39,8 @@ interface DockPanelProps {
   interimText: string | null
   interimSpeaker: string | undefined
   isTranscriptionConnected: boolean
+  transcriptionEnabled?: boolean
+  onToggleTranscription?: () => void
 }
 
 const tabs: { id: DockTab; label: string }[] = [
@@ -65,6 +69,8 @@ export function DockPanel({
   interimText,
   interimSpeaker,
   isTranscriptionConnected,
+  transcriptionEnabled,
+  onToggleTranscription,
 }: DockPanelProps) {
   const chatScrollRef = useRef<HTMLDivElement>(null)
   const transcriptScrollRef = useRef<HTMLDivElement>(null)
@@ -277,48 +283,76 @@ export function DockPanel({
             animate="active"
             exit="exit"
             transition={{ duration: 0.2, ease: 'easeOut' }}
-            className="absolute inset-0 overflow-y-auto px-4 py-3"
-            ref={transcriptScrollRef}
+            className="absolute inset-0 flex flex-col"
           >
-            {transcripts.length === 0 && !interimText ? (
-              <div className="flex flex-col items-center justify-center h-full text-white/25">
-                <FileText size={20} className="mb-2 opacity-40" />
-                <p className="text-xs">No transcripts yet</p>
-                <p className="text-[10px] mt-1 text-white/20">
-                  {isTranscriptionConnected
-                    ? 'Speak to see captions'
-                    : 'Enable transcription first'}
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {transcripts.map((entry) => {
-                  const time = new Date(entry.timestamp).toLocaleTimeString([], {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })
-                  return (
-                    <div key={entry.id} className="animate-[fadeInUp_0.3s_ease-out]">
-                      <div className="text-[11px] font-semibold text-blue-400 mb-0.5">
-                        {entry.speaker || 'Speaker'}
+            <div ref={transcriptScrollRef} className="flex-1 overflow-y-auto px-4 py-3">
+              {transcripts.length === 0 && !interimText ? (
+                <div className="flex flex-col items-center justify-center h-full text-white/25">
+                  <FileText size={20} className="mb-2 opacity-40" />
+                  <p className="text-xs">No transcripts yet</p>
+                  <p className="text-[10px] mt-1 text-white/20">
+                    {isTranscriptionConnected
+                      ? 'Speak to see captions'
+                      : transcriptionEnabled
+                        ? 'Connecting…'
+                        : 'Start transcription below'}
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {transcripts.map((entry) => {
+                    const time = new Date(entry.timestamp).toLocaleTimeString([], {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })
+                    return (
+                      <div key={entry.id} className="animate-[fadeInUp_0.3s_ease-out]">
+                        <div className="text-[11px] font-semibold text-blue-400 mb-0.5">
+                          {entry.speaker || 'Speaker'}
+                        </div>
+                        <div className="text-[13px] leading-[1.5] text-white/90">{entry.text}</div>
+                        <div className="text-[10px] text-white/25 mt-0.5">{time}</div>
                       </div>
-                      <div className="text-[13px] leading-[1.5] text-white/90">{entry.text}</div>
-                      <div className="text-[10px] text-white/25 mt-0.5">{time}</div>
-                    </div>
-                  )
-                })}
+                    )
+                  })}
 
-                {interimText && (
-                  <div>
-                    <div className="text-[11px] font-semibold text-amber-400/60 mb-0.5">
-                      {interimSpeaker || '...'}
+                  {interimText && (
+                    <div>
+                      <div className="text-[11px] font-semibold text-amber-400/60 mb-0.5">
+                        {interimSpeaker || '...'}
+                      </div>
+                      <div className="text-[13px] leading-[1.5] text-white/40 italic">
+                        {interimText}
+                      </div>
+                      <div className="text-[10px] text-white/20 mt-0.5">live</div>
                     </div>
-                    <div className="text-[13px] leading-[1.5] text-white/40 italic">
-                      {interimText}
-                    </div>
-                    <div className="text-[10px] text-white/20 mt-0.5">live</div>
-                  </div>
-                )}
+                  )}
+                </div>
+              )}
+            </div>
+
+            {onToggleTranscription && (
+              <div className="shrink-0 px-4 pb-3 pt-2 border-t border-white/6">
+                <button
+                  onClick={onToggleTranscription}
+                  className={`w-full h-9 rounded-xl flex items-center justify-center gap-2 text-[13px] font-medium border transition-colors ${
+                    transcriptionEnabled
+                      ? 'bg-rose-500/10 border-rose-500/25 text-rose-300 hover:bg-rose-500/15'
+                      : 'bg-emerald-400/10 border-emerald-400/25 text-emerald-300 hover:bg-emerald-400/15'
+                  }`}
+                >
+                  {transcriptionEnabled ? (
+                    <>
+                      <Square size={12} fill="currentColor" />
+                      Stop transcription
+                    </>
+                  ) : (
+                    <>
+                      <Play size={12} fill="currentColor" />
+                      Start transcription
+                    </>
+                  )}
+                </button>
               </div>
             )}
           </motion.div>
