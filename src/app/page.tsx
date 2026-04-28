@@ -29,7 +29,27 @@ import { useTheme } from '@/hooks/useTheme'
 import { useRegistration } from '@/contexts/RegistrationContext'
 import { useRecentCalls } from '@/hooks/useRecentCalls'
 import { useElectron } from '@/hooks/useElectron'
+import { ScribeOverlay } from '@/components/scribe/ScribeOverlay'
 import type { CalendarMeeting } from '@/types/meetings'
+
+function MeetingsSkeleton() {
+  return (
+    <div className="mt-8" aria-busy="true" aria-label="Loading meetings">
+      <div className="text-[11px] font-semibold tracking-[0.08em] uppercase text-white/50 mb-3 pl-1">
+        My Meetings
+      </div>
+      <div className="px-6 py-8 flex items-center gap-4 border-l-[5px] border-white/8 rounded-r-xl bg-white/3 animate-pulse">
+        <div className="w-10 h-10 rounded-xl bg-white/8 shrink-0" />
+        <div className="flex-1 min-w-0 space-y-2.5">
+          <div className="h-[14px] w-24 rounded bg-white/8" />
+          <div className="h-[22px] w-3/4 rounded bg-white/10" />
+          <div className="h-[14px] w-32 rounded bg-white/6" />
+        </div>
+        <div className="w-[78px] h-10 rounded-xl bg-white/6 shrink-0" />
+      </div>
+    </div>
+  )
+}
 
 export default function HomePage() {
   const router = useRouter()
@@ -60,7 +80,7 @@ export default function HomePage() {
     muteVideo,
     switchMediaDevices,
   } = usePexip()
-  const { meetings } = useMeetings({
+  const { meetings, loading: loadingMeetings } = useMeetings({
     otjClientId: settings.otjClientId,
     otjClientSecret: settings.otjClientSecret,
   })
@@ -94,6 +114,7 @@ export default function HomePage() {
   const isVideoOff = isVideoMuted
   const [isJoining, setIsJoining] = useState(false)
   const [callError, setCallError] = useState(false)
+  const [scribeOpen, setScribeOpen] = useState(false)
   const isBusy = isJoining || connectionState === 'connecting'
 
   // Camera preview: request/release getUserMedia based on video toggle or device change
@@ -223,6 +244,7 @@ export default function HomePage() {
   }, [pip.isActive, pip.pipWindow, cosmeticTheme, applyThemeToDocument])
 
   function handleJoin(alias: string, pin?: string) {
+    if (scribeOpen) return
     if (connectionState === 'pin_required' || connectionState === 'pin_optional') {
       connectWithPin(pin ?? '')
       setShowJoin(false)
@@ -250,15 +272,17 @@ export default function HomePage() {
     const displayName =
       settings.displayName || localStorage.getItem('fuse_display_name') || 'Guest'
 
-    const userMediaStream = await acquireUserMedia({
-      audioInput: settings.audioInput || undefined,
-      videoInput: settings.videoInput || undefined,
-    })
-
+    // Release preview before acquiring the call stream — concurrent getUserMedia
+    // on the same camera can cause Windows to substitute a different device.
     if (previewStream) {
       previewStream.getTracks().forEach((t) => t.stop())
       setPreviewStream(null)
     }
+
+    const userMediaStream = await acquireUserMedia({
+      audioInput: settings.audioInput || undefined,
+      videoInput: settings.videoInput || undefined,
+    })
 
     const alias = preflightAlias
     setPendingAlias(alias)
@@ -292,6 +316,11 @@ export default function HomePage() {
     const displayName =
       settings.displayName || localStorage.getItem('fuse_display_name') || 'Guest'
 
+    if (previewStream) {
+      previewStream.getTracks().forEach((t) => t.stop())
+      setPreviewStream(null)
+    }
+
     const userMediaStream = await acquireUserMedia({
       audioInput: settings.audioInput || undefined,
       videoInput: settings.videoInput || undefined,
@@ -312,6 +341,7 @@ export default function HomePage() {
   }
 
   function handleCalendarJoin() {
+    if (scribeOpen) return
     if (featuredMeeting?.alias) {
       if (isMini) {
         handleMiniJoin(featuredMeeting.alias)
@@ -453,11 +483,17 @@ export default function HomePage() {
           )}
 
           {meetings.length === 0 && (
-            <div className="mt-8 text-center space-y-2">
+            <>
               {settings.otjClientId && settings.otjClientSecret ? (
-                <p className="text-sm text-white/20">No upcoming meetings</p>
+                loadingMeetings ? (
+                  <MeetingsSkeleton />
+                ) : (
+                  <div className="mt-8 min-h-[148px] flex items-center justify-center text-center">
+                    <p className="text-sm text-white/20">No upcoming meetings</p>
+                  </div>
+                )
               ) : (
-                <>
+                <div className="mt-8 min-h-[148px] flex flex-col items-center justify-center text-center space-y-2">
                   <p className="text-sm text-white/20">Calendar not configured</p>
                   <button
                     onClick={() => setShowSettings(true)}
@@ -465,9 +501,9 @@ export default function HomePage() {
                   >
                     Set up One Touch Join in Settings
                   </button>
-                </>
+                </div>
               )}
-            </div>
+            </>
           )}
 
           {error && <p className="text-rose-400 text-xs text-center mt-4">{error}</p>}
@@ -483,10 +519,12 @@ export default function HomePage() {
               if (v) setCalendarExpanded(false)
             }}
             onProviderClick={(p) => {
+              if (scribeOpen) return
               setJoinProvider({ id: p.id, icon: p.icon, label: p.label })
               setShowJoin(true)
             }}
             onCallClick={() => {
+              if (scribeOpen) return
               setJoinProvider(null)
               setShowJoin(true)
             }}
@@ -499,6 +537,7 @@ export default function HomePage() {
               }
               handleJoin(alias)
             }}
+            onScribe={() => setScribeOpen(true)}
           />
         </div>
 
@@ -579,11 +618,14 @@ export default function HomePage() {
             callerName={incomingCall.remoteDisplayName}
             conferenceAlias={incomingCall.conferenceAlias}
             ringtone={settings.ringtone}
+            scribeActive={scribeOpen}
             onAnswer={handleAnswerIncoming}
             onDecline={declineCall}
           />
         )}
       </AnimatePresence>
+
+      <ScribeOverlay open={scribeOpen} onClose={() => setScribeOpen(false)} />
 
       <AnimatePresence>
         {callError && (

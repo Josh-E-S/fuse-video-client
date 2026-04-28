@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { getProviderById, getMeetingProvider } from '@/utils/meetingProvider'
 import { useEscapeKey } from '@/hooks/useEscapeKey'
 import type { RecentCall } from '@/hooks/useRecentCalls'
+import { ScribeButton } from '@/components/scribe/ScribeButton'
 
 interface VisibleProvider {
   id: string
@@ -23,6 +24,7 @@ interface AdHocJoinProps {
   onProviderClick: (provider: { id: string; icon: string; label: string }) => void
   onCallClick: () => void
   onRecentCallClick: (alias: string) => void
+  onScribe?: () => void
 }
 
 export function AdHocJoin({
@@ -35,6 +37,7 @@ export function AdHocJoin({
   onProviderClick,
   onCallClick,
   onRecentCallClick,
+  onScribe,
 }: AdHocJoinProps) {
   const [showRecents, setShowRecents] = useState(false)
 
@@ -106,6 +109,12 @@ export function AdHocJoin({
           )}
         </div>
       </div>
+
+      {onScribe && (
+        <div className="flex items-center justify-center mt-2">
+          <ScribeButton onClick={onScribe} />
+        </div>
+      )}
 
       <RecentsModal
         open={showRecents}
