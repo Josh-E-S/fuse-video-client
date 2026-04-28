@@ -224,7 +224,7 @@ export function FeaturedMeetingCard({
         </AnimatePresence>
 
         {laterMeetings.length > 0 && (() => {
-          const VISIBLE_COUNT = compact ? 8 : 3
+          const VISIBLE_COUNT = compact ? 7 : 3
           const visibleMeetings = laterMeetings.slice(0, VISIBLE_COUNT)
           const overflowMeetings = laterMeetings.slice(VISIBLE_COUNT)
 
