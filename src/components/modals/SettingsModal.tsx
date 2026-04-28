@@ -60,7 +60,9 @@ export function SettingsModal({
   const quickJoin = useQuickJoin()
   const [nodeDomain, setNodeDomain] = useState(settings.nodeDomain)
   const [displayName, setDisplayName] = useState(settings.displayName)
-  const [tab, setTab] = useState<'connection' | 'meetings' | 'devices' | 'appearance'>('connection')
+  const [tab, setTab] = useState<
+    'connection' | 'meetings' | 'devices' | 'transcription' | 'appearance'
+  >('connection')
   const [pollInterval, setPollInterval] = useState(60)
   const [otjClientId, setOtjClientId] = useState(settings.otjClientId)
   const [otjClientSecret, setOtjClientSecret] = useState(settings.otjClientSecret)
@@ -267,7 +269,9 @@ export function SettingsModal({
                   ? 'Calendar and provider settings'
                   : tab === 'devices'
                     ? 'Camera, mic, speakers, and ringtone'
-                    : 'Choose your theme'}
+                    : tab === 'transcription'
+                      ? 'Local speech-to-text models'
+                      : 'Choose your theme'}
             </p>
 
             <div className="flex gap-1 p-1 rounded-2xl bg-white/4 border border-white/6 mb-6">
@@ -275,6 +279,9 @@ export function SettingsModal({
                 { id: 'connection' as const, icon: Globe, label: 'Connection' },
                 { id: 'meetings' as const, icon: CalendarDays, label: 'Meetings' },
                 { id: 'devices' as const, icon: SlidersHorizontal, label: 'Devices' },
+                ...(isElectron
+                  ? [{ id: 'transcription' as const, icon: Languages, label: 'Transcription' }]
+                  : []),
                 { id: 'appearance' as const, icon: Palette, label: 'Appearance' },
               ].map((t) => {
                 const active = tab === t.id
@@ -699,59 +706,62 @@ export function SettingsModal({
                     </div>
                   </div>
 
-                  {isElectron && (
-                    <>
-                      <div className="border-t border-white/6" />
+                </div>
+              )}
 
-                      <div className="text-[10px] font-bold uppercase tracking-widest text-white/20 pl-1">
-                        Live Transcription
+              {tab === 'transcription' && isElectron && (
+                <div className="space-y-5">
+                  <div className="text-[10px] font-bold uppercase tracking-widest text-white/20 pl-1">
+                    Speech-to-Text Model
+                  </div>
+
+                  <div className="px-4 py-4 rounded-xl bg-white/3 border border-white/6 space-y-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-lg bg-white/6 border border-white/8 flex items-center justify-center shrink-0">
+                        <Languages size={16} className="text-white/40" />
                       </div>
-
-                      <div className="px-4 py-4 rounded-xl bg-white/3 border border-white/6 space-y-3">
-                        <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-lg bg-white/6 border border-white/8 flex items-center justify-center shrink-0">
-                            <Languages size={16} className="text-white/40" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="text-[13px] font-medium text-white/80">Parakeet TDT-CTC 110M</div>
-                            <div className="text-[11px] text-white/30">English, ~126 MB, runs locally</div>
-                          </div>
-                          {modelsDownloaded ? (
-                            <div className="flex items-center gap-1.5 text-emerald-400 text-xs font-medium">
-                              <Check size={14} /> Ready
-                            </div>
-                          ) : (
-                            <button
-                              onClick={handleDownloadModels}
-                              disabled={modelDownloadBusy}
-                              className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white/8 border border-white/10 text-white/70 text-xs font-medium hover:bg-white/12 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                            >
-                              {modelDownloadBusy ? (
-                                <div className="w-3 h-3 border border-white/20 border-t-white/60 rounded-full animate-spin" />
-                              ) : (
-                                <Download size={12} />
-                              )}
-                              {modelDownloadBusy ? 'Downloading...' : 'Download'}
-                            </button>
-                          )}
+                      <div className="flex-1 min-w-0">
+                        <div className="text-[13px] font-medium text-white/80">Parakeet TDT-CTC 110M</div>
+                        <div className="text-[11px] text-white/30">English, ~126 MB, runs locally</div>
+                      </div>
+                      {modelsDownloaded ? (
+                        <div className="flex items-center gap-1.5 text-emerald-400 text-xs font-medium">
+                          <Check size={14} /> Ready
                         </div>
-                        {modelDownloadBusy && (
-                          <div className="space-y-1">
-                            <div className="h-1.5 rounded-full bg-white/6 overflow-hidden">
-                              <div
-                                className="h-full rounded-full bg-white/30 transition-all duration-300"
-                                style={{ width: `${modelDownloadProgress}%` }}
-                              />
-                            </div>
-                            <div className="text-[11px] text-white/25 truncate">{modelDownloadStatus}</div>
-                          </div>
-                        )}
-                        {modelDownloadStatus && !modelsDownloaded && !modelDownloadBusy && (
-                          <div className="text-[11px] text-rose-400/60 truncate">{modelDownloadStatus}</div>
-                        )}
+                      ) : (
+                        <button
+                          onClick={handleDownloadModels}
+                          disabled={modelDownloadBusy}
+                          className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white/8 border border-white/10 text-white/70 text-xs font-medium hover:bg-white/12 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                          {modelDownloadBusy ? (
+                            <div className="w-3 h-3 border border-white/20 border-t-white/60 rounded-full animate-spin" />
+                          ) : (
+                            <Download size={12} />
+                          )}
+                          {modelDownloadBusy ? 'Downloading...' : 'Download'}
+                        </button>
+                      )}
+                    </div>
+                    {modelDownloadBusy && (
+                      <div className="space-y-1">
+                        <div className="h-1.5 rounded-full bg-white/6 overflow-hidden">
+                          <div
+                            className="h-full rounded-full bg-white/30 transition-all duration-300"
+                            style={{ width: `${modelDownloadProgress}%` }}
+                          />
+                        </div>
+                        <div className="text-[11px] text-white/25 truncate">{modelDownloadStatus}</div>
                       </div>
-                    </>
-                  )}
+                    )}
+                    {modelDownloadStatus && !modelsDownloaded && !modelDownloadBusy && (
+                      <div className="text-[11px] text-rose-400/60 truncate">{modelDownloadStatus}</div>
+                    )}
+                  </div>
+
+                  <p className="text-[11px] text-white/30 leading-relaxed pl-1">
+                    Live captions are generated on this device. No audio is sent to any external service.
+                  </p>
                 </div>
               )}
 
