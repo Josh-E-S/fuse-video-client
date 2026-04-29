@@ -73,7 +73,9 @@ export function SettingsModal({
   const [regUsername, setRegUsername] = useState('')
   const [regPassword, setRegPassword] = useState('')
   const [isElectron, setIsElectron] = useState(false)
-  const { downloaded: modelsDownloaded, refresh: refreshModelStatus } = useModelStatus()
+  const { transcription, summarizer, refresh: refreshModelStatus } = useModelStatus()
+  const modelsDownloaded = transcription.downloaded
+  const summaryModelDownloaded = summarizer.downloaded
   const [modelDownloadBusy, setModelDownloadBusy] = useState(false)
   const [modelDownloadStatus, setModelDownloadStatus] = useState('')
   const [modelDownloadProgress, setModelDownloadProgress] = useState(0)

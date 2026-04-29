@@ -22,6 +22,17 @@ interface ElectronBridge {
   modelsStatus: () => Promise<{ downloaded: boolean }>
   downloadModels: () => Promise<{ success: boolean; error?: string }>
   onDownloadProgress: (callback: (line: string) => void) => () => void
+  summarizeAvailable: () => Promise<boolean>
+  summarizeRun: (prompt: string) => Promise<
+    | { ok: true; markdown: string; tokenCount: number; elapsedMs: number }
+    | { ok: false; error: string }
+  >
+  summarizeModelStatus: () => Promise<{ downloaded: boolean }>
+  summarizeDownloadModel: () => Promise<{ success: boolean; error?: string }>
+  onSummarizeProgress: (
+    callback: (payload: { tokenCount: number; elapsedMs: number }) => void,
+  ) => () => void
+  onSummarizeDownloadProgress: (callback: (line: string) => void) => () => void
   onPowerResume: (callback: () => void) => () => void
 }
 
