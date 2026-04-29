@@ -23,7 +23,9 @@ interface ElectronBridge {
   downloadModels: () => Promise<{ success: boolean; error?: string }>
   onDownloadProgress: (callback: (line: string) => void) => () => void
   summarizeAvailable: () => Promise<boolean>
-  summarizeRun: (prompt: string) => Promise<
+  summarizeRun: (
+    prompt: string,
+  ) => Promise<
     | { ok: true; markdown: string; tokenCount: number; elapsedMs: number }
     | { ok: false; error: string }
   >
@@ -52,9 +54,18 @@ export function useElectron() {
     const bridge = getElectronBridge()
     if (bridge) {
       setIsElectron(true)
-      bridge.getExpanded().then(setIsExpanded).catch(() => {})
-      bridge.getMini().then(setIsMini).catch(() => {})
-      bridge.getSidebar?.().then(setIsSidebar).catch(() => {})
+      bridge
+        .getExpanded()
+        .then(setIsExpanded)
+        .catch(() => {})
+      bridge
+        .getMini()
+        .then(setIsMini)
+        .catch(() => {})
+      bridge
+        .getSidebar?.()
+        .then(setIsSidebar)
+        .catch(() => {})
     }
   }, [])
 

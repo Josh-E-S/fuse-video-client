@@ -91,8 +91,7 @@ export function composeSavedMarkdown({
   const transcriptLines = transcripts
     .map((e) => `*${timeOf(e.timestamp)}* — ${e.text.trim()}`)
     .join('\n\n')
-  const transcriptSection =
-    transcripts.length > 0 ? transcriptLines : '_No transcript captured._'
+  const transcriptSection = transcripts.length > 0 ? transcriptLines : '_No transcript captured._'
 
   return `${header}\n\n${body}\n\n## Full Transcript\n\n${transcriptSection}\n`
 }

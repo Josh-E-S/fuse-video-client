@@ -183,7 +183,9 @@ export function DockPanel({
                             </span>
                           )}
                         </div>
-                        <div className="text-[13px] leading-[1.45] text-white/90">{msg.payload}</div>
+                        <div className="text-[13px] leading-[1.45] text-white/90">
+                          {msg.payload}
+                        </div>
                       </div>
                     </div>
                   )
@@ -242,37 +244,33 @@ export function DockPanel({
                 const presenting = p.is_presenting === 'YES'
                 const roleLabel = p.role === 'chair' ? 'Host' : p.protocol || 'Participant'
                 return (
-                <div
-                  key={p.uuid}
-                  className="flex items-center gap-3 py-2.5 border-b border-white/4 last:border-b-0"
-                >
-                  <div className="w-[34px] h-[34px] rounded-xl bg-gradient-to-br from-blue-500 to-violet-500 flex items-center justify-center text-[13px] font-semibold text-white shrink-0">
-                    {initial}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-[13px] font-medium text-white/90 truncate leading-tight">
-                      {name}
+                  <div
+                    key={p.uuid}
+                    className="flex items-center gap-3 py-2.5 border-b border-white/4 last:border-b-0"
+                  >
+                    <div className="w-[34px] h-[34px] rounded-xl bg-gradient-to-br from-blue-500 to-violet-500 flex items-center justify-center text-[13px] font-semibold text-white shrink-0">
+                      {initial}
                     </div>
-                    <div className="text-[11px] text-white/35">
-                      {roleLabel}
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[13px] font-medium text-white/90 truncate leading-tight">
+                        {name}
+                      </div>
+                      <div className="text-[11px] text-white/35">{roleLabel}</div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {muted ? (
+                        <MicOff size={16} className="text-rose-400/60" />
+                      ) : (
+                        <Mic size={16} className="text-white/45" />
+                      )}
+                      {videoMuted ? (
+                        <VideoOff size={16} className="text-rose-400/60" />
+                      ) : (
+                        <Video size={16} className="text-white/45" />
+                      )}
+                      {presenting && <Share2 size={16} className="text-amber-400/60" />}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    {muted ? (
-                      <MicOff size={16} className="text-rose-400/60" />
-                    ) : (
-                      <Mic size={16} className="text-white/45" />
-                    )}
-                    {videoMuted ? (
-                      <VideoOff size={16} className="text-rose-400/60" />
-                    ) : (
-                      <Video size={16} className="text-white/45" />
-                    )}
-                    {presenting && (
-                      <Share2 size={16} className="text-amber-400/60" />
-                    )}
-                  </div>
-                </div>
                 )
               })
             )}

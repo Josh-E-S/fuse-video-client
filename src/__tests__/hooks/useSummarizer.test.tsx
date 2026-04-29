@@ -57,12 +57,20 @@ describe('useSummarizer', () => {
   })
 
   it('transitions idle → preparing → running → done on success', async () => {
-    let resolveRun: (v: { ok: true; markdown: string; tokenCount: number; elapsedMs: number }) => void = () => {}
-    const runPromise = new Promise<{ ok: true; markdown: string; tokenCount: number; elapsedMs: number }>(
-      (resolve) => {
-        resolveRun = resolve
-      },
-    )
+    let resolveRun: (v: {
+      ok: true
+      markdown: string
+      tokenCount: number
+      elapsedMs: number
+    }) => void = () => {}
+    const runPromise = new Promise<{
+      ok: true
+      markdown: string
+      tokenCount: number
+      elapsedMs: number
+    }>((resolve) => {
+      resolveRun = resolve
+    })
     installBridge({ summarizeRun: vi.fn().mockReturnValue(runPromise) })
 
     const { result } = renderHook(() => useSummarizer())
@@ -100,7 +108,9 @@ describe('useSummarizer', () => {
 
   it('clear() resets state to idle', async () => {
     installBridge({
-      summarizeRun: vi.fn().mockResolvedValue({ ok: true, markdown: 'x', tokenCount: 1, elapsedMs: 1 }),
+      summarizeRun: vi
+        .fn()
+        .mockResolvedValue({ ok: true, markdown: 'x', tokenCount: 1, elapsedMs: 1 }),
     })
 
     const { result } = renderHook(() => useSummarizer())
@@ -135,15 +145,18 @@ describe('useSummarizer', () => {
   })
 
   it('updates tokenCount from progress events', async () => {
-    let resolveRun: (v: { ok: true; markdown: string; tokenCount: number; elapsedMs: number }) => void = () => {}
+    let resolveRun: (v: {
+      ok: true
+      markdown: string
+      tokenCount: number
+      elapsedMs: number
+    }) => void = () => {}
     installBridge({
-      summarizeRun: vi
-        .fn()
-        .mockReturnValue(
-          new Promise((resolve) => {
-            resolveRun = resolve as typeof resolveRun
-          }),
-        ),
+      summarizeRun: vi.fn().mockReturnValue(
+        new Promise((resolve) => {
+          resolveRun = resolve as typeof resolveRun
+        }),
+      ),
     })
 
     const { result } = renderHook(() => useSummarizer())
@@ -162,7 +175,12 @@ describe('useSummarizer', () => {
   })
 
   it('clear() during a running summary cancels its result', async () => {
-    let resolveRun: (v: { ok: true; markdown: string; tokenCount: number; elapsedMs: number }) => void = () => {}
+    let resolveRun: (v: {
+      ok: true
+      markdown: string
+      tokenCount: number
+      elapsedMs: number
+    }) => void = () => {}
     installBridge({
       summarizeRun: vi.fn().mockReturnValue(
         new Promise((resolve) => {
@@ -196,7 +214,9 @@ describe('useSummarizer', () => {
 
   it('run is referentially stable across renders', async () => {
     installBridge({
-      summarizeRun: vi.fn().mockResolvedValue({ ok: true, markdown: 'x', tokenCount: 1, elapsedMs: 1 }),
+      summarizeRun: vi
+        .fn()
+        .mockResolvedValue({ ok: true, markdown: 'x', tokenCount: 1, elapsedMs: 1 }),
     })
     const { result, rerender } = renderHook(() => useSummarizer())
     const firstRun = result.current.run

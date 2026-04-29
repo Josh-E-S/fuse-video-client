@@ -113,18 +113,12 @@ export function SettingsModal({
     }
   }, [open, settings.nodeDomain, settings.displayName, refreshModelStatus])
 
-  const {
-    audioInputs,
-    audioOutputs,
-    videoInputs,
-    previewStream,
-    cameraError,
-    micLevel,
-  } = useMediaDevices({
-    active: open && tab === 'devices',
-    audioInputId: settings.audioInput,
-    videoInputId: settings.videoInput,
-  })
+  const { audioInputs, audioOutputs, videoInputs, previewStream, cameraError, micLevel } =
+    useMediaDevices({
+      active: open && tab === 'devices',
+      audioInputId: settings.audioInput,
+      videoInputId: settings.videoInput,
+    })
 
   const speakerTest = useSpeakerTest(settings.audioOutput)
 
@@ -299,7 +293,9 @@ export function SettingsModal({
             transition={{ type: 'spring', damping: 28, stiffness: 260 }}
             onClick={(e) => e.stopPropagation()}
             className={`relative w-full flex flex-col rounded-2xl bg-white/4 border border-white/10 backdrop-blur-3xl shadow-2xl ${
-              isNarrow ? 'max-w-full h-[calc(100vh-16px)] px-4 pb-4 pt-12' : 'max-w-md h-[640px] p-8'
+              isNarrow
+                ? 'max-w-full h-[calc(100vh-16px)] px-4 pb-4 pt-12'
+                : 'max-w-md h-[640px] p-8'
             }`}
           >
             <button
@@ -311,7 +307,9 @@ export function SettingsModal({
               <X size={16} />
             </button>
 
-            <h2 className={`font-light text-white/90 mb-1 ${isNarrow ? 'text-lg' : 'text-2xl'}`}>Settings</h2>
+            <h2 className={`font-light text-white/90 mb-1 ${isNarrow ? 'text-lg' : 'text-2xl'}`}>
+              Settings
+            </h2>
             {!isNarrow && (
               <p className="text-sm text-white/30 mb-8">
                 {tab === 'connection'
@@ -326,7 +324,9 @@ export function SettingsModal({
               </p>
             )}
 
-            <div className={`flex gap-1 p-1 rounded-2xl bg-white/4 border border-white/6 ${isNarrow ? 'mb-4 mt-3' : 'mb-6'}`}>
+            <div
+              className={`flex gap-1 p-1 rounded-2xl bg-white/4 border border-white/6 ${isNarrow ? 'mb-4 mt-3' : 'mb-6'}`}
+            >
               {[
                 { id: 'connection' as const, icon: Globe, label: 'Connection' },
                 { id: 'meetings' as const, icon: CalendarDays, label: 'Meetings' },
@@ -348,7 +348,9 @@ export function SettingsModal({
                     } ${active ? 'bg-white/10 text-white' : 'text-white/30 hover:text-white/50'}`}
                   >
                     <t.icon size={16} strokeWidth={1.5} />
-                    {!isNarrow && <span className="text-[10px] font-medium tracking-wide">{t.label}</span>}
+                    {!isNarrow && (
+                      <span className="text-[10px] font-medium tracking-wide">{t.label}</span>
+                    )}
                   </button>
                 )
               })}
@@ -575,7 +577,10 @@ export function SettingsModal({
 
                   <div className="space-y-2">
                     {quickJoin.providers.map((p) => (
-                      <div key={p.id} className="flex items-center justify-between px-3 py-2.5 rounded-xl bg-white/3 border border-white/6">
+                      <div
+                        key={p.id}
+                        className="flex items-center justify-between px-3 py-2.5 rounded-xl bg-white/3 border border-white/6"
+                      >
                         <div className="flex items-center gap-3">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img src={p.icon} alt="" width={20} height={20} className="opacity-70" />
@@ -591,9 +596,10 @@ export function SettingsModal({
                           disabled={!p.configReady}
                           className="relative w-9 h-5 rounded-full transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                           style={{
-                            background: quickJoin.isToggled(p.id) && p.configReady
-                              ? 'rgba(52, 211, 153, 0.4)'
-                              : 'rgba(255, 255, 255, 0.08)',
+                            background:
+                              quickJoin.isToggled(p.id) && p.configReady
+                                ? 'rgba(52, 211, 153, 0.4)'
+                                : 'rgba(255, 255, 255, 0.08)',
                           }}
                         >
                           <div
@@ -609,7 +615,8 @@ export function SettingsModal({
 
                   <div className="px-3 py-3 rounded-xl bg-white/2 border border-white/4">
                     <p className="text-[11px] text-white/25 leading-relaxed">
-                      Quick Join requires call routing rules configured on your Pexip Infinity deployment. Contact your Pexip administrator if calls fail to connect.
+                      Quick Join requires call routing rules configured on your Pexip Infinity
+                      deployment. Contact your Pexip administrator if calls fail to connect.
                     </p>
                   </div>
                 </div>
@@ -766,7 +773,6 @@ export function SettingsModal({
                       })}
                     </div>
                   </div>
-
                 </div>
               )}
 
@@ -782,8 +788,12 @@ export function SettingsModal({
                         <Languages size={16} className="text-white/40" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="text-[13px] font-medium text-white/80">Parakeet TDT-CTC 110M</div>
-                        <div className="text-[11px] text-white/30">English, ~126 MB, runs locally</div>
+                        <div className="text-[13px] font-medium text-white/80">
+                          Parakeet TDT-CTC 110M
+                        </div>
+                        <div className="text-[11px] text-white/30">
+                          English, ~126 MB, runs locally
+                        </div>
                       </div>
                       {modelsDownloaded ? (
                         <div className="flex items-center gap-1.5 text-emerald-400 text-xs font-medium">
@@ -812,16 +822,21 @@ export function SettingsModal({
                             style={{ width: `${modelDownloadProgress}%` }}
                           />
                         </div>
-                        <div className="text-[11px] text-white/25 truncate">{modelDownloadStatus}</div>
+                        <div className="text-[11px] text-white/25 truncate">
+                          {modelDownloadStatus}
+                        </div>
                       </div>
                     )}
                     {modelDownloadStatus && !modelsDownloaded && !modelDownloadBusy && (
-                      <div className="text-[11px] text-rose-400/60 truncate">{modelDownloadStatus}</div>
+                      <div className="text-[11px] text-rose-400/60 truncate">
+                        {modelDownloadStatus}
+                      </div>
                     )}
                   </div>
 
                   <p className="text-[11px] text-white/30 leading-relaxed pl-1">
-                    Live captions are generated on this device. No audio is sent to any external service.
+                    Live captions are generated on this device. No audio is sent to any external
+                    service.
                   </p>
 
                   <div className="text-[10px] font-bold uppercase tracking-widest text-white/20 pl-1 pt-2">
@@ -834,7 +849,9 @@ export function SettingsModal({
                         <Sparkles size={16} className="text-white/40" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="text-[13px] font-medium text-white/80">Qwen3 0.6B Instruct</div>
+                        <div className="text-[13px] font-medium text-white/80">
+                          Qwen3 0.6B Instruct
+                        </div>
                         <div className="text-[11px] text-white/30">~400 MB, runs locally</div>
                       </div>
                       {summaryModelDownloaded ? (
@@ -864,16 +881,21 @@ export function SettingsModal({
                             style={{ width: `${summaryDownloadProgress}%` }}
                           />
                         </div>
-                        <div className="text-[11px] text-white/25 truncate">{summaryDownloadStatus}</div>
+                        <div className="text-[11px] text-white/25 truncate">
+                          {summaryDownloadStatus}
+                        </div>
                       </div>
                     )}
                     {summaryDownloadStatus && !summaryModelDownloaded && !summaryDownloadBusy && (
-                      <div className="text-[11px] text-rose-400/60 truncate">{summaryDownloadStatus}</div>
+                      <div className="text-[11px] text-rose-400/60 truncate">
+                        {summaryDownloadStatus}
+                      </div>
                     )}
                   </div>
 
                   <p className="text-[11px] text-white/30 leading-relaxed pl-1">
-                    Generates meeting summaries from your transcripts. Optional — captions work without this model.
+                    Generates meeting summaries from your transcripts. Optional — captions work
+                    without this model.
                   </p>
                 </div>
               )}
@@ -911,9 +933,7 @@ export function SettingsModal({
                             >
                               {t.label}
                             </div>
-                            <div className="text-[10px] text-white/25 mt-0.5">
-                              {t.description}
-                            </div>
+                            <div className="text-[10px] text-white/25 mt-0.5">{t.description}</div>
                           </div>
                           {selected && (
                             <div

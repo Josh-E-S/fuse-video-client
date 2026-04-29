@@ -31,16 +31,35 @@ export function useSetupRequired() {
   useEffect(() => {
     setRequired(!localStorage.getItem(SETUP_KEY))
   }, [])
-  return { required, complete: () => { localStorage.setItem(SETUP_KEY, '1'); setRequired(false) } }
+  return {
+    required,
+    complete: () => {
+      localStorage.setItem(SETUP_KEY, '1')
+      setRequired(false)
+    },
+  }
 }
 
 interface SetupWizardProps {
   open: boolean
   onComplete: () => void
-  onRegister?: (creds: { alias: string; username: string; password: string }, nodeDomain: string) => Promise<void>
+  onRegister?: (
+    creds: { alias: string; username: string; password: string },
+    nodeDomain: string,
+  ) => Promise<void>
 }
 
-const ALL_STEPS = ['welcome', 'connection', 'registration', 'calendar', 'providers', 'devices', 'transcription', 'check', 'done'] as const
+const ALL_STEPS = [
+  'welcome',
+  'connection',
+  'registration',
+  'calendar',
+  'providers',
+  'devices',
+  'transcription',
+  'check',
+  'done',
+] as const
 
 type CheckStatus = 'pending' | 'checking' | 'pass' | 'warn' | 'fail'
 interface CheckItem {
@@ -49,7 +68,7 @@ interface CheckItem {
   detail?: string
   jumpTo?: Step
 }
-type Step = typeof ALL_STEPS[number]
+type Step = (typeof ALL_STEPS)[number]
 
 export function SetupWizard({ open, onComplete, onRegister }: SetupWizardProps) {
   const { settings, saveSettings } = useSettings()
@@ -85,30 +104,40 @@ export function SetupWizard({ open, onComplete, onRegister }: SetupWizardProps) 
     if (open) {
       setNodeDomain(settings.nodeDomain)
       setDisplayName(settings.displayName)
-      setRegAlias(localStorage.getItem('fuse_reg_alias') ?? process.env.NEXT_PUBLIC_DEFAULT_REG_ALIAS ?? '')
-      setRegUsername(localStorage.getItem('fuse_reg_username') ?? process.env.NEXT_PUBLIC_DEFAULT_REG_USERNAME ?? '')
-      setRegPassword(localStorage.getItem('fuse_reg_password') ?? process.env.NEXT_PUBLIC_DEFAULT_REG_PASSWORD ?? '')
+      setRegAlias(
+        localStorage.getItem('fuse_reg_alias') ?? process.env.NEXT_PUBLIC_DEFAULT_REG_ALIAS ?? '',
+      )
+      setRegUsername(
+        localStorage.getItem('fuse_reg_username') ??
+          process.env.NEXT_PUBLIC_DEFAULT_REG_USERNAME ??
+          '',
+      )
+      setRegPassword(
+        localStorage.getItem('fuse_reg_password') ??
+          process.env.NEXT_PUBLIC_DEFAULT_REG_PASSWORD ??
+          '',
+      )
       setOtjClientId(settings.otjClientId)
       setOtjClientSecret(settings.otjClientSecret)
       setPexipCustomerId(settings.pexipCustomerId)
       setGoogleDomain(settings.googleDomain)
-      getElectronBridge()?.modelsStatus().then((s) => setModelsDownloaded(s.downloaded)).catch(() => {})
-      getElectronBridge()?.summarizeModelStatus().then((s) => setSummaryModelDownloaded(s.downloaded)).catch(() => {})
+      getElectronBridge()
+        ?.modelsStatus()
+        .then((s) => setModelsDownloaded(s.downloaded))
+        .catch(() => {})
+      getElectronBridge()
+        ?.summarizeModelStatus()
+        .then((s) => setSummaryModelDownloaded(s.downloaded))
+        .catch(() => {})
     }
   }, [open, settings])
 
-  const {
-    audioInputs,
-    audioOutputs,
-    videoInputs,
-    previewStream,
-    cameraError,
-    micLevel,
-  } = useMediaDevices({
-    active: open && step === 'devices',
-    audioInputId: settings.audioInput,
-    videoInputId: settings.videoInput,
-  })
+  const { audioInputs, audioOutputs, videoInputs, previewStream, cameraError, micLevel } =
+    useMediaDevices({
+      active: open && step === 'devices',
+      audioInputId: settings.audioInput,
+      videoInputId: settings.videoInput,
+    })
 
   const speakerTest = useSpeakerTest(settings.audioOutput)
 
@@ -199,8 +228,16 @@ export function SetupWizard({ open, onComplete, onRegister }: SetupWizardProps) 
       { label: 'Microphone', status: 'pending', jumpTo: 'devices' },
       ...(isElectron
         ? [
-            { label: 'Transcription Model', status: 'pending' as CheckStatus, jumpTo: 'transcription' as Step },
-            { label: 'Summary Model', status: 'pending' as CheckStatus, jumpTo: 'transcription' as Step },
+            {
+              label: 'Transcription Model',
+              status: 'pending' as CheckStatus,
+              jumpTo: 'transcription' as Step,
+            },
+            {
+              label: 'Summary Model',
+              status: 'pending' as CheckStatus,
+              jumpTo: 'transcription' as Step,
+            },
           ]
         : []),
     ]
@@ -216,7 +253,10 @@ export function SetupWizard({ open, onComplete, onRegister }: SetupWizardProps) 
     // Pexip node reachability
     await update('checking')
     try {
-      const res = await fetch(`https://${nodeDomain}/api/client/v2/status`, { method: 'GET', signal: AbortSignal.timeout(5000) })
+      const res = await fetch(`https://${nodeDomain}/api/client/v2/status`, {
+        method: 'GET',
+        signal: AbortSignal.timeout(5000),
+      })
       if (res.ok) {
         await update('pass', 'Node reachable')
       } else {
@@ -239,7 +279,10 @@ export function SetupWizard({ open, onComplete, onRegister }: SetupWizardProps) 
       await update('warn', 'Not configured (optional)')
     } else if (onRegister) {
       try {
-        await onRegister({ alias: regAlias, username: regUsername, password: regPassword }, nodeDomain)
+        await onRegister(
+          { alias: regAlias, username: regUsername, password: regPassword },
+          nodeDomain,
+        )
         await update('pass', 'Registered')
       } catch (err) {
         log.ui.warn('Setup check: registration failed')
@@ -342,7 +385,8 @@ export function SetupWizard({ open, onComplete, onRegister }: SetupWizardProps) 
   }
 
   const canNavigate = !downloadBusy
-  const canNext = canNavigate && (step === 'connection' ? !!nodeDomain.trim() && !!displayName.trim() : true)
+  const canNext =
+    canNavigate && (step === 'connection' ? !!nodeDomain.trim() && !!displayName.trim() : true)
 
   return (
     <AnimatePresence>
@@ -374,436 +418,491 @@ export function SetupWizard({ open, onComplete, onRegister }: SetupWizardProps) 
             </div>
 
             <div className="flex-1 min-h-0 overflow-y-auto [scrollbar-width:none]">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={step}
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.2 }}
-              >
-                {step === 'welcome' && (
-                  <div className="text-center space-y-4">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src="/logo-1.png" alt="Fuse" width={64} height={64} className="mx-auto opacity-80" />
-                    <h2 className="text-2xl font-light text-white/90">Welcome to Fuse</h2>
-                    <p className="text-sm text-white/40 leading-relaxed max-w-sm mx-auto">
-                      Let's get you set up in a few quick steps. You can always change these later in Settings.
-                    </p>
-                  </div>
-                )}
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={step}
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  {step === 'welcome' && (
+                    <div className="text-center space-y-4">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src="/logo-1.png"
+                        alt="Fuse"
+                        width={64}
+                        height={64}
+                        className="mx-auto opacity-80"
+                      />
+                      <h2 className="text-2xl font-light text-white/90">Welcome to Fuse</h2>
+                      <p className="text-sm text-white/40 leading-relaxed max-w-sm mx-auto">
+                        Let's get you set up in a few quick steps. You can always change these later
+                        in Settings.
+                      </p>
+                    </div>
+                  )}
 
-                {step === 'connection' && (
-                  <div className="space-y-5">
-                    <div>
-                      <h2 className="text-xl font-light text-white/90 mb-1">Connection</h2>
-                      <p className="text-sm text-white/30">Connect to your Pexip Infinity deployment</p>
-                    </div>
-                    <div>
-                      <label className="text-xs font-medium text-white/40 uppercase tracking-widest mb-2 flex items-center gap-1.5">
-                        <Server size={10} /> Node Domain
-                      </label>
-                      <input
-                        type="text"
-                        value={nodeDomain}
-                        onChange={(e) => setNodeDomain(e.target.value)}
-                        placeholder="e.g. pexipdemo.com"
-                        autoFocus
-                        className="w-full px-4 py-3 rounded-xl bg-white/6 border border-white/10 text-white placeholder-white/20 focus:outline-none focus:border-white/30 transition-colors text-sm"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs font-medium text-white/40 uppercase tracking-widest mb-2 flex items-center gap-1.5">
-                        <User size={10} /> Display Name
-                      </label>
-                      <input
-                        type="text"
-                        value={displayName}
-                        onChange={(e) => setDisplayName(e.target.value)}
-                        placeholder="e.g. Jane Doe"
-                        className="w-full px-4 py-3 rounded-xl bg-white/6 border border-white/10 text-white placeholder-white/20 focus:outline-none focus:border-white/30 transition-colors text-sm"
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {step === 'registration' && (
-                  <div className="space-y-5">
-                    <div>
-                      <h2 className="text-xl font-light text-white/90 mb-1">Registration</h2>
-                      <p className="text-sm text-white/30">Register as a SIP endpoint to receive incoming calls</p>
-                    </div>
-                    <div>
-                      <label className="text-xs font-medium text-white/40 uppercase tracking-widest mb-2 flex items-center gap-1.5">
-                        <Mail size={10} /> Alias
-                      </label>
-                      <input
-                        type="email"
-                        value={regAlias}
-                        onChange={(e) => setRegAlias(e.target.value)}
-                        placeholder="e.g. user@example.com"
-                        className="w-full px-4 py-3 rounded-xl bg-white/6 border border-white/10 text-white placeholder-white/20 focus:outline-none focus:border-white/30 transition-colors text-sm"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs font-medium text-white/40 uppercase tracking-widest mb-2 flex items-center gap-1.5">
-                        <User size={10} /> Username
-                      </label>
-                      <input
-                        type="text"
-                        value={regUsername}
-                        onChange={(e) => setRegUsername(e.target.value)}
-                        placeholder="e.g. username"
-                        className="w-full px-4 py-3 rounded-xl bg-white/6 border border-white/10 text-white placeholder-white/20 focus:outline-none focus:border-white/30 transition-colors text-sm"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs font-medium text-white/40 uppercase tracking-widest mb-2 flex items-center gap-1.5">
-                        <KeyRound size={10} /> Password
-                      </label>
-                      <input
-                        type="password"
-                        value={regPassword}
-                        onChange={(e) => setRegPassword(e.target.value)}
-                        placeholder="••••••••"
-                        className="w-full px-4 py-3 rounded-xl bg-white/6 border border-white/10 text-white placeholder-white/20 focus:outline-none focus:border-white/30 transition-colors text-sm"
-                      />
-                    </div>
-                    <p className="text-[11px] text-white/20">Optional. Skip if you don't need to receive incoming calls.</p>
-                  </div>
-                )}
-
-                {step === 'calendar' && (
-                  <div className="space-y-5">
-                    <div>
-                      <h2 className="text-xl font-light text-white/90 mb-1">Calendar</h2>
-                      <p className="text-sm text-white/30">Connect your calendar with Pexip One Touch Join</p>
-                    </div>
-                    <div>
-                      <label className="text-xs font-medium text-white/40 uppercase tracking-widest mb-2 flex items-center gap-1.5">
-                        <Key size={10} /> OTJ Client ID
-                      </label>
-                      <input
-                        type="text"
-                        value={otjClientId}
-                        onChange={(e) => setOtjClientId(e.target.value)}
-                        placeholder="From your Pexip OTJ portal"
-                        className="w-full px-4 py-3 rounded-xl bg-white/6 border border-white/10 text-white placeholder-white/20 focus:outline-none focus:border-white/30 transition-colors text-sm"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs font-medium text-white/40 uppercase tracking-widest mb-2 flex items-center gap-1.5">
-                        <KeyRound size={10} /> OTJ Client Secret
-                      </label>
-                      <input
-                        type="password"
-                        value={otjClientSecret}
-                        onChange={(e) => setOtjClientSecret(e.target.value)}
-                        placeholder="••••••••"
-                        className="w-full px-4 py-3 rounded-xl bg-white/6 border border-white/10 text-white placeholder-white/20 focus:outline-none focus:border-white/30 transition-colors text-sm"
-                      />
-                    </div>
-                    <p className="text-[11px] text-white/20">Optional. Skip if you don't use calendar integration.</p>
-                  </div>
-                )}
-
-                {step === 'providers' && (
-                  <div className="space-y-5">
-                    <div>
-                      <h2 className="text-xl font-light text-white/90 mb-1">Provider Settings</h2>
-                      <p className="text-sm text-white/30">Configure interop with third-party meeting providers</p>
-                    </div>
-                    <div>
-                      <label className="text-xs font-medium text-white/40 uppercase tracking-widest mb-2 flex items-center gap-1.5">
-                        <Cloud size={10} /> Pexip Cloud Customer ID
-                      </label>
-                      <input
-                        type="text"
-                        value={pexipCustomerId}
-                        onChange={(e) => setPexipCustomerId(e.target.value)}
-                        placeholder="For Teams CVI dial strings"
-                        className="w-full px-4 py-3 rounded-xl bg-white/6 border border-white/10 text-white placeholder-white/20 focus:outline-none focus:border-white/30 transition-colors text-sm"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs font-medium text-white/40 uppercase tracking-widest mb-2 flex items-center gap-1.5">
-                        <Video size={10} /> Google Meet Domain
-                      </label>
-                      <input
-                        type="text"
-                        value={googleDomain}
-                        onChange={(e) => setGoogleDomain(e.target.value)}
-                        placeholder="e.g. meet.example.com"
-                        className="w-full px-4 py-3 rounded-xl bg-white/6 border border-white/10 text-white placeholder-white/20 focus:outline-none focus:border-white/30 transition-colors text-sm"
-                      />
-                    </div>
-                    <p className="text-[11px] text-white/20">Optional. Skip if you only use Pexip-native meetings.</p>
-                  </div>
-                )}
-
-                {step === 'devices' && (
-                  <div className="space-y-4">
-                    <div>
-                      <h2 className="text-xl font-light text-white/90 mb-1">Devices</h2>
-                      <p className="text-sm text-white/30">Check your camera, mic, and speakers</p>
-                    </div>
-
-                    {/* Camera preview */}
-                    <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-black/40 border border-white/6">
-                      {cameraError ? (
-                        <div className="absolute inset-0 flex items-center justify-center text-white/30 text-xs">
-                          Camera unavailable
-                        </div>
-                      ) : (
-                        <>
-                          <video
-                            ref={videoRef}
-                            autoPlay
-                            playsInline
-                            muted
-                            className="w-full h-full object-cover -scale-x-100"
-                          />
-                          {!previewStream && (
-                            <div className="absolute inset-0 flex items-center justify-center">
-                              <div className="w-8 h-8 border-[3px] border-white/10 border-t-white/60 rounded-full animate-spin" />
-                            </div>
-                          )}
-                        </>
-                      )}
-                    </div>
-
-                    {/* Camera select */}
-                    <div>
-                      <label className="text-xs font-medium text-white/40 uppercase tracking-widest mb-2 flex items-center gap-1.5">
-                        <Camera size={10} /> Camera
-                      </label>
-                      <select
-                        value={settings.videoInput}
-                        onChange={(e) => saveSettings({ videoInput: e.target.value })}
-                        className="w-full px-4 py-3 rounded-xl bg-white/6 border border-white/10 text-white text-sm focus:outline-none focus:border-white/30 transition-colors appearance-none cursor-pointer"
-                      >
-                        <option value="" className="bg-black">System Default</option>
-                        {videoInputs.map((d) => (
-                          <option key={d.deviceId} value={d.deviceId} className="bg-black">
-                            {d.label || `Camera ${d.deviceId.slice(0, 8)}`}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    {/* Mic + level */}
-                    <div>
-                      <label className="text-xs font-medium text-white/40 uppercase tracking-widest mb-2 flex items-center gap-1.5">
-                        <Mic size={10} /> Microphone
-                      </label>
-                      <select
-                        value={settings.audioInput}
-                        onChange={(e) => saveSettings({ audioInput: e.target.value })}
-                        className="w-full px-4 py-3 rounded-xl bg-white/6 border border-white/10 text-white text-sm focus:outline-none focus:border-white/30 transition-colors appearance-none cursor-pointer"
-                      >
-                        <option value="" className="bg-black">System Default</option>
-                        {audioInputs.map((d) => (
-                          <option key={d.deviceId} value={d.deviceId} className="bg-black">
-                            {d.label || `Microphone ${d.deviceId.slice(0, 8)}`}
-                          </option>
-                        ))}
-                      </select>
-                      <div className="mt-2 h-1.5 rounded-full bg-white/6 overflow-hidden">
-                        <div
-                          className="h-full rounded-full bg-emerald-500/60"
-                          style={{
-                            width: `${micLevel * 100}%`,
-                            transition: 'width 0.15s ease-out',
-                          }}
+                  {step === 'connection' && (
+                    <div className="space-y-5">
+                      <div>
+                        <h2 className="text-xl font-light text-white/90 mb-1">Connection</h2>
+                        <p className="text-sm text-white/30">
+                          Connect to your Pexip Infinity deployment
+                        </p>
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-white/40 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                          <Server size={10} /> Node Domain
+                        </label>
+                        <input
+                          type="text"
+                          value={nodeDomain}
+                          onChange={(e) => setNodeDomain(e.target.value)}
+                          placeholder="e.g. pexipdemo.com"
+                          autoFocus
+                          className="w-full px-4 py-3 rounded-xl bg-white/6 border border-white/10 text-white placeholder-white/20 focus:outline-none focus:border-white/30 transition-colors text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-white/40 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                          <User size={10} /> Display Name
+                        </label>
+                        <input
+                          type="text"
+                          value={displayName}
+                          onChange={(e) => setDisplayName(e.target.value)}
+                          placeholder="e.g. Jane Doe"
+                          className="w-full px-4 py-3 rounded-xl bg-white/6 border border-white/10 text-white placeholder-white/20 focus:outline-none focus:border-white/30 transition-colors text-sm"
                         />
                       </div>
                     </div>
+                  )}
 
-                    {/* Speaker */}
-                    <div>
-                      <label className="text-xs font-medium text-white/40 uppercase tracking-widest mb-2 flex items-center gap-1.5">
-                        <Speaker size={10} /> Speakers
-                      </label>
-                      <div className="flex gap-2">
+                  {step === 'registration' && (
+                    <div className="space-y-5">
+                      <div>
+                        <h2 className="text-xl font-light text-white/90 mb-1">Registration</h2>
+                        <p className="text-sm text-white/30">
+                          Register as a SIP endpoint to receive incoming calls
+                        </p>
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-white/40 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                          <Mail size={10} /> Alias
+                        </label>
+                        <input
+                          type="email"
+                          value={regAlias}
+                          onChange={(e) => setRegAlias(e.target.value)}
+                          placeholder="e.g. user@example.com"
+                          className="w-full px-4 py-3 rounded-xl bg-white/6 border border-white/10 text-white placeholder-white/20 focus:outline-none focus:border-white/30 transition-colors text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-white/40 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                          <User size={10} /> Username
+                        </label>
+                        <input
+                          type="text"
+                          value={regUsername}
+                          onChange={(e) => setRegUsername(e.target.value)}
+                          placeholder="e.g. username"
+                          className="w-full px-4 py-3 rounded-xl bg-white/6 border border-white/10 text-white placeholder-white/20 focus:outline-none focus:border-white/30 transition-colors text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-white/40 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                          <KeyRound size={10} /> Password
+                        </label>
+                        <input
+                          type="password"
+                          value={regPassword}
+                          onChange={(e) => setRegPassword(e.target.value)}
+                          placeholder="••••••••"
+                          className="w-full px-4 py-3 rounded-xl bg-white/6 border border-white/10 text-white placeholder-white/20 focus:outline-none focus:border-white/30 transition-colors text-sm"
+                        />
+                      </div>
+                      <p className="text-[11px] text-white/20">
+                        Optional. Skip if you don't need to receive incoming calls.
+                      </p>
+                    </div>
+                  )}
+
+                  {step === 'calendar' && (
+                    <div className="space-y-5">
+                      <div>
+                        <h2 className="text-xl font-light text-white/90 mb-1">Calendar</h2>
+                        <p className="text-sm text-white/30">
+                          Connect your calendar with Pexip One Touch Join
+                        </p>
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-white/40 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                          <Key size={10} /> OTJ Client ID
+                        </label>
+                        <input
+                          type="text"
+                          value={otjClientId}
+                          onChange={(e) => setOtjClientId(e.target.value)}
+                          placeholder="From your Pexip OTJ portal"
+                          className="w-full px-4 py-3 rounded-xl bg-white/6 border border-white/10 text-white placeholder-white/20 focus:outline-none focus:border-white/30 transition-colors text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-white/40 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                          <KeyRound size={10} /> OTJ Client Secret
+                        </label>
+                        <input
+                          type="password"
+                          value={otjClientSecret}
+                          onChange={(e) => setOtjClientSecret(e.target.value)}
+                          placeholder="••••••••"
+                          className="w-full px-4 py-3 rounded-xl bg-white/6 border border-white/10 text-white placeholder-white/20 focus:outline-none focus:border-white/30 transition-colors text-sm"
+                        />
+                      </div>
+                      <p className="text-[11px] text-white/20">
+                        Optional. Skip if you don't use calendar integration.
+                      </p>
+                    </div>
+                  )}
+
+                  {step === 'providers' && (
+                    <div className="space-y-5">
+                      <div>
+                        <h2 className="text-xl font-light text-white/90 mb-1">Provider Settings</h2>
+                        <p className="text-sm text-white/30">
+                          Configure interop with third-party meeting providers
+                        </p>
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-white/40 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                          <Cloud size={10} /> Pexip Cloud Customer ID
+                        </label>
+                        <input
+                          type="text"
+                          value={pexipCustomerId}
+                          onChange={(e) => setPexipCustomerId(e.target.value)}
+                          placeholder="For Teams CVI dial strings"
+                          className="w-full px-4 py-3 rounded-xl bg-white/6 border border-white/10 text-white placeholder-white/20 focus:outline-none focus:border-white/30 transition-colors text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-white/40 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                          <Video size={10} /> Google Meet Domain
+                        </label>
+                        <input
+                          type="text"
+                          value={googleDomain}
+                          onChange={(e) => setGoogleDomain(e.target.value)}
+                          placeholder="e.g. meet.example.com"
+                          className="w-full px-4 py-3 rounded-xl bg-white/6 border border-white/10 text-white placeholder-white/20 focus:outline-none focus:border-white/30 transition-colors text-sm"
+                        />
+                      </div>
+                      <p className="text-[11px] text-white/20">
+                        Optional. Skip if you only use Pexip-native meetings.
+                      </p>
+                    </div>
+                  )}
+
+                  {step === 'devices' && (
+                    <div className="space-y-4">
+                      <div>
+                        <h2 className="text-xl font-light text-white/90 mb-1">Devices</h2>
+                        <p className="text-sm text-white/30">
+                          Check your camera, mic, and speakers
+                        </p>
+                      </div>
+
+                      {/* Camera preview */}
+                      <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-black/40 border border-white/6">
+                        {cameraError ? (
+                          <div className="absolute inset-0 flex items-center justify-center text-white/30 text-xs">
+                            Camera unavailable
+                          </div>
+                        ) : (
+                          <>
+                            <video
+                              ref={videoRef}
+                              autoPlay
+                              playsInline
+                              muted
+                              className="w-full h-full object-cover -scale-x-100"
+                            />
+                            {!previewStream && (
+                              <div className="absolute inset-0 flex items-center justify-center">
+                                <div className="w-8 h-8 border-[3px] border-white/10 border-t-white/60 rounded-full animate-spin" />
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </div>
+
+                      {/* Camera select */}
+                      <div>
+                        <label className="text-xs font-medium text-white/40 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                          <Camera size={10} /> Camera
+                        </label>
                         <select
-                          value={settings.audioOutput}
-                          onChange={(e) => saveSettings({ audioOutput: e.target.value })}
-                          className="flex-1 px-4 py-3 rounded-xl bg-white/6 border border-white/10 text-white text-sm focus:outline-none focus:border-white/30 transition-colors appearance-none cursor-pointer"
+                          value={settings.videoInput}
+                          onChange={(e) => saveSettings({ videoInput: e.target.value })}
+                          className="w-full px-4 py-3 rounded-xl bg-white/6 border border-white/10 text-white text-sm focus:outline-none focus:border-white/30 transition-colors appearance-none cursor-pointer"
                         >
-                          <option value="" className="bg-black">System Default</option>
-                          {audioOutputs.map((d) => (
+                          <option value="" className="bg-black">
+                            System Default
+                          </option>
+                          {videoInputs.map((d) => (
                             <option key={d.deviceId} value={d.deviceId} className="bg-black">
-                              {d.label || `Speaker ${d.deviceId.slice(0, 8)}`}
+                              {d.label || `Camera ${d.deviceId.slice(0, 8)}`}
                             </option>
                           ))}
                         </select>
-                        <button
-                          onClick={speakerTest.toggle}
-                          className={`px-3 py-3 rounded-xl border text-xs font-medium transition-colors flex items-center gap-1.5 ${
-                            speakerTest.testing
-                              ? 'bg-white/10 border-white/20 text-white'
-                              : 'bg-white/4 border-white/6 text-white/40 hover:text-white/60 hover:bg-white/6'
-                          }`}
-                        >
-                          {speakerTest.testing ? 'Stop' : 'Test'}
-                        </button>
                       </div>
-                    </div>
-                  </div>
-                )}
 
-                {step === 'transcription' && (
-                  <div className="space-y-3">
-                    <div>
-                      <h3 className="text-base font-semibold mb-1">Local Models</h3>
-                      <p className="text-sm text-white/30">
-                        Optional. Download speech-to-text and summarization models for offline use.
-                      </p>
-                    </div>
-
-                    <div className="px-4 py-3 rounded-xl bg-white/3 border border-white/6 flex items-center gap-3">
-                      <div className="flex-1 min-w-0">
-                        <div className="text-[13px] font-medium text-white/80">Speech-to-Text · ~126 MB</div>
-                        <div className="text-[11px] text-white/30">Parakeet TDT-CTC 110M</div>
-                      </div>
-                      {modelsDownloaded ? (
-                        <div className="flex items-center gap-1.5 text-emerald-400 text-xs font-medium">
-                          <Check size={14} /> Ready
-                        </div>
-                      ) : (
-                        <button
-                          onClick={handleDownloadModels}
-                          disabled={downloadBusy}
-                          className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white/8 border border-white/10 text-white/70 text-xs font-medium hover:bg-white/12 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                      {/* Mic + level */}
+                      <div>
+                        <label className="text-xs font-medium text-white/40 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                          <Mic size={10} /> Microphone
+                        </label>
+                        <select
+                          value={settings.audioInput}
+                          onChange={(e) => saveSettings({ audioInput: e.target.value })}
+                          className="w-full px-4 py-3 rounded-xl bg-white/6 border border-white/10 text-white text-sm focus:outline-none focus:border-white/30 transition-colors appearance-none cursor-pointer"
                         >
-                          {downloadBusy ? (
-                            <div className="w-3 h-3 border border-white/20 border-t-white/60 rounded-full animate-spin" />
-                          ) : (
-                            <Download size={12} />
-                          )}
-                          {downloadBusy ? 'Downloading...' : 'Download'}
-                        </button>
-                      )}
-                    </div>
-                    {downloadBusy && (
-                      <div className="space-y-1.5 pl-1">
-                        <div className="h-1.5 rounded-full bg-white/6 overflow-hidden">
+                          <option value="" className="bg-black">
+                            System Default
+                          </option>
+                          {audioInputs.map((d) => (
+                            <option key={d.deviceId} value={d.deviceId} className="bg-black">
+                              {d.label || `Microphone ${d.deviceId.slice(0, 8)}`}
+                            </option>
+                          ))}
+                        </select>
+                        <div className="mt-2 h-1.5 rounded-full bg-white/6 overflow-hidden">
                           <div
-                            className="h-full rounded-full bg-white/30 transition-all duration-300"
-                            style={{ width: `${downloadProgress}%` }}
+                            className="h-full rounded-full bg-emerald-500/60"
+                            style={{
+                              width: `${micLevel * 100}%`,
+                              transition: 'width 0.15s ease-out',
+                            }}
                           />
                         </div>
-                        <div className="text-[11px] text-white/25 truncate">{downloadStatus}</div>
                       </div>
-                    )}
-                    {downloadStatus && !modelsDownloaded && !downloadBusy && (
-                      <div className="text-[11px] text-rose-400/60 truncate pl-1">{downloadStatus}</div>
-                    )}
 
-                    <div className="px-4 py-3 rounded-xl bg-white/3 border border-white/6 flex items-center gap-3">
-                      <div className="flex-1 min-w-0">
-                        <div className="text-[13px] font-medium text-white/80">Summarization · ~400 MB</div>
-                        <div className="text-[11px] text-white/30">Qwen3 0.6B Instruct</div>
-                      </div>
-                      {summaryModelDownloaded ? (
-                        <div className="flex items-center gap-1.5 text-emerald-400 text-xs font-medium">
-                          <Check size={14} /> Ready
+                      {/* Speaker */}
+                      <div>
+                        <label className="text-xs font-medium text-white/40 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                          <Speaker size={10} /> Speakers
+                        </label>
+                        <div className="flex gap-2">
+                          <select
+                            value={settings.audioOutput}
+                            onChange={(e) => saveSettings({ audioOutput: e.target.value })}
+                            className="flex-1 px-4 py-3 rounded-xl bg-white/6 border border-white/10 text-white text-sm focus:outline-none focus:border-white/30 transition-colors appearance-none cursor-pointer"
+                          >
+                            <option value="" className="bg-black">
+                              System Default
+                            </option>
+                            {audioOutputs.map((d) => (
+                              <option key={d.deviceId} value={d.deviceId} className="bg-black">
+                                {d.label || `Speaker ${d.deviceId.slice(0, 8)}`}
+                              </option>
+                            ))}
+                          </select>
+                          <button
+                            onClick={speakerTest.toggle}
+                            className={`px-3 py-3 rounded-xl border text-xs font-medium transition-colors flex items-center gap-1.5 ${
+                              speakerTest.testing
+                                ? 'bg-white/10 border-white/20 text-white'
+                                : 'bg-white/4 border-white/6 text-white/40 hover:text-white/60 hover:bg-white/6'
+                            }`}
+                          >
+                            {speakerTest.testing ? 'Stop' : 'Test'}
+                          </button>
                         </div>
-                      ) : (
-                        <button
-                          onClick={downloadSummaryModel}
-                          disabled={summaryDownloadBusy}
-                          className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white/8 border border-white/10 text-white/70 text-xs font-medium hover:bg-white/12 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                        >
-                          {summaryDownloadBusy ? (
-                            <div className="w-3 h-3 border border-white/20 border-t-white/60 rounded-full animate-spin" />
-                          ) : (
-                            <Download size={12} />
-                          )}
-                          {summaryDownloadBusy ? 'Downloading...' : 'Download'}
-                        </button>
-                      )}
+                      </div>
                     </div>
-                    {summaryDownloadBusy && summaryDownloadStatus && (
-                      <div className="text-[11px] text-white/25 truncate pl-1">{summaryDownloadStatus}</div>
-                    )}
-                    {summaryDownloadStatus && !summaryModelDownloaded && !summaryDownloadBusy && (
-                      <div className="text-[11px] text-rose-400/60 truncate pl-1">{summaryDownloadStatus}</div>
-                    )}
+                  )}
 
-                    <p className="text-[11px] text-white/20 pt-1">
-                      Both are optional. You can also download these later from Settings or by running{' '}
-                      <code className="text-white/30">npm run download-models</code>.
-                    </p>
-                  </div>
-                )}
-
-                {step === 'check' && (
-                  <div className="space-y-5">
-                    <div>
-                      <h2 className="text-xl font-light text-white/90 mb-1">System Check</h2>
-                      <p className="text-sm text-white/30">Verifying your configuration</p>
-                    </div>
+                  {step === 'transcription' && (
                     <div className="space-y-3">
-                      {checks.map((item, i) => (
-                        <div key={i} className="flex items-center gap-3 px-3 py-3 rounded-xl bg-white/3 border border-white/6">
-                          <div className="w-6 h-6 flex items-center justify-center shrink-0">
-                            {item.status === 'pending' && (
-                              <div className="w-2.5 h-2.5 rounded-full bg-white/10" />
-                            )}
-                            {item.status === 'checking' && (
-                              <div className="w-4 h-4 border-2 border-white/10 border-t-white/50 rounded-full animate-spin" />
-                            )}
-                            {item.status === 'pass' && (
-                              <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-                            )}
-                            {item.status === 'warn' && (
-                              <div className="w-2.5 h-2.5 rounded-full bg-amber-500" />
-                            )}
-                            {item.status === 'fail' && (
-                              <div className="w-2.5 h-2.5 rounded-full bg-rose-500" />
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="text-[13px] font-medium text-white/80">{item.label}</div>
-                            {item.detail && (
-                              <div className={`text-[11px] ${
-                                item.status === 'pass' ? 'text-emerald-400/60' :
-                                item.status === 'warn' ? 'text-amber-400/60' :
-                                item.status === 'fail' ? 'text-rose-400/60' :
-                                'text-white/30'
-                              }`}>
-                                {item.detail}
-                              </div>
-                            )}
-                          </div>
-                          {(item.status === 'fail' || item.status === 'warn') && item.jumpTo && !checks.some((c) => c.status === 'pending' || c.status === 'checking') && (
-                            <button
-                              onClick={() => setStep(item.jumpTo!)}
-                              className="text-[11px] text-white/30 hover:text-white/60 transition-colors px-2 py-1 rounded-lg hover:bg-white/6 shrink-0"
-                            >
-                              Configure
-                            </button>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                      <div>
+                        <h3 className="text-base font-semibold mb-1">Local Models</h3>
+                        <p className="text-sm text-white/30">
+                          Optional. Download speech-to-text and summarization models for offline
+                          use.
+                        </p>
+                      </div>
 
-                {step === 'done' && (
-                  <div className="text-center space-y-4">
-                    <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mx-auto">
-                      <Check size={28} className="text-emerald-400" />
+                      <div className="px-4 py-3 rounded-xl bg-white/3 border border-white/6 flex items-center gap-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="text-[13px] font-medium text-white/80">
+                            Speech-to-Text · ~126 MB
+                          </div>
+                          <div className="text-[11px] text-white/30">Parakeet TDT-CTC 110M</div>
+                        </div>
+                        {modelsDownloaded ? (
+                          <div className="flex items-center gap-1.5 text-emerald-400 text-xs font-medium">
+                            <Check size={14} /> Ready
+                          </div>
+                        ) : (
+                          <button
+                            onClick={handleDownloadModels}
+                            disabled={downloadBusy}
+                            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white/8 border border-white/10 text-white/70 text-xs font-medium hover:bg-white/12 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                          >
+                            {downloadBusy ? (
+                              <div className="w-3 h-3 border border-white/20 border-t-white/60 rounded-full animate-spin" />
+                            ) : (
+                              <Download size={12} />
+                            )}
+                            {downloadBusy ? 'Downloading...' : 'Download'}
+                          </button>
+                        )}
+                      </div>
+                      {downloadBusy && (
+                        <div className="space-y-1.5 pl-1">
+                          <div className="h-1.5 rounded-full bg-white/6 overflow-hidden">
+                            <div
+                              className="h-full rounded-full bg-white/30 transition-all duration-300"
+                              style={{ width: `${downloadProgress}%` }}
+                            />
+                          </div>
+                          <div className="text-[11px] text-white/25 truncate">{downloadStatus}</div>
+                        </div>
+                      )}
+                      {downloadStatus && !modelsDownloaded && !downloadBusy && (
+                        <div className="text-[11px] text-rose-400/60 truncate pl-1">
+                          {downloadStatus}
+                        </div>
+                      )}
+
+                      <div className="px-4 py-3 rounded-xl bg-white/3 border border-white/6 flex items-center gap-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="text-[13px] font-medium text-white/80">
+                            Summarization · ~400 MB
+                          </div>
+                          <div className="text-[11px] text-white/30">Qwen3 0.6B Instruct</div>
+                        </div>
+                        {summaryModelDownloaded ? (
+                          <div className="flex items-center gap-1.5 text-emerald-400 text-xs font-medium">
+                            <Check size={14} /> Ready
+                          </div>
+                        ) : (
+                          <button
+                            onClick={downloadSummaryModel}
+                            disabled={summaryDownloadBusy}
+                            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white/8 border border-white/10 text-white/70 text-xs font-medium hover:bg-white/12 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                          >
+                            {summaryDownloadBusy ? (
+                              <div className="w-3 h-3 border border-white/20 border-t-white/60 rounded-full animate-spin" />
+                            ) : (
+                              <Download size={12} />
+                            )}
+                            {summaryDownloadBusy ? 'Downloading...' : 'Download'}
+                          </button>
+                        )}
+                      </div>
+                      {summaryDownloadBusy && summaryDownloadStatus && (
+                        <div className="text-[11px] text-white/25 truncate pl-1">
+                          {summaryDownloadStatus}
+                        </div>
+                      )}
+                      {summaryDownloadStatus && !summaryModelDownloaded && !summaryDownloadBusy && (
+                        <div className="text-[11px] text-rose-400/60 truncate pl-1">
+                          {summaryDownloadStatus}
+                        </div>
+                      )}
+
+                      <p className="text-[11px] text-white/20 pt-1">
+                        Both are optional. You can also download these later from Settings or by
+                        running <code className="text-white/30">npm run download-models</code>.
+                      </p>
                     </div>
-                    <h2 className="text-2xl font-light text-white/90">You're all set</h2>
-                    <p className="text-sm text-white/40 leading-relaxed max-w-sm mx-auto">
-                      Everything is configured. You can change any of these settings later from the settings menu.
-                    </p>
-                  </div>
-                )}
-              </motion.div>
-            </AnimatePresence>
+                  )}
+
+                  {step === 'check' && (
+                    <div className="space-y-5">
+                      <div>
+                        <h2 className="text-xl font-light text-white/90 mb-1">System Check</h2>
+                        <p className="text-sm text-white/30">Verifying your configuration</p>
+                      </div>
+                      <div className="space-y-3">
+                        {checks.map((item, i) => (
+                          <div
+                            key={i}
+                            className="flex items-center gap-3 px-3 py-3 rounded-xl bg-white/3 border border-white/6"
+                          >
+                            <div className="w-6 h-6 flex items-center justify-center shrink-0">
+                              {item.status === 'pending' && (
+                                <div className="w-2.5 h-2.5 rounded-full bg-white/10" />
+                              )}
+                              {item.status === 'checking' && (
+                                <div className="w-4 h-4 border-2 border-white/10 border-t-white/50 rounded-full animate-spin" />
+                              )}
+                              {item.status === 'pass' && (
+                                <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                              )}
+                              {item.status === 'warn' && (
+                                <div className="w-2.5 h-2.5 rounded-full bg-amber-500" />
+                              )}
+                              {item.status === 'fail' && (
+                                <div className="w-2.5 h-2.5 rounded-full bg-rose-500" />
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="text-[13px] font-medium text-white/80">
+                                {item.label}
+                              </div>
+                              {item.detail && (
+                                <div
+                                  className={`text-[11px] ${
+                                    item.status === 'pass'
+                                      ? 'text-emerald-400/60'
+                                      : item.status === 'warn'
+                                        ? 'text-amber-400/60'
+                                        : item.status === 'fail'
+                                          ? 'text-rose-400/60'
+                                          : 'text-white/30'
+                                  }`}
+                                >
+                                  {item.detail}
+                                </div>
+                              )}
+                            </div>
+                            {(item.status === 'fail' || item.status === 'warn') &&
+                              item.jumpTo &&
+                              !checks.some(
+                                (c) => c.status === 'pending' || c.status === 'checking',
+                              ) && (
+                                <button
+                                  onClick={() => setStep(item.jumpTo!)}
+                                  className="text-[11px] text-white/30 hover:text-white/60 transition-colors px-2 py-1 rounded-lg hover:bg-white/6 shrink-0"
+                                >
+                                  Configure
+                                </button>
+                              )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {step === 'done' && (
+                    <div className="text-center space-y-4">
+                      <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mx-auto">
+                        <Check size={28} className="text-emerald-400" />
+                      </div>
+                      <h2 className="text-2xl font-light text-white/90">You're all set</h2>
+                      <p className="text-sm text-white/40 leading-relaxed max-w-sm mx-auto">
+                        Everything is configured. You can change any of these settings later from
+                        the settings menu.
+                      </p>
+                    </div>
+                  )}
+                </motion.div>
+              </AnimatePresence>
             </div>
 
             {/* Navigation */}
@@ -833,7 +932,9 @@ export function SetupWizard({ open, onComplete, onRegister }: SetupWizardProps) 
                   disabled={checks.some((c) => c.status === 'pending' || c.status === 'checking')}
                   className="w-full py-4 rounded-xl bg-white/8 border border-white/10 text-white font-medium text-sm hover:bg-white/12 transition-colors flex items-center justify-center gap-2 disabled:opacity-30 disabled:cursor-not-allowed"
                 >
-                  {checks.some((c) => c.status === 'checking' || c.status === 'pending') ? 'Checking...' : 'Continue'}
+                  {checks.some((c) => c.status === 'checking' || c.status === 'pending')
+                    ? 'Checking...'
+                    : 'Continue'}
                 </button>
               ) : step === 'welcome' ? (
                 <button
