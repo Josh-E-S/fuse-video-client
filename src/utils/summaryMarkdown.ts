@@ -1,0 +1,107 @@
+import type { TranscriptEntry } from '@/hooks/useTranscription'
+
+const TOKENS_PER_WORD = 0.75
+const MAX_TOKENS = 25_000
+const MIN_ENTRIES = 5
+const MIN_WORDS = 50
+
+const PROMPT_INSTRUCTIONS = `You are a concise meeting note-taker. Read the transcript below and produce a clean markdown summary.
+
+Use exactly this structure. Omit any section that has no content. Do not invent details.
+
+## Summary
+A 2-3 sentence overview.
+
+## Key Points
+- Concise bullet
+- Concise bullet
+
+## Action Items
+- [ ] Owner: task (deadline if mentioned)`
+
+function pad(n: number) {
+  return n.toString().padStart(2, '0')
+}
+
+function timeOf(ts: string): string {
+  const d = new Date(ts)
+  return `${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}:${pad(d.getUTCSeconds())}`
+}
+
+export function countWords(text: string): number {
+  const trimmed = text.trim()
+  if (trimmed.length === 0) return 0
+  return trimmed.split(/\s+/).length
+}
+
+export function estimateTokens(wordCount: number): number {
+  return Math.ceil(wordCount * TOKENS_PER_WORD)
+}
+
+export function buildPrompt(entries: TranscriptEntry[]): string {
+  const transcript = entries.map((e) => `${timeOf(e.timestamp)} — ${e.text.trim()}`).join('\n')
+  return `/no_think\n\n${PROMPT_INSTRUCTIONS}\n\nTRANSCRIPT:\n${transcript}`
+}
+
+export function stripThinkBlocks(raw: string): string {
+  return raw.replace(/<think>[\s\S]*?<\/think>/g, '')
+}
+
+export function gateReason(entries: TranscriptEntry[]): string | null {
+  if (entries.length === 0) return 'No transcript yet'
+  if (entries.length < MIN_ENTRIES) return 'Not enough transcript to summarize yet'
+
+  const words = entries.reduce((acc, e) => acc + countWords(e.text), 0)
+  if (words < MIN_WORDS) return 'Not enough transcript to summarize yet'
+  if (estimateTokens(words) > MAX_TOKENS) {
+    return 'Transcript too long — summary not yet supported for sessions over ~50 min'
+  }
+  return null
+}
+
+interface ComposeArgs {
+  summary: string
+  transcripts: TranscriptEntry[]
+  startedAt: Date
+  includeFullTranscript: boolean
+}
+
+const HEADER_FMT: Intl.DateTimeFormatOptions = {
+  weekday: 'long',
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+  hour: '2-digit',
+  minute: '2-digit',
+}
+
+export function composeSavedMarkdown({
+  summary,
+  transcripts,
+  startedAt,
+  includeFullTranscript,
+}: ComposeArgs): string {
+  const header = `# Meeting Notes — ${startedAt.toLocaleString(undefined, HEADER_FMT)}`
+  const body = summary.trim().length > 0 ? summary.trim() : '_No summary captured._'
+
+  if (!includeFullTranscript) {
+    return `${header}\n\n${body}\n`
+  }
+
+  const transcriptLines = transcripts
+    .map((e) => `*${timeOf(e.timestamp)}* — ${e.text.trim()}`)
+    .join('\n\n')
+  const transcriptSection =
+    transcripts.length > 0 ? transcriptLines : '_No transcript captured._'
+
+  return `${header}\n\n${body}\n\n## Full Transcript\n\n${transcriptSection}\n`
+}
+
+export function defaultSummaryFilename(startedAt: Date): string {
+  const y = startedAt.getFullYear()
+  const m = pad(startedAt.getMonth() + 1)
+  const d = pad(startedAt.getDate())
+  const hh = pad(startedAt.getHours())
+  const mm = pad(startedAt.getMinutes())
+  return `summary-${y}-${m}-${d}-${hh}${mm}.md`
+}
