@@ -3,11 +3,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Play, Square, Save, NotebookPen, AlertCircle, NotebookText } from 'lucide-react'
-import { toast } from 'sonner'
 import { useScribe } from '@/hooks/useScribe'
 import { useSettings } from '@/hooks/useSettings'
 import { useEscapeKey } from '@/hooks/useEscapeKey'
 import { useSummarizer } from '@/hooks/useSummarizer'
+import { TranscriptionConsentModal } from '@/components/modals/TranscriptionConsentModal'
 import { defaultScribeFilename, formatScribeMarkdown } from '@/utils/scribeMarkdown'
 import { composeSavedMarkdown, defaultSummaryFilename, gateReason } from '@/utils/summaryMarkdown'
 
@@ -20,6 +20,7 @@ export function ScribeOverlay({ open, onClose }: ScribeOverlayProps) {
   const { settings } = useSettings()
   const scribe = useScribe(settings.audioInput || undefined)
   const [showCloseConfirm, setShowCloseConfirm] = useState(false)
+  const [showConsent, setShowConsent] = useState(false)
   const summarizer = useSummarizer()
   const [includeFullTranscript, setIncludeFullTranscript] = useState(true)
   const bodyScrollRef = useRef<HTMLDivElement>(null)
@@ -42,10 +43,11 @@ export function ScribeOverlay({ open, onClose }: ScribeOverlayProps) {
   }, [scribe.transcripts, scribe.interimText])
 
   const handleStartScribing = () => {
-    toast('Transcription is starting', {
-      description: 'Please ensure all participants have consented to being transcribed.',
-      duration: 6000,
-    })
+    setShowConsent(true)
+  }
+
+  const confirmStartScribing = () => {
+    setShowConsent(false)
     scribe.start()
   }
 
@@ -336,6 +338,12 @@ export function ScribeOverlay({ open, onClose }: ScribeOverlayProps) {
               </div>
             </div>
           )}
+
+          <TranscriptionConsentModal
+            open={showConsent}
+            onConfirm={confirmStartScribing}
+            onCancel={() => setShowConsent(false)}
+          />
 
           <AnimatePresence>
             {showCloseConfirm && (

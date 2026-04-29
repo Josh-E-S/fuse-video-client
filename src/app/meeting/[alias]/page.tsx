@@ -13,6 +13,7 @@ import { VideoLayout } from '@/components/meeting/VideoLayout'
 import { MiniModeView } from '@/components/meeting/MiniModeView'
 import { PipModeView } from '@/components/meeting/PipModeView'
 import { SettingsModal } from '@/components/modals/SettingsModal'
+import { TranscriptionConsentModal } from '@/components/modals/TranscriptionConsentModal'
 import { CallStatsModal } from '@/components/modals/CallStatsModal'
 import { DTMFModal } from '@/components/modals/DTMFModal'
 import { usePexip } from '@/contexts/PexipContext'
@@ -41,6 +42,9 @@ export default function MeetingPage() {
   const { isElectron, isExpanded, isMini, toggleExpand, toggleMini } = useElectron()
   const [showSettings, setShowSettings] = useState(false)
   const [showStats, setShowStats] = useState(false)
+  const [transcriptionConsentRequest, setTranscriptionConsentRequest] = useState<
+    null | 'toggle' | 'enableWithCaptions'
+  >(null)
 
   const {
     connectionState,
@@ -214,13 +218,11 @@ export default function MeetingPage() {
     isTranscriptionConnected: transcription.isTranscriptionConnected,
     transcriptionEnabled: transcription.transcriptionEnabled,
     onToggleTranscription: () => {
-      if (!transcription.transcriptionEnabled) {
-        toast('Transcription is starting', {
-          description: 'Please ensure all participants have consented to being transcribed.',
-          duration: 6000,
-        })
+      if (transcription.transcriptionEnabled) {
+        transcription.setTranscriptionEnabled(false)
+      } else {
+        setTranscriptionConsentRequest('toggle')
       }
-      transcription.setTranscriptionEnabled(!transcription.transcriptionEnabled)
     },
   }
 
@@ -425,22 +427,15 @@ export default function MeetingPage() {
             }
             onToggleShare={() => (isPresenting ? stopScreenShare() : startScreenShare())}
             onToggleTranscription={() => {
-              if (!transcription.transcriptionEnabled) {
-                toast('Transcription is starting', {
-                  description: 'Please ensure all participants have consented to being transcribed.',
-                  duration: 6000,
-                })
+              if (transcription.transcriptionEnabled) {
+                transcription.setTranscriptionEnabled(false)
+              } else {
+                setTranscriptionConsentRequest('toggle')
               }
-              transcription.setTranscriptionEnabled(!transcription.transcriptionEnabled)
             }}
             onToggleCaptions={() => {
               if (!transcription.transcriptionEnabled) {
-                toast('Transcription is starting', {
-                  description: 'Please ensure all participants have consented to being transcribed.',
-                  duration: 6000,
-                })
-                transcription.setTranscriptionEnabled(true)
-                transcription.setCaptionsVisible(true)
+                setTranscriptionConsentRequest('enableWithCaptions')
               } else {
                 transcription.setCaptionsVisible(!transcription.captionsVisible)
               }
@@ -469,6 +464,20 @@ export default function MeetingPage() {
         onUnregister={async () => {
           await regUnregister()
         }}
+      />
+
+      <TranscriptionConsentModal
+        open={transcriptionConsentRequest !== null}
+        onConfirm={() => {
+          if (transcriptionConsentRequest === 'enableWithCaptions') {
+            transcription.setTranscriptionEnabled(true)
+            transcription.setCaptionsVisible(true)
+          } else {
+            transcription.setTranscriptionEnabled(true)
+          }
+          setTranscriptionConsentRequest(null)
+        }}
+        onCancel={() => setTranscriptionConsentRequest(null)}
       />
 
       <AnimatePresence>
