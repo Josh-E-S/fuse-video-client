@@ -14,6 +14,7 @@ import {
   Users,
   ScreenShare,
 } from 'lucide-react'
+import { toast } from 'sonner'
 import { getElectronBridge } from '@/hooks/useElectron'
 import type { CosmeticTheme } from '@/themes/types'
 
@@ -110,7 +111,13 @@ export function MiniModeView({
       await bridge.adjustWidth(-640)
       setMiniTranscript(false)
     } else {
-      if (!transcriptionEnabled) setTranscriptionEnabled(true)
+      if (!transcriptionEnabled) {
+        toast('Transcription is starting', {
+          description: 'Please ensure all participants have consented to being transcribed.',
+          duration: 6000,
+        })
+        setTranscriptionEnabled(true)
+      }
       await bridge.adjustWidth(640)
       setMiniTranscript(true)
     }
