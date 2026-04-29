@@ -90,7 +90,8 @@ export function ScribeOverlay({ open, onClose }: ScribeOverlayProps) {
             background: 'rgba(var(--theme-surface-base), 0.55)',
             backdropFilter: 'blur(60px)',
             WebkitBackdropFilter: 'blur(60px)',
-          }}
+            WebkitAppRegion: 'no-drag',
+          } as React.CSSProperties}
         >
           <div className="shrink-0 flex items-center justify-between px-5 pt-12 pb-4">
             <div className="flex items-center gap-2.5">
@@ -154,6 +155,7 @@ export function ScribeOverlay({ open, onClose }: ScribeOverlayProps) {
                     </span>
                   </div>
                   <button
+                    type="button"
                     onClick={summarizer.clear}
                     className="px-2 py-1 rounded-md text-[11px] font-medium text-violet-200/80 hover:text-violet-100 hover:bg-violet-400/15 transition-colors"
                   >
