@@ -148,9 +148,8 @@ describe('composeSavedMarkdown', () => {
 })
 
 describe('defaultSummaryFilename', () => {
-  it('produces a stable timestamped filename', () => {
-    const d = new Date('2026-04-28T15:04:00.000Z')
-    const name = defaultSummaryFilename(d)
-    expect(name).toMatch(/^summary-2026-04-28-\d{4}\.md$/)
+  it('produces a timestamped filename in local time', () => {
+    const d = new Date(2026, 3, 28, 15, 4, 0)
+    expect(defaultSummaryFilename(d)).toBe('summary-2026-04-28-1504.md')
   })
 })
