@@ -3,22 +3,33 @@
 import { useState, useEffect, useCallback } from 'react'
 import { getElectronBridge } from '@/hooks/useElectron'
 
+interface ModelEntry {
+  downloaded: boolean
+  checked: boolean
+}
+
+const initialEntry: ModelEntry = { downloaded: false, checked: false }
+
 export function useModelStatus() {
-  const [downloaded, setDownloaded] = useState(false)
-  const [checked, setChecked] = useState(false)
+  const [transcription, setTranscription] = useState<ModelEntry>(initialEntry)
+  const [summarizer, setSummarizer] = useState<ModelEntry>(initialEntry)
 
   const refresh = useCallback(() => {
     const bridge = getElectronBridge()
     if (!bridge) {
-      setDownloaded(false)
-      setChecked(true)
+      setTranscription({ downloaded: false, checked: true })
+      setSummarizer({ downloaded: false, checked: true })
       return
     }
     bridge
       .modelsStatus()
-      .then((s) => setDownloaded(s.downloaded))
-      .catch(() => setDownloaded(false))
-      .finally(() => setChecked(true))
+      .then((s) => setTranscription({ downloaded: s.downloaded, checked: true }))
+      .catch(() => setTranscription({ downloaded: false, checked: true }))
+
+    bridge
+      .summarizeModelStatus()
+      .then((s) => setSummarizer({ downloaded: s.downloaded, checked: true }))
+      .catch(() => setSummarizer({ downloaded: false, checked: true }))
   }, [])
 
   useEffect(() => {
@@ -28,5 +39,5 @@ export function useModelStatus() {
     return () => window.removeEventListener('focus', onFocus)
   }, [refresh])
 
-  return { downloaded, checked, refresh }
+  return { transcription, summarizer, refresh }
 }

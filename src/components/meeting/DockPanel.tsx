@@ -16,9 +16,12 @@ import {
   PanelBottomClose,
   Play,
   Square,
+  NotebookText,
 } from 'lucide-react'
 import type { ChatMessage, Participant } from '@/types/pexrtc'
 import type { TranscriptEntry } from '@/hooks/useTranscription'
+import { useSummarizer } from '@/hooks/useSummarizer'
+import { gateReason } from '@/utils/summaryMarkdown'
 
 export type DockTab = 'chat' | 'people' | 'transcript'
 export type DockMode = 'bottom' | 'side'
@@ -74,19 +77,50 @@ export function DockPanel({
 }: DockPanelProps) {
   const chatScrollRef = useRef<HTMLDivElement>(null)
   const transcriptScrollRef = useRef<HTMLDivElement>(null)
+  const isAtChatBottomRef = useRef(true)
+  const isAtTranscriptBottomRef = useRef(true)
+  const summarizer = useSummarizer()
   const isBottom = mode === 'bottom'
 
+  const handleChatScroll = () => {
+    const el = chatScrollRef.current
+    if (!el) return
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight
+    isAtChatBottomRef.current = distanceFromBottom < 50
+  }
+
+  const handleTranscriptScroll = () => {
+    const el = transcriptScrollRef.current
+    if (!el) return
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight
+    isAtTranscriptBottomRef.current = distanceFromBottom < 50
+  }
+
   useEffect(() => {
-    if (activeTab === 'chat' && chatScrollRef.current) {
-      chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight
-    }
+    if (activeTab !== 'chat' || !chatScrollRef.current) return
+    if (!isAtChatBottomRef.current) return
+    chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight
   }, [chatMessages, activeTab])
 
   useEffect(() => {
-    if (activeTab === 'transcript' && transcriptScrollRef.current) {
-      transcriptScrollRef.current.scrollTop = transcriptScrollRef.current.scrollHeight
-    }
+    if (activeTab !== 'transcript' || !transcriptScrollRef.current) return
+    if (!isAtTranscriptBottomRef.current) return
+    transcriptScrollRef.current.scrollTop = transcriptScrollRef.current.scrollHeight
   }, [transcripts, interimText, activeTab])
+
+  useEffect(() => {
+    if (activeTab === 'chat') {
+      isAtChatBottomRef.current = true
+      if (chatScrollRef.current) {
+        chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight
+      }
+    } else if (activeTab === 'transcript') {
+      isAtTranscriptBottomRef.current = true
+      if (transcriptScrollRef.current) {
+        transcriptScrollRef.current.scrollTop = transcriptScrollRef.current.scrollHeight
+      }
+    }
+  }, [activeTab])
 
   function resolveName(uuid: string, origin: string) {
     if (uuid === 'self') return 'You'
@@ -143,7 +177,11 @@ export function DockPanel({
             transition={{ duration: 0.2, ease: 'easeOut' }}
             className="absolute inset-0 flex flex-col"
           >
-            <div ref={chatScrollRef} className="flex-1 overflow-y-auto px-4 py-3 space-y-3.5">
+            <div
+              ref={chatScrollRef}
+              onScroll={handleChatScroll}
+              className="flex-1 overflow-y-auto px-4 py-3 space-y-3.5"
+            >
               {chatMessages.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full text-white/25">
                   <MessageSquare size={20} className="mb-2 opacity-40" />
@@ -179,7 +217,9 @@ export function DockPanel({
                             </span>
                           )}
                         </div>
-                        <div className="text-[13px] leading-[1.45] text-white/90">{msg.payload}</div>
+                        <div className="text-[13px] leading-[1.45] text-white/90">
+                          {msg.payload}
+                        </div>
                       </div>
                     </div>
                   )
@@ -238,37 +278,33 @@ export function DockPanel({
                 const presenting = p.is_presenting === 'YES'
                 const roleLabel = p.role === 'chair' ? 'Host' : p.protocol || 'Participant'
                 return (
-                <div
-                  key={p.uuid}
-                  className="flex items-center gap-3 py-2.5 border-b border-white/4 last:border-b-0"
-                >
-                  <div className="w-[34px] h-[34px] rounded-xl bg-gradient-to-br from-blue-500 to-violet-500 flex items-center justify-center text-[13px] font-semibold text-white shrink-0">
-                    {initial}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-[13px] font-medium text-white/90 truncate leading-tight">
-                      {name}
+                  <div
+                    key={p.uuid}
+                    className="flex items-center gap-3 py-2.5 border-b border-white/4 last:border-b-0"
+                  >
+                    <div className="w-[34px] h-[34px] rounded-xl bg-gradient-to-br from-blue-500 to-violet-500 flex items-center justify-center text-[13px] font-semibold text-white shrink-0">
+                      {initial}
                     </div>
-                    <div className="text-[11px] text-white/35">
-                      {roleLabel}
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[13px] font-medium text-white/90 truncate leading-tight">
+                        {name}
+                      </div>
+                      <div className="text-[11px] text-white/35">{roleLabel}</div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {muted ? (
+                        <MicOff size={16} className="text-rose-400/60" />
+                      ) : (
+                        <Mic size={16} className="text-white/45" />
+                      )}
+                      {videoMuted ? (
+                        <VideoOff size={16} className="text-rose-400/60" />
+                      ) : (
+                        <Video size={16} className="text-white/45" />
+                      )}
+                      {presenting && <Share2 size={16} className="text-amber-400/60" />}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    {muted ? (
-                      <MicOff size={16} className="text-rose-400/60" />
-                    ) : (
-                      <Mic size={16} className="text-white/45" />
-                    )}
-                    {videoMuted ? (
-                      <VideoOff size={16} className="text-rose-400/60" />
-                    ) : (
-                      <Video size={16} className="text-white/45" />
-                    )}
-                    {presenting && (
-                      <Share2 size={16} className="text-amber-400/60" />
-                    )}
-                  </div>
-                </div>
                 )
               })
             )}
@@ -285,7 +321,43 @@ export function DockPanel({
             transition={{ duration: 0.2, ease: 'easeOut' }}
             className="absolute inset-0 flex flex-col"
           >
-            <div ref={transcriptScrollRef} className="flex-1 overflow-y-auto px-4 py-3">
+            <div
+              ref={transcriptScrollRef}
+              onScroll={handleTranscriptScroll}
+              className="flex-1 overflow-y-auto px-4 py-3"
+            >
+              {summarizer.status === 'error' && summarizer.error && (
+                <div className="mb-3 px-3 py-2 rounded-lg bg-rose-500/10 border border-rose-500/25 text-[12px] text-rose-300">
+                  {summarizer.error}{' '}
+                  <button
+                    onClick={() => summarizer.run(transcripts)}
+                    className="underline underline-offset-2 hover:text-rose-200"
+                  >
+                    Try again
+                  </button>
+                </div>
+              )}
+              {summarizer.summary && (
+                <div className="mb-3 p-3 rounded-xl bg-violet-400/8 border border-violet-400/20">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <NotebookText size={12} className="text-violet-300" />
+                      <span className="text-[10px] font-semibold tracking-wide uppercase text-violet-200/80">
+                        Summary
+                      </span>
+                    </div>
+                    <button
+                      onClick={summarizer.clear}
+                      className="px-2 py-0.5 rounded-md text-[10px] font-medium text-violet-200/80 hover:text-violet-100 hover:bg-violet-400/15 transition-colors"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                  <pre className="whitespace-pre-wrap text-[12px] leading-[1.5] text-white/90 font-sans">
+                    {summarizer.summary}
+                  </pre>
+                </div>
+              )}
               {transcripts.length === 0 && !interimText ? (
                 <div className="flex flex-col items-center justify-center h-full text-white/25">
                   <FileText size={20} className="mb-2 opacity-40" />
@@ -331,28 +403,50 @@ export function DockPanel({
               )}
             </div>
 
-            {onToggleTranscription && (
-              <div className="shrink-0 px-4 pb-3 pt-2 border-t border-white/6">
-                <button
-                  onClick={onToggleTranscription}
-                  className={`w-full h-9 rounded-xl flex items-center justify-center gap-2 text-[13px] font-medium border transition-colors ${
-                    transcriptionEnabled
-                      ? 'bg-rose-500/10 border-rose-500/25 text-rose-300 hover:bg-rose-500/15'
-                      : 'bg-emerald-400/10 border-emerald-400/25 text-emerald-300 hover:bg-emerald-400/15'
-                  }`}
-                >
-                  {transcriptionEnabled ? (
-                    <>
-                      <Square size={12} fill="currentColor" />
-                      Stop transcription
-                    </>
-                  ) : (
-                    <>
-                      <Play size={12} fill="currentColor" />
-                      Start transcription
-                    </>
-                  )}
-                </button>
+            {(onToggleTranscription || summarizer.available) && (
+              <div className="shrink-0 px-4 pb-3 pt-2 border-t border-white/6 flex flex-col gap-2">
+                {onToggleTranscription && (
+                  <button
+                    onClick={onToggleTranscription}
+                    className={`w-full h-9 rounded-xl flex items-center justify-center gap-2 text-[13px] font-medium border transition-colors ${
+                      transcriptionEnabled
+                        ? 'bg-rose-500/10 border-rose-500/25 text-rose-300 hover:bg-rose-500/15'
+                        : 'bg-emerald-400/10 border-emerald-400/25 text-emerald-300 hover:bg-emerald-400/15'
+                    }`}
+                  >
+                    {transcriptionEnabled ? (
+                      <>
+                        <Square size={12} fill="currentColor" />
+                        Stop transcription
+                      </>
+                    ) : (
+                      <>
+                        <Play size={12} fill="currentColor" />
+                        Start transcription
+                      </>
+                    )}
+                  </button>
+                )}
+                {summarizer.available && (
+                  <button
+                    onClick={() => summarizer.run(transcripts)}
+                    disabled={
+                      transcripts.length === 0 ||
+                      summarizer.status === 'preparing' ||
+                      summarizer.status === 'running' ||
+                      Boolean(gateReason(transcripts))
+                    }
+                    title={gateReason(transcripts) ?? 'Generate summary'}
+                    className="w-full h-10 rounded-xl flex items-center justify-center gap-2 text-[13px] font-medium border bg-violet-400/12 border-violet-400/30 text-violet-100 hover:bg-violet-400/18 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <NotebookText size={13} />
+                    {summarizer.status === 'running' || summarizer.status === 'preparing'
+                      ? `${summarizer.elapsedSeconds}s · ${summarizer.tokenCount}t`
+                      : summarizer.status === 'done'
+                        ? 'Regenerate'
+                        : 'Summarize'}
+                  </button>
+                )}
               </div>
             )}
           </motion.div>

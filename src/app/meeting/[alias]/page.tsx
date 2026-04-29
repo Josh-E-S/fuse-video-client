@@ -13,6 +13,7 @@ import { VideoLayout } from '@/components/meeting/VideoLayout'
 import { MiniModeView } from '@/components/meeting/MiniModeView'
 import { PipModeView } from '@/components/meeting/PipModeView'
 import { SettingsModal } from '@/components/modals/SettingsModal'
+import { TranscriptionConsentModal } from '@/components/modals/TranscriptionConsentModal'
 import { CallStatsModal } from '@/components/modals/CallStatsModal'
 import { DTMFModal } from '@/components/modals/DTMFModal'
 import { usePexip } from '@/contexts/PexipContext'
@@ -41,6 +42,9 @@ export default function MeetingPage() {
   const { isElectron, isExpanded, isMini, toggleExpand, toggleMini } = useElectron()
   const [showSettings, setShowSettings] = useState(false)
   const [showStats, setShowStats] = useState(false)
+  const [transcriptionConsentRequest, setTranscriptionConsentRequest] = useState<
+    null | 'toggle' | 'enableWithCaptions'
+  >(null)
 
   const {
     connectionState,
@@ -213,8 +217,13 @@ export default function MeetingPage() {
     interimSpeaker: transcription.interimSpeaker,
     isTranscriptionConnected: transcription.isTranscriptionConnected,
     transcriptionEnabled: transcription.transcriptionEnabled,
-    onToggleTranscription: () =>
-      transcription.setTranscriptionEnabled(!transcription.transcriptionEnabled),
+    onToggleTranscription: () => {
+      if (transcription.transcriptionEnabled) {
+        transcription.setTranscriptionEnabled(false)
+      } else {
+        setTranscriptionConsentRequest('toggle')
+      }
+    },
   }
 
   // PiP mode
@@ -417,11 +426,16 @@ export default function MeetingPage() {
               })
             }
             onToggleShare={() => (isPresenting ? stopScreenShare() : startScreenShare())}
-            onToggleTranscription={() => transcription.setTranscriptionEnabled(!transcription.transcriptionEnabled)}
+            onToggleTranscription={() => {
+              if (transcription.transcriptionEnabled) {
+                transcription.setTranscriptionEnabled(false)
+              } else {
+                setTranscriptionConsentRequest('toggle')
+              }
+            }}
             onToggleCaptions={() => {
               if (!transcription.transcriptionEnabled) {
-                transcription.setTranscriptionEnabled(true)
-                transcription.setCaptionsVisible(true)
+                setTranscriptionConsentRequest('enableWithCaptions')
               } else {
                 transcription.setCaptionsVisible(!transcription.captionsVisible)
               }
@@ -450,6 +464,20 @@ export default function MeetingPage() {
         onUnregister={async () => {
           await regUnregister()
         }}
+      />
+
+      <TranscriptionConsentModal
+        open={transcriptionConsentRequest !== null}
+        onConfirm={() => {
+          if (transcriptionConsentRequest === 'enableWithCaptions') {
+            transcription.setTranscriptionEnabled(true)
+            transcription.setCaptionsVisible(true)
+          } else {
+            transcription.setTranscriptionEnabled(true)
+          }
+          setTranscriptionConsentRequest(null)
+        }}
+        onCancel={() => setTranscriptionConsentRequest(null)}
       />
 
       <AnimatePresence>

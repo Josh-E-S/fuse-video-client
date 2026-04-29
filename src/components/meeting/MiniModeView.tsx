@@ -15,6 +15,7 @@ import {
   ScreenShare,
 } from 'lucide-react'
 import { getElectronBridge } from '@/hooks/useElectron'
+import { TranscriptionConsentModal } from '@/components/modals/TranscriptionConsentModal'
 import type { CosmeticTheme } from '@/themes/types'
 
 interface MiniModeViewProps {
@@ -69,6 +70,7 @@ export function MiniModeView({
   const miniHoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [miniTranscript, setMiniTranscript] = useState(false)
   const [miniView, setMiniView] = useState<'far' | 'content'>('far')
+  const [showTranscriptionConsent, setShowTranscriptionConsent] = useState(false)
 
   // When the local user starts sharing, auto-flip to content view so they see what they're presenting.
   // Only on the rising edge — user can still manually flip back to far-end.
@@ -109,11 +111,23 @@ export function MiniModeView({
     if (miniTranscript) {
       await bridge.adjustWidth(-640)
       setMiniTranscript(false)
-    } else {
-      if (!transcriptionEnabled) setTranscriptionEnabled(true)
-      await bridge.adjustWidth(640)
-      setMiniTranscript(true)
+      return
     }
+    if (!transcriptionEnabled) {
+      setShowTranscriptionConsent(true)
+      return
+    }
+    await bridge.adjustWidth(640)
+    setMiniTranscript(true)
+  }
+
+  async function confirmMiniTranscriptionStart() {
+    const bridge = getElectronBridge()
+    if (!bridge) return
+    setShowTranscriptionConsent(false)
+    setTranscriptionEnabled(true)
+    await bridge.adjustWidth(640)
+    setMiniTranscript(true)
   }
 
   return (
@@ -278,6 +292,11 @@ export function MiniModeView({
           </div>
         </div>
       )}
+      <TranscriptionConsentModal
+        open={showTranscriptionConsent}
+        onConfirm={confirmMiniTranscriptionStart}
+        onCancel={() => setShowTranscriptionConsent(false)}
+      />
     </div>
   )
 }

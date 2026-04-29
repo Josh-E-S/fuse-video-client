@@ -104,11 +104,11 @@ export function FeaturedMeetingCard({
   }
 
   return (
-    <div className={compact ? 'mt-6' : 'mt-8'}>
+    <div className={compact ? 'mt-3' : 'mt-8'}>
       {compact && (
-        <div className="flex flex-col items-center mb-5 mt-1">
-          <span className="text-[11px] text-white/35">{dateStr}</span>
-          <span className="text-[28px] font-light text-white/85 tabular-nums tracking-tight leading-none mt-0.5">
+        <div className="flex flex-col items-center mb-8">
+          <span className="text-[10px] text-white/35">{dateStr}</span>
+          <span className="text-[24px] font-light text-white/85 tabular-nums tracking-tight leading-none mt-0.5">
             {clockStr}
           </span>
         </div>
@@ -224,7 +224,7 @@ export function FeaturedMeetingCard({
         </AnimatePresence>
 
         {laterMeetings.length > 0 && (() => {
-          const VISIBLE_COUNT = compact ? 7 : 3
+          const VISIBLE_COUNT = compact ? 5 : 3
           const visibleMeetings = laterMeetings.slice(0, VISIBLE_COUNT)
           const overflowMeetings = laterMeetings.slice(VISIBLE_COUNT)
 
@@ -240,9 +240,9 @@ export function FeaturedMeetingCard({
                   )}
                   <button
                     onClick={() => onSelectMeeting(m.id)}
-                    className="flex items-center cursor-pointer text-left w-full px-3 py-3 gap-3 border-l-[3px] border-white/10 rounded-r-lg hover:bg-white/3 hover:border-white/20 transition-colors"
+                    className="flex items-center cursor-pointer text-left w-full px-3 py-2 gap-3 border-l-[3px] border-white/10 rounded-r-lg hover:bg-white/3 hover:border-white/20 transition-colors"
                   >
-                    <div className="w-8 h-8 rounded-lg bg-white/3 flex items-center justify-center shrink-0">
+                    <div className="w-7 h-7 rounded-lg bg-white/3 flex items-center justify-center shrink-0">
                       {prov ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img

@@ -810,30 +810,30 @@ export default function HomePage() {
             {miniIdx > 0 ? (
               <button
                 onClick={() => setMiniIdx(miniIdx - 1)}
-                className="w-8 h-8 shrink-0 rounded-full flex items-center justify-center text-white/35 hover:text-white/70 hover:bg-white/6 transition-colors"
+                className="w-12 h-12 shrink-0 rounded-full flex items-center justify-center text-white/35 hover:text-white/70 hover:bg-white/6 transition-colors"
               >
-                <ChevronLeft size={18} />
+                <ChevronLeft size={28} />
               </button>
             ) : (
-              <div className="w-8 shrink-0" />
+              <div className="w-12 shrink-0" />
             )}
 
             {/* Meeting info */}
             {(() => {
               const m = meetings[miniIdx]
-              if (!m) return <div className="flex-1 text-center"><span className="text-[12px] text-white/25">No upcoming meetings</span></div>
+              if (!m) return <div className="flex-1 text-center"><span className="text-[16px] text-white/25">No upcoming meetings</span></div>
               const countdown = getMeetingCountdown(m)
               const miniProvider = getMeetingProvider(m.alias)
               return (
-                <div className="flex-1 flex flex-col items-center justify-center gap-1.5 min-w-0 px-1">
-                  <span className="text-[11px] text-white/30 truncate max-w-full">
+                <div className="flex-1 flex flex-col items-center justify-center gap-2 min-w-0 px-1">
+                  <span className="text-[14px] text-white/30 truncate max-w-full">
                     {countdown || (m.isNow ? 'Live now' : '')}
                   </span>
                   {miniProvider && (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={miniProvider.icon} alt={miniProvider.label} width={20} height={20} className="opacity-70" />
+                    <img src={miniProvider.icon} alt={miniProvider.label} width={36} height={36} className="opacity-70" />
                   )}
-                  <span className="text-[13px] font-medium text-white/85 truncate max-w-full text-center leading-tight">
+                  <span className="text-[16px] font-medium text-white/85 truncate max-w-full text-center leading-tight">
                     {m.title}
                   </span>
                   {canJoinMeeting(m) && m.alias && (
@@ -846,7 +846,7 @@ export default function HomePage() {
                         }
                       }}
                       disabled={isBusy}
-                      className="mt-0.5 px-4 py-1.5 rounded-lg text-[11px] font-semibold text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 hover:bg-emerald-400/20 transition-colors disabled:opacity-40"
+                      className="mt-1 px-6 py-2.5 rounded-lg text-[14px] font-semibold text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 hover:bg-emerald-400/20 transition-colors disabled:opacity-40"
                     >
                       Join
                     </button>
@@ -859,12 +859,12 @@ export default function HomePage() {
             {miniIdx < meetings.length - 1 ? (
               <button
                 onClick={() => setMiniIdx(miniIdx + 1)}
-                className="w-8 h-8 shrink-0 rounded-full flex items-center justify-center text-white/35 hover:text-white/70 hover:bg-white/6 transition-colors"
+                className="w-12 h-12 shrink-0 rounded-full flex items-center justify-center text-white/35 hover:text-white/70 hover:bg-white/6 transition-colors"
               >
-                <ChevronRight size={18} />
+                <ChevronRight size={28} />
               </button>
             ) : (
-              <div className="w-8 shrink-0" />
+              <div className="w-12 shrink-0" />
             )}
             </div>
           </div>

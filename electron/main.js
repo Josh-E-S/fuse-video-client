@@ -3,6 +3,7 @@ const { spawn, fork } = require("child_process");
 const path = require("path");
 const net = require("net");
 const { registerTranscriptionHandlers, registerModelHandlers } = require("./transcription");
+const { registerSummarizerHandlers, registerSummarizerModelHandlers } = require("./summarizer");
 
 // Window size matrix — keyed by (expanded, sideDockOpen).
 // Uniform height (941) across all non-mini states so mode toggles never jump vertically.
@@ -398,6 +399,8 @@ app.whenReady().then(async () => {
 
   registerTranscriptionHandlers();
   registerModelHandlers();
+  registerSummarizerHandlers();
+  registerSummarizerModelHandlers();
 
   // Notify renderer when the OS resumes from sleep or the screen is unlocked,
   // so it can re-establish the Pexip registration after suspend kills its socket.

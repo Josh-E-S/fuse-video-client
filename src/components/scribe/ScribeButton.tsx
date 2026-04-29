@@ -10,7 +10,8 @@ interface ScribeButtonProps {
 
 export function ScribeButton({ onClick }: ScribeButtonProps) {
   const { isElectron } = useElectron()
-  const { downloaded, checked } = useModelStatus()
+  const { transcription } = useModelStatus()
+  const { downloaded, checked } = transcription
 
   if (!isElectron || !checked) return null
 
