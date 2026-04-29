@@ -106,7 +106,7 @@ export function FeaturedMeetingCard({
   return (
     <div className={compact ? 'mt-3' : 'mt-8'}>
       {compact && (
-        <div className="flex flex-col items-center mb-5">
+        <div className="flex flex-col items-center mb-8">
           <span className="text-[10px] text-white/35">{dateStr}</span>
           <span className="text-[24px] font-light text-white/85 tabular-nums tracking-tight leading-none mt-0.5">
             {clockStr}
