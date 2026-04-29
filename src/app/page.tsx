@@ -482,7 +482,7 @@ export default function HomePage() {
         <div
           className={`flex-1 min-h-0 overflow-y-auto [scrollbar-width:none] w-full mx-auto px-6 ${
             isSidebar ? 'max-w-[280px]' : isExpanded ? 'max-w-[700px]' : 'max-w-[430px]'
-          } ${isSidebar ? 'pt-20' : isElectron ? 'pt-36' : 'pt-28'}`}
+          } ${isSidebar ? 'pt-24' : isElectron ? 'pt-36' : 'pt-28'}`}
         >
           <div style={{ height: !isElectron && pip.isActive ? '1vh' : '1vh' }} />
 
