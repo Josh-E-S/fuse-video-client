@@ -48,7 +48,7 @@ export function AdHocJoin({
   }, [expanded])
 
   return (
-    <div className={`flex flex-col items-center ${compact ? 'gap-2.5 mt-4' : 'gap-4 mt-10'}`}>
+    <div className={`flex flex-col items-center ${compact ? 'gap-2.5 mt-7' : 'gap-4 mt-10'}`}>
       {providers.length > 0 && (
         <>
       <span className="text-[11px] font-semibold tracking-[0.08em] uppercase text-white/50">
