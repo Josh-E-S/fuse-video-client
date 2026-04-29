@@ -23,7 +23,9 @@ describe('buildPrompt', () => {
   })
 
   it('joins entries with HH:MM:SS prefix', () => {
-    const p = buildPrompt([entry('first', '2026-04-28T12:00:00.000Z'), entry('second', '2026-04-28T12:00:05.000Z')])
+    const ts1 = new Date(2026, 3, 28, 12, 0, 0).toISOString()
+    const ts2 = new Date(2026, 3, 28, 12, 0, 5).toISOString()
+    const p = buildPrompt([entry('first', ts1), entry('second', ts2)])
     expect(p).toMatch(/12:00:00 — first/)
     expect(p).toMatch(/12:00:05 — second/)
   })

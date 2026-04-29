@@ -25,7 +25,7 @@ function pad(n: number) {
 
 function timeOf(ts: string): string {
   const d = new Date(ts)
-  return `${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}:${pad(d.getUTCSeconds())}`
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
 }
 
 export function countWords(text: string): number {
