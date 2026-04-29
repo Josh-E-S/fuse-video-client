@@ -29,6 +29,8 @@ export function useSummarizer(): UseSummarizerReturn {
 
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const unsubRef = useRef<(() => void) | null>(null)
+  const inFlightRef = useRef(false)
+  const generationRef = useRef(0)
 
   useEffect(() => {
     const bridge = getElectronBridge()
@@ -47,6 +49,7 @@ export function useSummarizer(): UseSummarizerReturn {
   }, [])
 
   const clear = useCallback(() => {
+    generationRef.current++
     if (tickRef.current) {
       clearInterval(tickRef.current)
       tickRef.current = null
@@ -62,71 +65,77 @@ export function useSummarizer(): UseSummarizerReturn {
     setTokenCount(0)
   }, [])
 
-  const run = useCallback(
-    async (entries: TranscriptEntry[]) => {
-      if (status === 'preparing' || status === 'running') return
+  const run = useCallback(async (entries: TranscriptEntry[]) => {
+    if (inFlightRef.current) return
+    inFlightRef.current = true
 
-      const bridge = getElectronBridge()
-      if (!bridge) {
-        setError('Summary engine not available outside the desktop app')
+    const myGen = ++generationRef.current
+
+    const bridge = getElectronBridge()
+    if (!bridge) {
+      inFlightRef.current = false
+      setError('Summary engine not available outside the desktop app')
+      setStatus('error')
+      return
+    }
+
+    const reason = gateReason(entries)
+    if (reason) {
+      inFlightRef.current = false
+      setError(reason)
+      setStatus('error')
+      return
+    }
+
+    setStatus('preparing')
+    setError(null)
+    setSummary(null)
+    setElapsedSeconds(0)
+    setTokenCount(0)
+
+    const startedAt = Date.now()
+    tickRef.current = setInterval(() => {
+      setElapsedSeconds(Math.floor((Date.now() - startedAt) / 1000))
+    }, 250)
+
+    unsubRef.current = bridge.onSummarizeProgress((payload) => {
+      setTokenCount(payload.tokenCount)
+    })
+
+    setStatus('running')
+
+    try {
+      const prompt = buildPrompt(entries)
+      const result = await bridge.summarizeRun(prompt)
+
+      if (generationRef.current !== myGen) return
+
+      if (result.ok) {
+        setSummary(result.markdown)
+        setTokenCount(result.tokenCount)
+        setElapsedSeconds(Math.floor(result.elapsedMs / 1000))
+        setStatus('done')
+      } else {
+        setError(result.error)
         setStatus('error')
-        return
       }
-
-      const reason = gateReason(entries)
-      if (reason) {
-        setError(reason)
-        setStatus('error')
-        return
+    } catch (err) {
+      if (generationRef.current !== myGen) return
+      log.media.warn('Summarizer call threw')
+      setError(err instanceof Error ? err.message : "Couldn't generate summary. Try again.")
+      setStatus('error')
+    } finally {
+      inFlightRef.current = false
+      if (tickRef.current) {
+        clearInterval(tickRef.current)
+        tickRef.current = null
       }
-
-      setStatus('preparing')
-      setError(null)
-      setSummary(null)
-      setElapsedSeconds(0)
-      setTokenCount(0)
-
-      const startedAt = Date.now()
-      tickRef.current = setInterval(() => {
-        setElapsedSeconds(Math.floor((Date.now() - startedAt) / 1000))
-      }, 250)
-
-      unsubRef.current = bridge.onSummarizeProgress((payload) => {
-        setTokenCount(payload.tokenCount)
-      })
-
-      setStatus('running')
-
-      try {
-        const prompt = buildPrompt(entries)
-        const result = await bridge.summarizeRun(prompt)
-
-        if (result.ok) {
-          setSummary(result.markdown)
-          setTokenCount(result.tokenCount)
-          setElapsedSeconds(Math.floor(result.elapsedMs / 1000))
-          setStatus('done')
-        } else {
-          setError(result.error)
-          setStatus('error')
-        }
-      } catch (err) {
-        log.media.warn('Summarizer call threw')
-        setError(err instanceof Error ? err.message : "Couldn't generate summary. Try again.")
-        setStatus('error')
-      } finally {
-        if (tickRef.current) {
-          clearInterval(tickRef.current)
-          tickRef.current = null
-        }
-        if (unsubRef.current) {
-          unsubRef.current()
-          unsubRef.current = null
-        }
+      if (unsubRef.current) {
+        unsubRef.current()
+        unsubRef.current = null
       }
-    },
-    [status],
-  )
+    }
+  }, [])
 
   return { available, status, summary, error, elapsedSeconds, tokenCount, run, clear }
 }

@@ -160,4 +160,64 @@ describe('useSummarizer', () => {
       resolveRun({ ok: true, markdown: 'x', tokenCount: 17, elapsedMs: 500 })
     })
   })
+
+  it('clear() during a running summary cancels its result', async () => {
+    let resolveRun: (v: { ok: true; markdown: string; tokenCount: number; elapsedMs: number }) => void = () => {}
+    installBridge({
+      summarizeRun: vi.fn().mockReturnValue(
+        new Promise((resolve) => {
+          resolveRun = resolve as typeof resolveRun
+        }),
+      ),
+    })
+
+    const { result } = renderHook(() => useSummarizer())
+    let runP: Promise<void>
+    await act(async () => {
+      runP = result.current.run(longEntries)
+    })
+    expect(result.current.status).toBe('running')
+
+    // User clicks Clear mid-run.
+    act(() => {
+      result.current.clear()
+    })
+    expect(result.current.status).toBe('idle')
+
+    // Late-arriving result should NOT flip back to 'done' or set summary.
+    await act(async () => {
+      resolveRun({ ok: true, markdown: 'cancelled', tokenCount: 99, elapsedMs: 999 })
+      await runP!
+    })
+
+    expect(result.current.status).toBe('idle')
+    expect(result.current.summary).toBeNull()
+  })
+
+  it('run is referentially stable across renders', async () => {
+    installBridge({
+      summarizeRun: vi.fn().mockResolvedValue({ ok: true, markdown: 'x', tokenCount: 1, elapsedMs: 1 }),
+    })
+    const { result, rerender } = renderHook(() => useSummarizer())
+    const firstRun = result.current.run
+
+    // Trigger re-renders by running through a complete lifecycle.
+    await act(async () => {
+      await result.current.run(longEntries)
+    })
+    rerender()
+
+    // run identity must not change just because status changed.
+    expect(result.current.run).toBe(firstRun)
+  })
+
+  it('sets error when no Electron bridge is present', async () => {
+    delete (window as unknown as { electron?: unknown }).electron
+    const { result } = renderHook(() => useSummarizer())
+    await act(async () => {
+      await result.current.run(longEntries)
+    })
+    expect(result.current.status).toBe('error')
+    expect(result.current.error).toMatch(/desktop app/i)
+  })
 })
