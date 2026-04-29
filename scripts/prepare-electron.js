@@ -67,4 +67,26 @@ for (const bin of platformBinaries) {
   }
 }
 
+// Copy node-llama-cpp and its platform binary into standalone so the electron
+// main process can dynamic-import() it from the unpacked asar path.
+const llamaSrc = path.join(root, 'node_modules', 'node-llama-cpp');
+const llamaDest = path.join(standalone, 'node_modules', 'node-llama-cpp');
+if (fs.existsSync(llamaSrc) && !fs.existsSync(llamaDest)) {
+  console.log('[prepare] Copying node-llama-cpp into standalone...');
+  copyDir(llamaSrc, llamaDest);
+}
+
+const llamaPlatformBinariesSrc = path.join(root, 'node_modules', '@node-llama-cpp');
+if (fs.existsSync(llamaPlatformBinariesSrc)) {
+  const llamaPlatformBinariesDest = path.join(standalone, 'node_modules', '@node-llama-cpp');
+  for (const bin of fs.readdirSync(llamaPlatformBinariesSrc)) {
+    const src = path.join(llamaPlatformBinariesSrc, bin);
+    const dest = path.join(llamaPlatformBinariesDest, bin);
+    if (!fs.existsSync(dest)) {
+      console.log(`[prepare] Copying @node-llama-cpp/${bin} into standalone...`);
+      copyDir(src, dest);
+    }
+  }
+}
+
 console.log('[prepare] Done.');
