@@ -16,9 +16,12 @@ import {
   PanelBottomClose,
   Play,
   Square,
+  Sparkles,
 } from 'lucide-react'
 import type { ChatMessage, Participant } from '@/types/pexrtc'
 import type { TranscriptEntry } from '@/hooks/useTranscription'
+import { useSummarizer } from '@/hooks/useSummarizer'
+import { gateReason } from '@/utils/summaryMarkdown'
 
 export type DockTab = 'chat' | 'people' | 'transcript'
 export type DockMode = 'bottom' | 'side'
@@ -74,6 +77,7 @@ export function DockPanel({
 }: DockPanelProps) {
   const chatScrollRef = useRef<HTMLDivElement>(null)
   const transcriptScrollRef = useRef<HTMLDivElement>(null)
+  const summarizer = useSummarizer()
   const isBottom = mode === 'bottom'
 
   useEffect(() => {
@@ -286,6 +290,38 @@ export function DockPanel({
             className="absolute inset-0 flex flex-col"
           >
             <div ref={transcriptScrollRef} className="flex-1 overflow-y-auto px-4 py-3">
+              {summarizer.status === 'error' && summarizer.error && (
+                <div className="mb-3 px-3 py-2 rounded-lg bg-rose-500/10 border border-rose-500/25 text-[12px] text-rose-300">
+                  {summarizer.error}{' '}
+                  <button
+                    onClick={() => summarizer.run(transcripts)}
+                    className="underline underline-offset-2 hover:text-rose-200"
+                  >
+                    Try again
+                  </button>
+                </div>
+              )}
+              {summarizer.summary && (
+                <div className="mb-3 p-3 rounded-xl bg-violet-400/8 border border-violet-400/20">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <Sparkles size={12} className="text-violet-300" />
+                      <span className="text-[10px] font-semibold tracking-wide uppercase text-violet-200/80">
+                        Summary
+                      </span>
+                    </div>
+                    <button
+                      onClick={summarizer.clear}
+                      className="text-[10px] text-white/30 hover:text-white/60"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                  <pre className="whitespace-pre-wrap text-[12px] leading-[1.5] text-white/90 font-sans">
+                    {summarizer.summary}
+                  </pre>
+                </div>
+              )}
               {transcripts.length === 0 && !interimText ? (
                 <div className="flex flex-col items-center justify-center h-full text-white/25">
                   <FileText size={20} className="mb-2 opacity-40" />
@@ -331,28 +367,50 @@ export function DockPanel({
               )}
             </div>
 
-            {onToggleTranscription && (
-              <div className="shrink-0 px-4 pb-3 pt-2 border-t border-white/6">
-                <button
-                  onClick={onToggleTranscription}
-                  className={`w-full h-9 rounded-xl flex items-center justify-center gap-2 text-[13px] font-medium border transition-colors ${
-                    transcriptionEnabled
-                      ? 'bg-rose-500/10 border-rose-500/25 text-rose-300 hover:bg-rose-500/15'
-                      : 'bg-emerald-400/10 border-emerald-400/25 text-emerald-300 hover:bg-emerald-400/15'
-                  }`}
-                >
-                  {transcriptionEnabled ? (
-                    <>
-                      <Square size={12} fill="currentColor" />
-                      Stop transcription
-                    </>
-                  ) : (
-                    <>
-                      <Play size={12} fill="currentColor" />
-                      Start transcription
-                    </>
-                  )}
-                </button>
+            {(onToggleTranscription || summarizer.available) && (
+              <div className="shrink-0 px-4 pb-3 pt-2 border-t border-white/6 flex flex-col gap-2">
+                {onToggleTranscription && (
+                  <button
+                    onClick={onToggleTranscription}
+                    className={`w-full h-9 rounded-xl flex items-center justify-center gap-2 text-[13px] font-medium border transition-colors ${
+                      transcriptionEnabled
+                        ? 'bg-rose-500/10 border-rose-500/25 text-rose-300 hover:bg-rose-500/15'
+                        : 'bg-emerald-400/10 border-emerald-400/25 text-emerald-300 hover:bg-emerald-400/15'
+                    }`}
+                  >
+                    {transcriptionEnabled ? (
+                      <>
+                        <Square size={12} fill="currentColor" />
+                        Stop transcription
+                      </>
+                    ) : (
+                      <>
+                        <Play size={12} fill="currentColor" />
+                        Start transcription
+                      </>
+                    )}
+                  </button>
+                )}
+                {summarizer.available && (
+                  <button
+                    onClick={() => summarizer.run(transcripts)}
+                    disabled={
+                      transcripts.length === 0 ||
+                      summarizer.status === 'preparing' ||
+                      summarizer.status === 'running' ||
+                      Boolean(gateReason(transcripts))
+                    }
+                    title={gateReason(transcripts) ?? 'Generate summary'}
+                    className="w-full h-9 rounded-xl flex items-center justify-center gap-2 text-[13px] font-medium border bg-violet-400/10 border-violet-400/25 text-violet-200 hover:bg-violet-400/15 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <Sparkles size={12} />
+                    {summarizer.status === 'running' || summarizer.status === 'preparing'
+                      ? `Summarizing… ${summarizer.elapsedSeconds}s · ${summarizer.tokenCount} tokens`
+                      : summarizer.status === 'done'
+                        ? 'Regenerate summary'
+                        : 'Generate summary'}
+                  </button>
+                )}
               </div>
             )}
           </motion.div>
