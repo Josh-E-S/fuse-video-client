@@ -35,6 +35,22 @@ contextBridge.exposeInMainWorld("electron", {
     return () => ipcRenderer.removeListener("transcription:download-progress", listener);
   },
 
+  // Local summarization
+  summarizeAvailable: () => ipcRenderer.invoke("summarize:available"),
+  summarizeRun: (prompt) => ipcRenderer.invoke("summarize:run", prompt),
+  summarizeModelStatus: () => ipcRenderer.invoke("summarize:models-status"),
+  summarizeDownloadModel: () => ipcRenderer.invoke("summarize:download-models"),
+  onSummarizeProgress: (callback) => {
+    const listener = (_event, payload) => callback(payload);
+    ipcRenderer.on("summarize:progress", listener);
+    return () => ipcRenderer.removeListener("summarize:progress", listener);
+  },
+  onSummarizeDownloadProgress: (callback) => {
+    const listener = (_event, line) => callback(line);
+    ipcRenderer.on("summarize:download-progress", listener);
+    return () => ipcRenderer.removeListener("summarize:download-progress", listener);
+  },
+
   // Fired when the OS resumes from sleep or the screen unlocks.
   onPowerResume: (callback) => {
     const listener = () => callback();
