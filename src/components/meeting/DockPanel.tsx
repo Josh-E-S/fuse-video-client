@@ -310,7 +310,7 @@ export function DockPanel({
                     </div>
                     <button
                       onClick={summarizer.clear}
-                      className="text-[10px] text-white/30 hover:text-white/60"
+                      className="px-2 py-0.5 rounded-md text-[10px] font-medium text-violet-200/80 hover:text-violet-100 hover:bg-violet-400/15 transition-colors"
                     >
                       Clear
                     </button>
