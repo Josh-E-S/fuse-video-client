@@ -25,6 +25,7 @@ import {
   Download,
   Languages,
   Check,
+  Sparkles,
 } from 'lucide-react'
 import { useSettings } from '@/hooks/useSettings'
 import { useMediaDevices, useSpeakerTest } from '@/hooks/useMediaDevices'
@@ -79,6 +80,9 @@ export function SettingsModal({
   const [modelDownloadBusy, setModelDownloadBusy] = useState(false)
   const [modelDownloadStatus, setModelDownloadStatus] = useState('')
   const [modelDownloadProgress, setModelDownloadProgress] = useState(0)
+  const [summaryDownloadBusy, setSummaryDownloadBusy] = useState(false)
+  const [summaryDownloadStatus, setSummaryDownloadStatus] = useState('')
+  const [summaryDownloadProgress, setSummaryDownloadProgress] = useState(0)
 
   // Sync local state when modal opens
   useEffect(() => {
@@ -247,6 +251,33 @@ export function SettingsModal({
     }
   }
 
+  async function handleDownloadSummaryModel() {
+    const bridge = getElectronBridge()
+    if (!bridge) return
+    setSummaryDownloadBusy(true)
+    setSummaryDownloadStatus('Connecting...')
+    setSummaryDownloadProgress(0)
+
+    const unsub = bridge.onSummarizeDownloadProgress((line) => {
+      setSummaryDownloadStatus(line)
+      const m = line.match(/^(\d+)%/)
+      if (m) setSummaryDownloadProgress(parseInt(m[1], 10))
+    })
+
+    try {
+      const result = await bridge.summarizeDownloadModel()
+      if (!result.success) {
+        setSummaryDownloadStatus(result.error || 'Download failed')
+      } else {
+        setSummaryDownloadStatus('Summary model ready.')
+      }
+    } finally {
+      setSummaryDownloadBusy(false)
+      unsub()
+      refreshModelStatus()
+    }
+  }
+
   return (
     <AnimatePresence>
       {open && (
@@ -290,7 +321,7 @@ export function SettingsModal({
                     : tab === 'devices'
                       ? 'Camera, mic, speakers, and ringtone'
                       : tab === 'transcription'
-                        ? 'Local speech-to-text models'
+                        ? 'On-device speech-to-text and summarization'
                         : 'Choose your theme'}
               </p>
             )}
@@ -301,7 +332,7 @@ export function SettingsModal({
                 { id: 'meetings' as const, icon: CalendarDays, label: 'Meetings' },
                 { id: 'devices' as const, icon: SlidersHorizontal, label: 'Devices' },
                 ...(isElectron
-                  ? [{ id: 'transcription' as const, icon: Languages, label: 'Transcription' }]
+                  ? [{ id: 'transcription' as const, icon: Languages, label: 'Local Models' }]
                   : []),
                 { id: 'appearance' as const, icon: Palette, label: 'Appearance' },
               ].map((t) => {
@@ -742,7 +773,7 @@ export function SettingsModal({
               {tab === 'transcription' && isElectron && (
                 <div className="space-y-5">
                   <div className="text-[10px] font-bold uppercase tracking-widest text-white/20 pl-1">
-                    Speech-to-Text Model
+                    Speech-to-Text
                   </div>
 
                   <div className="px-4 py-4 rounded-xl bg-white/3 border border-white/6 space-y-3">
@@ -791,6 +822,58 @@ export function SettingsModal({
 
                   <p className="text-[11px] text-white/30 leading-relaxed pl-1">
                     Live captions are generated on this device. No audio is sent to any external service.
+                  </p>
+
+                  <div className="text-[10px] font-bold uppercase tracking-widest text-white/20 pl-1 pt-2">
+                    Summarization
+                  </div>
+
+                  <div className="px-4 py-4 rounded-xl bg-white/3 border border-white/6 space-y-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-lg bg-white/6 border border-white/8 flex items-center justify-center shrink-0">
+                        <Sparkles size={16} className="text-white/40" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-[13px] font-medium text-white/80">Qwen3 0.6B Instruct</div>
+                        <div className="text-[11px] text-white/30">~400 MB, runs locally</div>
+                      </div>
+                      {summaryModelDownloaded ? (
+                        <div className="flex items-center gap-1.5 text-emerald-400 text-xs font-medium">
+                          <Check size={14} /> Ready
+                        </div>
+                      ) : (
+                        <button
+                          onClick={handleDownloadSummaryModel}
+                          disabled={summaryDownloadBusy}
+                          className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white/8 border border-white/10 text-white/70 text-xs font-medium hover:bg-white/12 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                          {summaryDownloadBusy ? (
+                            <div className="w-3 h-3 border border-white/20 border-t-white/60 rounded-full animate-spin" />
+                          ) : (
+                            <Download size={12} />
+                          )}
+                          {summaryDownloadBusy ? 'Downloading...' : 'Download'}
+                        </button>
+                      )}
+                    </div>
+                    {summaryDownloadBusy && (
+                      <div className="space-y-1">
+                        <div className="h-1.5 rounded-full bg-white/6 overflow-hidden">
+                          <div
+                            className="h-full rounded-full bg-white/30 transition-all duration-300"
+                            style={{ width: `${summaryDownloadProgress}%` }}
+                          />
+                        </div>
+                        <div className="text-[11px] text-white/25 truncate">{summaryDownloadStatus}</div>
+                      </div>
+                    )}
+                    {summaryDownloadStatus && !summaryModelDownloaded && !summaryDownloadBusy && (
+                      <div className="text-[11px] text-rose-400/60 truncate">{summaryDownloadStatus}</div>
+                    )}
+                  </div>
+
+                  <p className="text-[11px] text-white/30 leading-relaxed pl-1">
+                    Generates meeting summaries from your transcripts. Optional — captions work without this model.
                   </p>
                 </div>
               )}
