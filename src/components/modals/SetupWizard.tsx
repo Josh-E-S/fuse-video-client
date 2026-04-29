@@ -19,7 +19,6 @@ import {
   Check,
   Mail,
   Download,
-  Languages,
 } from 'lucide-react'
 import { useSettings } from '@/hooks/useSettings'
 import { useMediaDevices, useSpeakerTest } from '@/hooks/useMediaDevices'
@@ -78,6 +77,9 @@ export function SetupWizard({ open, onComplete, onRegister }: SetupWizardProps) 
   const [downloadBusy, setDownloadBusy] = useState(false)
   const [downloadStatus, setDownloadStatus] = useState('')
   const [downloadProgress, setDownloadProgress] = useState(0)
+  const [summaryModelDownloaded, setSummaryModelDownloaded] = useState(false)
+  const [summaryDownloadBusy, setSummaryDownloadBusy] = useState(false)
+  const [summaryDownloadStatus, setSummaryDownloadStatus] = useState('')
 
   useEffect(() => {
     if (open) {
@@ -91,6 +93,7 @@ export function SetupWizard({ open, onComplete, onRegister }: SetupWizardProps) 
       setPexipCustomerId(settings.pexipCustomerId)
       setGoogleDomain(settings.googleDomain)
       getElectronBridge()?.modelsStatus().then((s) => setModelsDownloaded(s.downloaded)).catch(() => {})
+      getElectronBridge()?.summarizeModelStatus().then((s) => setSummaryModelDownloaded(s.downloaded)).catch(() => {})
     }
   }, [open, settings])
 
@@ -164,6 +167,26 @@ export function SetupWizard({ open, onComplete, onRegister }: SetupWizardProps) 
     }
   }
 
+  async function downloadSummaryModel() {
+    const bridge = getElectronBridge()
+    if (!bridge) return
+    setSummaryDownloadBusy(true)
+    setSummaryDownloadStatus('Connecting...')
+    const unsub = bridge.onSummarizeDownloadProgress((line) => setSummaryDownloadStatus(line))
+    try {
+      const result = await bridge.summarizeDownloadModel()
+      if (result.success) {
+        setSummaryModelDownloaded(true)
+        setSummaryDownloadStatus('Summary model ready.')
+      } else {
+        setSummaryDownloadStatus(result.error ?? 'Download failed')
+      }
+    } finally {
+      setSummaryDownloadBusy(false)
+      unsub()
+    }
+  }
+
   const [checks, setChecks] = useState<CheckItem[]>([])
 
   async function runChecks() {
@@ -174,7 +197,12 @@ export function SetupWizard({ open, onComplete, onRegister }: SetupWizardProps) 
       { label: 'Calendar (OTJ)', status: 'pending', jumpTo: 'calendar' },
       { label: 'Camera', status: 'pending', jumpTo: 'devices' },
       { label: 'Microphone', status: 'pending', jumpTo: 'devices' },
-      ...(isElectron ? [{ label: 'Transcription Model', status: 'pending' as CheckStatus, jumpTo: 'transcription' as Step }] : []),
+      ...(isElectron
+        ? [
+            { label: 'Transcription Model', status: 'pending' as CheckStatus, jumpTo: 'transcription' as Step },
+            { label: 'Summary Model', status: 'pending' as CheckStatus, jumpTo: 'transcription' as Step },
+          ]
+        : []),
     ]
     setChecks([...items])
 
@@ -277,6 +305,21 @@ export function SetupWizard({ open, onComplete, onRegister }: SetupWizardProps) 
       const bridge = getElectronBridge()
       if (bridge) {
         const status = await bridge.modelsStatus()
+        if (status.downloaded) {
+          await update('pass', 'Model ready')
+        } else {
+          await update('warn', 'Not downloaded (optional)')
+        }
+      } else {
+        await update('warn', 'Bridge unavailable')
+      }
+      idx++
+
+      // Summary model
+      await update('checking')
+      const summaryBridge = getElectronBridge()
+      if (summaryBridge) {
+        const status = await summaryBridge.summarizeModelStatus()
         if (status.downloaded) {
           await update('pass', 'Model ready')
         } else {
@@ -610,55 +653,88 @@ export function SetupWizard({ open, onComplete, onRegister }: SetupWizardProps) 
                 )}
 
                 {step === 'transcription' && (
-                  <div className="space-y-5">
+                  <div className="space-y-3">
                     <div>
-                      <h2 className="text-xl font-light text-white/90 mb-1">Live Transcription</h2>
-                      <p className="text-sm text-white/30">Download a speech model for offline captions</p>
+                      <h3 className="text-base font-semibold mb-1">Local Models</h3>
+                      <p className="text-sm text-white/30">
+                        Optional. Download speech-to-text and summarization models for offline use.
+                      </p>
                     </div>
-                    <div className="px-4 py-5 rounded-xl bg-white/3 border border-white/6 space-y-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-white/6 border border-white/8 flex items-center justify-center shrink-0">
-                          <Languages size={18} className="text-white/40" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="text-[13px] font-medium text-white/80">Parakeet TDT-CTC 110M</div>
-                          <div className="text-[11px] text-white/30">English, ~126 MB, runs locally</div>
-                        </div>
-                        {modelsDownloaded ? (
-                          <div className="flex items-center gap-1.5 text-emerald-400 text-xs font-medium">
-                            <Check size={14} /> Ready
-                          </div>
-                        ) : (
-                          <button
-                            onClick={handleDownloadModels}
-                            disabled={downloadBusy}
-                            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white/8 border border-white/10 text-white/70 text-xs font-medium hover:bg-white/12 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                          >
-                            {downloadBusy ? (
-                              <div className="w-3 h-3 border border-white/20 border-t-white/60 rounded-full animate-spin" />
-                            ) : (
-                              <Download size={12} />
-                            )}
-                            {downloadBusy ? 'Downloading...' : 'Download'}
-                          </button>
-                        )}
+
+                    <div className="px-4 py-3 rounded-xl bg-white/3 border border-white/6 flex items-center gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="text-[13px] font-medium text-white/80">Speech-to-Text · ~126 MB</div>
+                        <div className="text-[11px] text-white/30">Parakeet TDT-CTC 110M</div>
                       </div>
-                      {downloadBusy && (
-                        <div className="space-y-1.5">
-                          <div className="h-1.5 rounded-full bg-white/6 overflow-hidden">
-                            <div
-                              className="h-full rounded-full bg-white/30 transition-all duration-300"
-                              style={{ width: `${downloadProgress}%` }}
-                            />
-                          </div>
-                          <div className="text-[11px] text-white/25 truncate">{downloadStatus}</div>
+                      {modelsDownloaded ? (
+                        <div className="flex items-center gap-1.5 text-emerald-400 text-xs font-medium">
+                          <Check size={14} /> Ready
                         </div>
-                      )}
-                      {downloadStatus && !modelsDownloaded && !downloadBusy && (
-                        <div className="text-[11px] text-rose-400/60 truncate">{downloadStatus}</div>
+                      ) : (
+                        <button
+                          onClick={handleDownloadModels}
+                          disabled={downloadBusy}
+                          className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white/8 border border-white/10 text-white/70 text-xs font-medium hover:bg-white/12 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                          {downloadBusy ? (
+                            <div className="w-3 h-3 border border-white/20 border-t-white/60 rounded-full animate-spin" />
+                          ) : (
+                            <Download size={12} />
+                          )}
+                          {downloadBusy ? 'Downloading...' : 'Download'}
+                        </button>
                       )}
                     </div>
-                    <p className="text-[11px] text-white/20">Optional. You can also download this later from Settings or by running <code className="text-white/30">npm run download-models</code>.</p>
+                    {downloadBusy && (
+                      <div className="space-y-1.5 pl-1">
+                        <div className="h-1.5 rounded-full bg-white/6 overflow-hidden">
+                          <div
+                            className="h-full rounded-full bg-white/30 transition-all duration-300"
+                            style={{ width: `${downloadProgress}%` }}
+                          />
+                        </div>
+                        <div className="text-[11px] text-white/25 truncate">{downloadStatus}</div>
+                      </div>
+                    )}
+                    {downloadStatus && !modelsDownloaded && !downloadBusy && (
+                      <div className="text-[11px] text-rose-400/60 truncate pl-1">{downloadStatus}</div>
+                    )}
+
+                    <div className="px-4 py-3 rounded-xl bg-white/3 border border-white/6 flex items-center gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="text-[13px] font-medium text-white/80">Summarization · ~400 MB</div>
+                        <div className="text-[11px] text-white/30">Qwen3 0.6B Instruct</div>
+                      </div>
+                      {summaryModelDownloaded ? (
+                        <div className="flex items-center gap-1.5 text-emerald-400 text-xs font-medium">
+                          <Check size={14} /> Ready
+                        </div>
+                      ) : (
+                        <button
+                          onClick={downloadSummaryModel}
+                          disabled={summaryDownloadBusy}
+                          className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white/8 border border-white/10 text-white/70 text-xs font-medium hover:bg-white/12 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                          {summaryDownloadBusy ? (
+                            <div className="w-3 h-3 border border-white/20 border-t-white/60 rounded-full animate-spin" />
+                          ) : (
+                            <Download size={12} />
+                          )}
+                          {summaryDownloadBusy ? 'Downloading...' : 'Download'}
+                        </button>
+                      )}
+                    </div>
+                    {summaryDownloadBusy && summaryDownloadStatus && (
+                      <div className="text-[11px] text-white/25 truncate pl-1">{summaryDownloadStatus}</div>
+                    )}
+                    {summaryDownloadStatus && !summaryModelDownloaded && !summaryDownloadBusy && (
+                      <div className="text-[11px] text-rose-400/60 truncate pl-1">{summaryDownloadStatus}</div>
+                    )}
+
+                    <p className="text-[11px] text-white/20 pt-1">
+                      Both are optional. You can also download these later from Settings or by running{' '}
+                      <code className="text-white/30">npm run download-models</code>.
+                    </p>
                   </div>
                 )}
 
