@@ -8,6 +8,7 @@ let llama = null;
 let _model = null;
 let _modelPath = null;
 let isLoading = false;
+let isRunning = false;
 
 const isDev = !require("electron").app.isPackaged;
 
@@ -81,13 +82,19 @@ function registerSummarizerHandlers() {
 
   ipcMain.handle("summarize:available", async () => {
     if (!modelExists()) return false;
-    const m = await ensureLoaded();
-    return Boolean(m);
+    // Don't load the model here — just confirm the file exists and the runtime
+    // module can be located. The actual load happens on the first summarize:run.
+    const mod = await loadLlamaModule();
+    return Boolean(mod);
   });
 
   ipcMain.handle("summarize:run", async (event, prompt) => {
     if (typeof prompt !== "string" || prompt.trim().length === 0) {
       return { ok: false, error: "Empty prompt" };
+    }
+
+    if (isRunning) {
+      return { ok: false, error: "A summary is already running." };
     }
 
     const model = await ensureLoaded();
@@ -101,13 +108,16 @@ function registerSummarizerHandlers() {
       return { ok: false, error: "Couldn't load the summary model. Try restarting the app." };
     }
 
+    isRunning = true;
+
     const startedAt = Date.now();
     let tokenCount = 0;
     let lastEmit = 0;
     const EMIT_EVERY_MS = 250;
 
+    let ctx;
     try {
-      const ctx = await model.createContext({ contextSize: 4096 });
+      ctx = await model.createContext({ contextSize: 4096 });
       const session = new llama.LlamaChatSession({ contextSequence: ctx.getSequence() });
 
       let raw = "";
@@ -123,10 +133,6 @@ function registerSummarizerHandlers() {
         },
       });
 
-      try {
-        await ctx.dispose?.();
-      } catch {}
-
       const cleaned = raw.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
       if (cleaned.length === 0) {
         return { ok: false, error: "Summary came back empty. Try again." };
@@ -141,6 +147,11 @@ function registerSummarizerHandlers() {
     } catch (err) {
       console.error("[Summarizer] Inference error:", err);
       return { ok: false, error: "Summary failed partway through. Try again." };
+    } finally {
+      try {
+        await ctx?.dispose?.();
+      } catch {}
+      isRunning = false;
     }
   });
 }
