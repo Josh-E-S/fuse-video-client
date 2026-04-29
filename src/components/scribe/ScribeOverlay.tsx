@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Play, Square, Save, NotebookPen, AlertCircle, Sparkles } from 'lucide-react'
+import { X, Play, Square, Save, NotebookPen, AlertCircle, NotebookText } from 'lucide-react'
+import { toast } from 'sonner'
 import { useScribe } from '@/hooks/useScribe'
 import { useSettings } from '@/hooks/useSettings'
 import { useEscapeKey } from '@/hooks/useEscapeKey'
@@ -21,9 +22,32 @@ export function ScribeOverlay({ open, onClose }: ScribeOverlayProps) {
   const [showCloseConfirm, setShowCloseConfirm] = useState(false)
   const summarizer = useSummarizer()
   const [includeFullTranscript, setIncludeFullTranscript] = useState(true)
+  const bodyScrollRef = useRef<HTMLDivElement>(null)
+  const isAtBottomRef = useRef(true)
 
   const isRecording = scribe.status === 'recording' || scribe.status === 'starting'
   const hasContent = scribe.transcripts.length > 0
+
+  const handleBodyScroll = () => {
+    const el = bodyScrollRef.current
+    if (!el) return
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight
+    isAtBottomRef.current = distanceFromBottom < 50
+  }
+
+  useEffect(() => {
+    if (!bodyScrollRef.current) return
+    if (!isAtBottomRef.current) return
+    bodyScrollRef.current.scrollTop = bodyScrollRef.current.scrollHeight
+  }, [scribe.transcripts, scribe.interimText])
+
+  const handleStartScribing = () => {
+    toast('Transcription is starting', {
+      description: 'Please ensure all participants have consented to being transcribed.',
+      duration: 6000,
+    })
+    scribe.start()
+  }
 
   const handleAttemptClose = () => {
     if (isRecording || hasContent) {
@@ -114,7 +138,11 @@ export function ScribeOverlay({ open, onClose }: ScribeOverlayProps) {
             </button>
           </div>
 
-          <div className="flex-1 min-h-0 overflow-y-auto px-6 py-3">
+          <div
+            ref={bodyScrollRef}
+            onScroll={handleBodyScroll}
+            className="flex-1 min-h-0 overflow-y-auto px-6 py-3"
+          >
             {scribe.status === 'error' && scribe.error && (
               <div className="mb-4 px-4 py-3 rounded-xl bg-rose-500/10 border border-rose-500/25 flex items-start gap-3">
                 <AlertCircle size={16} className="text-rose-400 mt-0.5 shrink-0" />
@@ -149,7 +177,7 @@ export function ScribeOverlay({ open, onClose }: ScribeOverlayProps) {
               <div className="mb-4 p-4 rounded-2xl bg-violet-400/8 border border-violet-400/20">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
-                    <Sparkles size={13} className="text-violet-300" />
+                    <NotebookText size={13} className="text-violet-300" />
                     <span className="text-[11px] font-semibold tracking-wide uppercase text-violet-200/80">
                       Summary
                     </span>
@@ -181,7 +209,7 @@ export function ScribeOverlay({ open, onClose }: ScribeOverlayProps) {
                 </div>
                 <div className="flex flex-col items-center gap-2">
                   <button
-                    onClick={scribe.start}
+                    onClick={handleStartScribing}
                     className="flex items-center justify-center gap-2 px-6 h-11 rounded-xl bg-emerald-400/10 border border-emerald-400/25 text-emerald-300 hover:bg-emerald-400/15 text-[14px] font-medium transition-colors"
                   >
                     <Play size={14} fill="currentColor" />
@@ -234,7 +262,7 @@ export function ScribeOverlay({ open, onClose }: ScribeOverlayProps) {
           </div>
 
           {!(scribe.status === 'idle' && !hasContent) && (
-            <div className="shrink-0 px-5 pb-5 pt-3 border-t border-white/6 flex flex-col gap-2">
+            <div className="shrink-0 px-5 pb-5 pt-3 border-t border-white/6 flex flex-col gap-2.5">
               {summarizer.summary && (
                 <label className="flex items-center gap-2 text-[12px] text-white/55 select-none cursor-pointer">
                   <input
@@ -246,58 +274,66 @@ export function ScribeOverlay({ open, onClose }: ScribeOverlayProps) {
                   Include full transcript when saving
                 </label>
               )}
-              <div className="flex gap-2">
-                <button
-                  onClick={isRecording ? scribe.stop : scribe.start}
-                  disabled={scribe.status === 'starting' || scribe.status === 'stopping'}
-                  className={`flex-1 h-10 rounded-xl flex items-center justify-center gap-2 text-[13px] font-medium border transition-colors disabled:opacity-50 ${
-                    isRecording
-                      ? 'bg-rose-500/10 border-rose-500/25 text-rose-300 hover:bg-rose-500/15'
-                      : 'bg-emerald-400/10 border-emerald-400/25 text-emerald-300 hover:bg-emerald-400/15'
-                  }`}
-                >
-                  {isRecording ? (
-                    <>
-                      <Square size={12} fill="currentColor" />
-                      Stop scribing
-                    </>
-                  ) : (
-                    <>
-                      <Play size={12} fill="currentColor" />
-                      Start scribing
-                    </>
-                  )}
-                </button>
+              <button
+                onClick={() => {
+                  if (isRecording) {
+                    scribe.stop()
+                  } else {
+                    handleStartScribing()
+                  }
+                }}
+                disabled={scribe.status === 'starting' || scribe.status === 'stopping'}
+                className={`w-full h-11 rounded-xl flex items-center justify-center gap-2 text-[13px] font-semibold border transition-colors disabled:opacity-50 ${
+                  isRecording
+                    ? 'bg-rose-500/15 border-rose-500/30 text-rose-200 hover:bg-rose-500/20'
+                    : 'bg-emerald-400/15 border-emerald-400/30 text-emerald-200 hover:bg-emerald-400/20'
+                }`}
+              >
+                {isRecording ? (
+                  <>
+                    <Square size={13} fill="currentColor" />
+                    Stop scribing
+                  </>
+                ) : (
+                  <>
+                    <Play size={13} fill="currentColor" />
+                    Start scribing
+                  </>
+                )}
+              </button>
+              <div className="grid grid-cols-2 gap-2">
                 <button
                   onClick={handleSave}
                   disabled={!hasContent}
-                  className="px-4 h-10 rounded-xl flex items-center justify-center gap-2 text-[13px] font-medium border bg-white/5 border-white/10 text-white/70 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  className="h-10 rounded-xl flex items-center justify-center gap-2 text-[13px] font-medium border bg-white/5 border-white/10 text-white/75 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                   title="Save as markdown"
                 >
                   <Save size={13} />
                   Save
                 </button>
+                {summarizer.available ? (
+                  <button
+                    onClick={() => summarizer.run(scribe.transcripts)}
+                    disabled={
+                      !hasContent ||
+                      summarizer.status === 'preparing' ||
+                      summarizer.status === 'running' ||
+                      Boolean(gateReason(scribe.transcripts))
+                    }
+                    title={gateReason(scribe.transcripts) ?? 'Generate summary'}
+                    className="h-10 rounded-xl flex items-center justify-center gap-2 text-[13px] font-medium border bg-violet-400/12 border-violet-400/30 text-violet-100 hover:bg-violet-400/18 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <NotebookText size={13} />
+                    {summarizer.status === 'running' || summarizer.status === 'preparing'
+                      ? `${summarizer.elapsedSeconds}s · ${summarizer.tokenCount}t`
+                      : summarizer.status === 'done'
+                        ? 'Regenerate'
+                        : 'Summarize'}
+                  </button>
+                ) : (
+                  <div />
+                )}
               </div>
-              {summarizer.available && (
-                <button
-                  onClick={() => summarizer.run(scribe.transcripts)}
-                  disabled={
-                    !hasContent ||
-                    summarizer.status === 'preparing' ||
-                    summarizer.status === 'running' ||
-                    Boolean(gateReason(scribe.transcripts))
-                  }
-                  title={gateReason(scribe.transcripts) ?? 'Generate summary'}
-                  className="w-full h-10 rounded-xl flex items-center justify-center gap-2 text-[13px] font-medium border bg-violet-400/10 border-violet-400/25 text-violet-200 hover:bg-violet-400/15 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                >
-                  <Sparkles size={13} />
-                  {summarizer.status === 'running' || summarizer.status === 'preparing'
-                    ? `Summarizing… ${summarizer.elapsedSeconds}s · ${summarizer.tokenCount} tokens`
-                    : summarizer.status === 'done'
-                      ? 'Regenerate summary'
-                      : 'Generate summary'}
-                </button>
-              )}
             </div>
           )}
 

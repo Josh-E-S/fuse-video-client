@@ -213,8 +213,15 @@ export default function MeetingPage() {
     interimSpeaker: transcription.interimSpeaker,
     isTranscriptionConnected: transcription.isTranscriptionConnected,
     transcriptionEnabled: transcription.transcriptionEnabled,
-    onToggleTranscription: () =>
-      transcription.setTranscriptionEnabled(!transcription.transcriptionEnabled),
+    onToggleTranscription: () => {
+      if (!transcription.transcriptionEnabled) {
+        toast('Transcription is starting', {
+          description: 'Please ensure all participants have consented to being transcribed.',
+          duration: 6000,
+        })
+      }
+      transcription.setTranscriptionEnabled(!transcription.transcriptionEnabled)
+    },
   }
 
   // PiP mode
@@ -417,9 +424,21 @@ export default function MeetingPage() {
               })
             }
             onToggleShare={() => (isPresenting ? stopScreenShare() : startScreenShare())}
-            onToggleTranscription={() => transcription.setTranscriptionEnabled(!transcription.transcriptionEnabled)}
+            onToggleTranscription={() => {
+              if (!transcription.transcriptionEnabled) {
+                toast('Transcription is starting', {
+                  description: 'Please ensure all participants have consented to being transcribed.',
+                  duration: 6000,
+                })
+              }
+              transcription.setTranscriptionEnabled(!transcription.transcriptionEnabled)
+            }}
             onToggleCaptions={() => {
               if (!transcription.transcriptionEnabled) {
+                toast('Transcription is starting', {
+                  description: 'Please ensure all participants have consented to being transcribed.',
+                  duration: 6000,
+                })
                 transcription.setTranscriptionEnabled(true)
                 transcription.setCaptionsVisible(true)
               } else {

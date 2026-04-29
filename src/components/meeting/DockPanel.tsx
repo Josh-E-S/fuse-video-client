@@ -16,7 +16,7 @@ import {
   PanelBottomClose,
   Play,
   Square,
-  Sparkles,
+  NotebookText,
 } from 'lucide-react'
 import type { ChatMessage, Participant } from '@/types/pexrtc'
 import type { TranscriptEntry } from '@/hooks/useTranscription'
@@ -77,20 +77,50 @@ export function DockPanel({
 }: DockPanelProps) {
   const chatScrollRef = useRef<HTMLDivElement>(null)
   const transcriptScrollRef = useRef<HTMLDivElement>(null)
+  const isAtChatBottomRef = useRef(true)
+  const isAtTranscriptBottomRef = useRef(true)
   const summarizer = useSummarizer()
   const isBottom = mode === 'bottom'
 
+  const handleChatScroll = () => {
+    const el = chatScrollRef.current
+    if (!el) return
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight
+    isAtChatBottomRef.current = distanceFromBottom < 50
+  }
+
+  const handleTranscriptScroll = () => {
+    const el = transcriptScrollRef.current
+    if (!el) return
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight
+    isAtTranscriptBottomRef.current = distanceFromBottom < 50
+  }
+
   useEffect(() => {
-    if (activeTab === 'chat' && chatScrollRef.current) {
-      chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight
-    }
+    if (activeTab !== 'chat' || !chatScrollRef.current) return
+    if (!isAtChatBottomRef.current) return
+    chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight
   }, [chatMessages, activeTab])
 
   useEffect(() => {
-    if (activeTab === 'transcript' && transcriptScrollRef.current) {
-      transcriptScrollRef.current.scrollTop = transcriptScrollRef.current.scrollHeight
-    }
+    if (activeTab !== 'transcript' || !transcriptScrollRef.current) return
+    if (!isAtTranscriptBottomRef.current) return
+    transcriptScrollRef.current.scrollTop = transcriptScrollRef.current.scrollHeight
   }, [transcripts, interimText, activeTab])
+
+  useEffect(() => {
+    if (activeTab === 'chat') {
+      isAtChatBottomRef.current = true
+      if (chatScrollRef.current) {
+        chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight
+      }
+    } else if (activeTab === 'transcript') {
+      isAtTranscriptBottomRef.current = true
+      if (transcriptScrollRef.current) {
+        transcriptScrollRef.current.scrollTop = transcriptScrollRef.current.scrollHeight
+      }
+    }
+  }, [activeTab])
 
   function resolveName(uuid: string, origin: string) {
     if (uuid === 'self') return 'You'
@@ -147,7 +177,11 @@ export function DockPanel({
             transition={{ duration: 0.2, ease: 'easeOut' }}
             className="absolute inset-0 flex flex-col"
           >
-            <div ref={chatScrollRef} className="flex-1 overflow-y-auto px-4 py-3 space-y-3.5">
+            <div
+              ref={chatScrollRef}
+              onScroll={handleChatScroll}
+              className="flex-1 overflow-y-auto px-4 py-3 space-y-3.5"
+            >
               {chatMessages.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full text-white/25">
                   <MessageSquare size={20} className="mb-2 opacity-40" />
@@ -287,7 +321,11 @@ export function DockPanel({
             transition={{ duration: 0.2, ease: 'easeOut' }}
             className="absolute inset-0 flex flex-col"
           >
-            <div ref={transcriptScrollRef} className="flex-1 overflow-y-auto px-4 py-3">
+            <div
+              ref={transcriptScrollRef}
+              onScroll={handleTranscriptScroll}
+              className="flex-1 overflow-y-auto px-4 py-3"
+            >
               {summarizer.status === 'error' && summarizer.error && (
                 <div className="mb-3 px-3 py-2 rounded-lg bg-rose-500/10 border border-rose-500/25 text-[12px] text-rose-300">
                   {summarizer.error}{' '}
@@ -303,7 +341,7 @@ export function DockPanel({
                 <div className="mb-3 p-3 rounded-xl bg-violet-400/8 border border-violet-400/20">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
-                      <Sparkles size={12} className="text-violet-300" />
+                      <NotebookText size={12} className="text-violet-300" />
                       <span className="text-[10px] font-semibold tracking-wide uppercase text-violet-200/80">
                         Summary
                       </span>
@@ -399,14 +437,14 @@ export function DockPanel({
                       Boolean(gateReason(transcripts))
                     }
                     title={gateReason(transcripts) ?? 'Generate summary'}
-                    className="w-full h-9 rounded-xl flex items-center justify-center gap-2 text-[13px] font-medium border bg-violet-400/10 border-violet-400/25 text-violet-200 hover:bg-violet-400/15 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    className="w-full h-10 rounded-xl flex items-center justify-center gap-2 text-[13px] font-medium border bg-violet-400/12 border-violet-400/30 text-violet-100 hover:bg-violet-400/18 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                   >
-                    <Sparkles size={12} />
+                    <NotebookText size={13} />
                     {summarizer.status === 'running' || summarizer.status === 'preparing'
-                      ? `Summarizing… ${summarizer.elapsedSeconds}s · ${summarizer.tokenCount} tokens`
+                      ? `${summarizer.elapsedSeconds}s · ${summarizer.tokenCount}t`
                       : summarizer.status === 'done'
-                        ? 'Regenerate summary'
-                        : 'Generate summary'}
+                        ? 'Regenerate'
+                        : 'Summarize'}
                   </button>
                 )}
               </div>
