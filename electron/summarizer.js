@@ -1,21 +1,25 @@
-const { ipcMain } = require("electron");
+const { ipcMain, utilityProcess, app } = require("electron");
 const path = require("path");
 const fs = require("fs");
 const https = require("https");
 const { execSync } = require("child_process");
 
-let llama = null;
-let _model = null;
-let _modelPath = null;
-let isLoading = false;
+const isDev = !app.isPackaged;
+
+// Concurrent-run guard — kept in main so the IPC handler can short-circuit
+// before forwarding to the worker.
 let isRunning = false;
 
-const isDev = !require("electron").app.isPackaged;
+// Lazily-spawned utility process that owns the model. We keep a single worker
+// for the lifetime of the app so the model only loads once.
+let worker = null;
+const pending = new Map(); // runId -> { resolve, sender }
+let nextRunId = 1;
 
 function getModelsDir() {
   return isDev
     ? path.join(__dirname, "..", "models")
-    : path.join(require("electron").app.getPath("userData"), "models");
+    : path.join(app.getPath("userData"), "models");
 }
 
 function getModelPath() {
@@ -26,67 +30,85 @@ function modelExists() {
   return fs.existsSync(getModelPath());
 }
 
-async function loadLlamaModule() {
-  if (llama) return llama;
-  try {
-    if (isDev) {
-      // node-llama-cpp@3.x is ESM-only with top-level await — must use dynamic import().
-      llama = await import("node-llama-cpp");
-    } else {
-      const { pathToFileURL } = require("url");
-      const unpackedPath = require("electron").app.getAppPath().replace("app.asar", "app.asar.unpacked");
-      const llamaEntry = path.join(unpackedPath, ".next", "standalone", "node_modules", "node-llama-cpp", "dist", "index.js");
-      llama = await import(pathToFileURL(llamaEntry).href);
-    }
-    return llama;
-  } catch (err) {
-    console.error("[Summarizer] Failed to load node-llama-cpp:", err.message);
-    return null;
+function getWorkerPath() {
+  if (isDev) {
+    return path.join(__dirname, "summarizer-worker.js");
   }
+  // In a packaged build the worker is unpacked from asar via the asarUnpack
+  // entry in package.json, so utilityProcess.fork can resolve it on disk.
+  return path.join(
+    app.getAppPath().replace("app.asar", "app.asar.unpacked"),
+    "electron",
+    "summarizer-worker.js",
+  );
 }
 
-async function ensureLoaded() {
-  if (_model && _modelPath === getModelPath() && modelExists()) return _model;
+function spawnWorker() {
+  const w = utilityProcess.fork(getWorkerPath(), [], { stdio: "inherit" });
 
-  if (!modelExists()) {
-    console.error("[Summarizer] Model file missing at", getModelPath());
-    return null;
-  }
+  w.on("message", (msg) => {
+    if (!msg || typeof msg !== "object") return;
 
-  if (isLoading) {
-    while (isLoading) await new Promise((r) => setTimeout(r, 100));
-    return _model;
-  }
+    if (msg.type === "log") {
+      const fn = msg.level === "error" ? console.error : console.log;
+      fn(`[Summarizer] ${msg.message}`);
+      return;
+    }
 
-  isLoading = true;
-  try {
-    const mod = await loadLlamaModule();
-    if (!mod) return null;
+    if (msg.type === "progress") {
+      const entry = pending.get(msg.runId);
+      if (entry && entry.sender && !entry.sender.isDestroyed()) {
+        entry.sender.send("summarize:progress", {
+          tokenCount: msg.tokenCount,
+          elapsedMs: msg.elapsedMs,
+        });
+      }
+      return;
+    }
 
-    const llamaInstance = await mod.getLlama();
-    _model = await llamaInstance.loadModel({ modelPath: getModelPath() });
-    _modelPath = getModelPath();
-    console.log("[Summarizer] Qwen3-0.6B loaded");
-    return _model;
-  } catch (err) {
-    console.error("[Summarizer] Failed to load model:", err.message);
-    _model = null;
-    return null;
-  } finally {
-    isLoading = false;
-  }
+    if (msg.type === "result") {
+      const entry = pending.get(msg.runId);
+      pending.delete(msg.runId);
+      if (entry) {
+        if (msg.ok) {
+          entry.resolve({
+            ok: true,
+            markdown: msg.markdown,
+            tokenCount: msg.tokenCount,
+            elapsedMs: msg.elapsedMs,
+          });
+        } else {
+          entry.resolve({ ok: false, error: msg.error });
+        }
+      }
+    }
+  });
+
+  w.on("exit", (code) => {
+    console.log(`[Summarizer] Worker exited with code ${code}`);
+    // Resolve any in-flight runs with an error so the renderer doesn't hang.
+    for (const [, entry] of pending) {
+      entry.resolve({ ok: false, error: "Summary worker exited unexpectedly. Try again." });
+    }
+    pending.clear();
+    if (worker === w) worker = null;
+  });
+
+  return w;
+}
+
+function getOrSpawnWorker() {
+  if (!worker) worker = spawnWorker();
+  return worker;
 }
 
 function registerSummarizerHandlers() {
   ipcMain.handle("summarize:models-status", () => ({ downloaded: modelExists() }));
 
-  ipcMain.handle("summarize:available", async () => {
-    if (!modelExists()) return false;
-    // Don't load the model here — just confirm the file exists and the runtime
-    // module can be located. The actual load happens on the first summarize:run.
-    const mod = await loadLlamaModule();
-    return Boolean(mod);
-  });
+  // Cheap availability check — only confirms the model file is on disk.
+  // Loading the model (and even forking the worker) is deferred until the
+  // first summarize:run call.
+  ipcMain.handle("summarize:available", () => modelExists());
 
   ipcMain.handle("summarize:run", async (event, prompt) => {
     if (typeof prompt !== "string" || prompt.trim().length === 0) {
@@ -97,62 +119,36 @@ function registerSummarizerHandlers() {
       return { ok: false, error: "A summary is already running." };
     }
 
-    const model = await ensureLoaded();
-    if (!model) {
-      if (!modelExists()) {
-        return { ok: false, error: "Summary model file missing. Re-download from Settings." };
-      }
-      if (!llama) {
-        return { ok: false, error: "Summary engine not available. Try reinstalling the app." };
-      }
-      return { ok: false, error: "Couldn't load the summary model. Try restarting the app." };
+    if (!modelExists()) {
+      return { ok: false, error: "Summary model file missing. Re-download from Settings." };
     }
 
     isRunning = true;
+    const runId = String(nextRunId++);
 
-    const startedAt = Date.now();
-    let tokenCount = 0;
-    let lastEmit = 0;
-    const EMIT_EVERY_MS = 250;
-
-    let ctx;
-    try {
-      ctx = await model.createContext({ contextSize: 4096 });
-      const session = new llama.LlamaChatSession({ contextSequence: ctx.getSequence() });
-
-      let raw = "";
-      await session.prompt(prompt, {
-        onTextChunk: (chunk) => {
-          raw += chunk;
-          tokenCount += 1;
-          const now = Date.now();
-          if (now - lastEmit >= EMIT_EVERY_MS) {
-            lastEmit = now;
-            event.sender.send("summarize:progress", { tokenCount, elapsedMs: now - startedAt });
-          }
+    return new Promise((resolve) => {
+      pending.set(runId, {
+        resolve: (result) => {
+          isRunning = false;
+          resolve(result);
         },
+        sender: event.sender,
       });
 
-      const cleaned = raw.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
-      if (cleaned.length === 0) {
-        return { ok: false, error: "Summary came back empty. Try again." };
-      }
-
-      return {
-        ok: true,
-        markdown: cleaned,
-        tokenCount,
-        elapsedMs: Date.now() - startedAt,
-      };
-    } catch (err) {
-      console.error("[Summarizer] Inference error:", err);
-      return { ok: false, error: "Summary failed partway through. Try again." };
-    } finally {
       try {
-        await ctx?.dispose?.();
-      } catch {}
-      isRunning = false;
-    }
+        getOrSpawnWorker().postMessage({
+          type: "run",
+          runId,
+          prompt,
+          modelPath: getModelPath(),
+        });
+      } catch (err) {
+        console.error("[Summarizer] Failed to dispatch to worker:", err);
+        pending.delete(runId);
+        isRunning = false;
+        resolve({ ok: false, error: "Couldn't start summary worker. Try again." });
+      }
+    });
   });
 }
 
@@ -233,5 +229,15 @@ function registerSummarizerModelHandlers() {
     });
   });
 }
+
+// Make sure we don't leak a llama.cpp child process across app restarts.
+app.on("before-quit", () => {
+  if (worker) {
+    try {
+      worker.postMessage({ type: "shutdown" });
+    } catch {}
+    worker = null;
+  }
+});
 
 module.exports = { registerSummarizerHandlers, registerSummarizerModelHandlers };

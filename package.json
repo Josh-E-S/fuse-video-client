@@ -72,7 +72,8 @@
     ],
     "asar": true,
     "asarUnpack": [
-      ".next/standalone/**/*"
+      ".next/standalone/**/*",
+      "electron/summarizer-worker.js"
     ],
     "compression": "maximum",
     "extraResources": [
