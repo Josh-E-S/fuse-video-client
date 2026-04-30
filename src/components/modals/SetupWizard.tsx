@@ -396,17 +396,17 @@ export function SetupWizard({ open, onComplete, onRegister }: SetupWizardProps) 
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
-          className="fixed inset-0 z-[60] flex items-center justify-center p-6 bg-black/70 backdrop-blur-md"
+          className="fixed inset-0 z-[60] flex items-center justify-center p-3 bg-black/70 backdrop-blur-md"
         >
           <motion.div
             initial={{ scale: 0.95, y: 10, opacity: 0, filter: 'blur(4px)' }}
             animate={{ scale: 1, y: 0, opacity: 1, filter: 'blur(0px)' }}
             exit={{ scale: 0.95, y: 10, opacity: 0, filter: 'blur(4px)' }}
             transition={{ type: 'spring', damping: 28, stiffness: 260 }}
-            className="relative w-full max-w-md h-[520px] flex flex-col rounded-2xl bg-white/4 border border-white/10 backdrop-blur-3xl shadow-2xl p-8 overflow-hidden"
+            className="relative w-[94vw] max-w-lg h-[94vh] max-h-[860px] flex flex-col rounded-2xl bg-white/4 border border-white/10 backdrop-blur-3xl shadow-2xl p-7 overflow-hidden"
           >
             {/* Progress dots */}
-            <div className="flex items-center justify-center gap-2 mb-8 shrink-0">
+            <div className="flex items-center justify-center gap-2 mb-6 shrink-0">
               {STEPS.map((s, i) => (
                 <div
                   key={s}
@@ -906,7 +906,7 @@ export function SetupWizard({ open, onComplete, onRegister }: SetupWizardProps) 
             </div>
 
             {/* Navigation */}
-            <div className="flex items-center justify-between mt-8 shrink-0">
+            <div className="flex items-center justify-between mt-6 shrink-0">
               {stepIdx > 0 && step !== 'done' && step !== 'check' ? (
                 <button
                   onClick={prev}

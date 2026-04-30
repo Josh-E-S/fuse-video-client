@@ -198,13 +198,13 @@ export function FeaturedMeetingCard({
               <button
                 onClick={onJoin}
                 disabled={isBusy}
-                className={`rounded-xl flex items-center justify-center cursor-pointer transition-all hover:scale-105 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0 font-semibold text-emerald-500 ${
+                className={`rounded-xl flex items-center justify-center cursor-pointer transition-all hover:scale-105 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0 font-semibold ${
                   compact ? 'px-3 py-1.5 text-[12px]' : 'px-6 py-3 text-[14px]'
                 }`}
                 style={{
-                  background: 'rgba(52,211,153,0.15)',
-                  border: '1px solid rgba(52,211,153,0.25)',
-                  boxShadow: '0 4px 20px rgba(52,211,153,0.1)',
+                  color: 'var(--theme-accent)',
+                  background: 'color-mix(in srgb, var(--theme-accent) 14%, transparent)',
+                  border: '1px solid color-mix(in srgb, var(--theme-accent) 30%, transparent)',
                 }}
                 title="Join meeting"
               >

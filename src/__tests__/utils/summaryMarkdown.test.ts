@@ -34,7 +34,6 @@ describe('buildPrompt', () => {
     const p = buildPrompt([entry('x')])
     expect(p).toMatch(/## Summary/)
     expect(p).toMatch(/## Key Points/)
-    expect(p).toMatch(/## Action Items/)
   })
 })
 

@@ -26,6 +26,7 @@ import {
   Languages,
   Check,
   Sparkles,
+  AudioLines,
 } from 'lucide-react'
 import { useSettings } from '@/hooks/useSettings'
 import { useMediaDevices, useSpeakerTest } from '@/hooks/useMediaDevices'
@@ -897,6 +898,32 @@ export function SettingsModal({
                     Generates meeting summaries from your transcripts. Optional — captions work
                     without this model.
                   </p>
+
+                  <div className="text-[10px] font-bold uppercase tracking-widest text-white/20 pl-1 pt-2">
+                    Display
+                  </div>
+
+                  <label className="px-4 py-3.5 rounded-xl bg-white/3 border border-white/6 flex items-center gap-3 cursor-pointer hover:bg-white/5 transition-colors">
+                    <div className="w-9 h-9 rounded-lg bg-white/6 border border-white/8 flex items-center justify-center shrink-0">
+                      <AudioLines size={16} className="text-white/40" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[13px] font-medium text-white/80">
+                        Audio visualizer
+                      </div>
+                      <div className="text-[11px] text-white/30">
+                        Live mic waveform shown while scribing
+                      </div>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={settings.audioVisualizerEnabled}
+                      onChange={(e) =>
+                        saveSettings({ audioVisualizerEnabled: e.target.checked })
+                      }
+                      className="accent-violet-400 w-4 h-4 cursor-pointer"
+                    />
+                  </label>
                 </div>
               )}
 

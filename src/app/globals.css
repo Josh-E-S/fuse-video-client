@@ -16,6 +16,12 @@
   }
 }
 
+@keyframes status-pulse {
+  0%, 100% { opacity: 0.78; }
+  50% { opacity: 1; }
+}
+
+
 @layer base {
   * {
     @apply border-white/10;

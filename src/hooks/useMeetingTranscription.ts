@@ -32,6 +32,7 @@ export function useMeetingTranscription({
     isConnected: isTranscriptionConnected,
     connect: connectTranscription,
     disconnect: disconnectTranscription,
+    clearTranscripts: clearLiveTranscripts,
   } = useTranscription({
     sipUri,
     autoConnect: false,
@@ -76,6 +77,11 @@ export function useMeetingTranscription({
   const activeInterimSpeaker = useLocal ? localTranscription.interimSpeaker : interimSpeaker
   const activeConnected = useLocal ? localTranscription.isConnected : isTranscriptionConnected
 
+  const clearTranscripts = () => {
+    if (useLocal) localTranscription.clearTranscripts()
+    else clearLiveTranscripts()
+  }
+
   return {
     transcriptionEnabled,
     setTranscriptionEnabled,
@@ -86,5 +92,6 @@ export function useMeetingTranscription({
     interimText: activeInterim,
     interimSpeaker: activeInterimSpeaker,
     isTranscriptionConnected: activeConnected,
+    clearTranscripts,
   }
 }

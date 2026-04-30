@@ -25,6 +25,7 @@ export function useScribe(audioInputId?: string) {
   const [interimText, setInterimText] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [startedAt, setStartedAt] = useState<Date | null>(null)
+  const [micStream, setMicStream] = useState<MediaStream | null>(null)
 
   const refs = useRef<ScribeRefs>({
     audioCtx: null,
@@ -62,6 +63,7 @@ export function useScribe(audioInputId?: string) {
       r.micStream.getTracks().forEach((t) => t.stop())
       r.micStream = null
     }
+    setMicStream(null)
   }, [])
 
   const start = useCallback(async () => {
@@ -85,6 +87,7 @@ export function useScribe(audioInputId?: string) {
         : {}
       const micStream = await navigator.mediaDevices.getUserMedia({ audio: audioConstraint })
       refs.current.micStream = micStream
+      setMicStream(micStream)
 
       const audioCtx = new AudioContext({ sampleRate: SCRIBE_SAMPLE_RATE })
       refs.current.audioCtx = audioCtx
@@ -167,5 +170,5 @@ export function useScribe(audioInputId?: string) {
     }
   }, [teardown])
 
-  return { status, transcripts, interimText, error, startedAt, start, stop, clear }
+  return { status, transcripts, interimText, error, startedAt, micStream, start, stop, clear }
 }

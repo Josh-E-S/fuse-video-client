@@ -74,7 +74,7 @@ describe('useSummarizer', () => {
     installBridge({ summarizeRun: vi.fn().mockReturnValue(runPromise) })
 
     const { result } = renderHook(() => useSummarizer())
-    let runP: Promise<void>
+    let runP: Promise<string | null>
     await act(async () => {
       runP = result.current.run(longEntries)
     })
@@ -190,7 +190,7 @@ describe('useSummarizer', () => {
     })
 
     const { result } = renderHook(() => useSummarizer())
-    let runP: Promise<void>
+    let runP: Promise<string | null>
     await act(async () => {
       runP = result.current.run(longEntries)
     })

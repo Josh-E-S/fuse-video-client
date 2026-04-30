@@ -13,6 +13,7 @@ const STORAGE_KEYS = {
   otjClientSecret: 'fuse_otj_client_secret',
   pexipCustomerId: 'fuse_pexip_customer_id',
   googleDomain: 'fuse_google_domain',
+  audioVisualizerEnabled: 'fuse_audio_visualizer_enabled',
 } as const
 
 export interface Settings {
@@ -26,6 +27,7 @@ export interface Settings {
   otjClientSecret: string
   pexipCustomerId: string
   googleDomain: string
+  audioVisualizerEnabled: boolean
 }
 
 export function useSettings() {
@@ -40,6 +42,7 @@ export function useSettings() {
     otjClientSecret: '',
     pexipCustomerId: '',
     googleDomain: '',
+    audioVisualizerEnabled: true,
   })
 
   function readAllSettings(): Settings {
@@ -72,6 +75,8 @@ export function useSettings() {
         localStorage.getItem(STORAGE_KEYS.googleDomain) ??
         process.env.NEXT_PUBLIC_GOOGLE_DOMAIN ??
         '',
+      audioVisualizerEnabled:
+        localStorage.getItem(STORAGE_KEYS.audioVisualizerEnabled) !== 'false',
     }
   }
 
@@ -114,6 +119,12 @@ export function useSettings() {
     }
     if (next.googleDomain !== undefined) {
       localStorage.setItem(STORAGE_KEYS.googleDomain, next.googleDomain)
+    }
+    if (next.audioVisualizerEnabled !== undefined) {
+      localStorage.setItem(
+        STORAGE_KEYS.audioVisualizerEnabled,
+        next.audioVisualizerEnabled ? 'true' : 'false',
+      )
     }
     setSettings((prev) => ({ ...prev, ...next }))
     window.dispatchEvent(new Event('fuse-settings-changed'))

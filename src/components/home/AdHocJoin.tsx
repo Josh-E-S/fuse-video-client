@@ -85,27 +85,31 @@ export function AdHocJoin({
         <div
           className="flex items-center rounded-2xl overflow-hidden transition-all hover:scale-105 active:scale-95"
           style={{
-            background: 'rgba(52,211,153,0.15)',
-            border: '1px solid rgba(52,211,153,0.25)',
-            boxShadow: '0 4px 20px rgba(52,211,153,0.1)',
+            background: 'color-mix(in srgb, var(--theme-accent) 14%, transparent)',
+            border: '1px solid color-mix(in srgb, var(--theme-accent) 30%, transparent)',
           }}
         >
           <button
             onClick={onCallClick}
-            className="flex items-center gap-2.5 px-8 py-3 transition-all hover:bg-emerald-500/15 active:scale-[0.97]"
+            className="flex items-center gap-2.5 px-8 py-3 transition-all active:scale-[0.97]"
+            style={{ color: 'var(--theme-accent)' }}
           >
-            <Phone size={16} className="text-emerald-500" />
-            <span className="text-[14px] font-semibold text-emerald-500">Dial</span>
+            <Phone size={16} />
+            <span className="text-[14px] font-semibold">Dial</span>
           </button>
 
           {recentCalls.length > 0 && (
             <>
-              <div className="w-px self-stretch bg-emerald-500/40" />
+              <div
+                className="w-px self-stretch"
+                style={{ background: 'color-mix(in srgb, var(--theme-accent) 40%, transparent)' }}
+              />
               <button
                 onClick={() => { setShowRecents(true); onExpandChange?.(true) }}
-                className="flex items-center px-3 py-3 transition-all hover:bg-emerald-500/15 active:scale-[0.97]"
+                className="flex items-center px-3 py-3 transition-all active:scale-[0.97]"
+                style={{ color: 'var(--theme-accent)' }}
               >
-                <History size={15} className="text-emerald-500" strokeWidth={1.5} />
+                <History size={15} strokeWidth={1.5} />
               </button>
             </>
           )}
