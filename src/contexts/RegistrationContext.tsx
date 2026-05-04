@@ -72,7 +72,7 @@ export function RegistrationProvider({ children }: { children: React.ReactNode }
 
   const getStoredCredentials = useCallback((): RegistrationCredentials | null => {
     if (typeof window === 'undefined') return null
-    const alias = localStorage.getItem(STORAGE_KEYS.alias) ?? process.env.NEXT_PUBLIC_DEFAULT_ALIAS
+    const alias = localStorage.getItem(STORAGE_KEYS.alias) ?? process.env.NEXT_PUBLIC_DEFAULT_REG_ALIAS
     const username =
       localStorage.getItem(STORAGE_KEYS.username) ?? process.env.NEXT_PUBLIC_DEFAULT_REG_USERNAME
     const password =

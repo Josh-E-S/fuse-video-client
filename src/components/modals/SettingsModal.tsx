@@ -96,7 +96,7 @@ export function SettingsModal({
       setGoogleDomain(settings.googleDomain)
       setPollInterval(Number(localStorage.getItem('fuse_poll_interval')) || 60)
       setRegAlias(
-        localStorage.getItem('fuse_reg_alias') ?? process.env.NEXT_PUBLIC_DEFAULT_ALIAS ?? '',
+        localStorage.getItem('fuse_reg_alias') ?? process.env.NEXT_PUBLIC_DEFAULT_REG_ALIAS ?? '',
       )
       setRegUsername(
         localStorage.getItem('fuse_reg_username') ??
