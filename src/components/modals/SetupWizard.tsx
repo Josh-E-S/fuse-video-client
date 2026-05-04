@@ -457,7 +457,7 @@ export function SetupWizard({ open, onComplete, onRegister }: SetupWizardProps) 
                           type="text"
                           value={nodeDomain}
                           onChange={(e) => setNodeDomain(e.target.value)}
-                          placeholder="e.g. pexipdemo.com"
+                          placeholder="e.g. pexip.example.com"
                           autoFocus
                           className="w-full px-4 py-3 rounded-xl bg-white/6 border border-white/10 text-white placeholder-white/20 focus:outline-none focus:border-white/30 transition-colors text-sm"
                         />
