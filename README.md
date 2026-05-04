@@ -301,37 +301,16 @@ electron/
 
 ## Environment Variables
 
-Copy `.env.example` to `.env.local`. All values are optional -- settings can be configured through the UI.
+Copy `.env.example` to `.env.local`. The two values are the public Pexip OTJ portal URLs and rarely need overriding — every other setting is supplied per-user through the Setup Wizard or Settings modal.
 
 ### Server-Side (API routes only)
 
-| Variable                  | Description                                                |
-| ------------------------- | ---------------------------------------------------------- |
-| `PEXIP_OTJ_AUTH_URL`      | Pexip OAuth endpoint (default:`https://auth.otj.pexip.io`) |
-| `PEXIP_OTJ_API_URL`       | Pexip OTJ API endpoint (default:`https://otj.pexip.io`)    |
-| `PEXIP_OTJ_CLIENT_ID`     | OTJ OAuth client ID                                        |
-| `PEXIP_OTJ_CLIENT_SECRET` | OTJ OAuth client secret                                    |
-| `PEXIP_CUSTOMER_ID`       | Pexip customer ID for Teams CVI                            |
+| Variable             | Description                                                  |
+| -------------------- | ------------------------------------------------------------ |
+| `PEXIP_OTJ_AUTH_URL` | Pexip OAuth endpoint (default: `https://auth.otj.pexip.io`)  |
+| `PEXIP_OTJ_API_URL`  | Pexip OTJ API endpoint (default: `https://otj.pexip.io`)     |
 
-### Client-Side
-
-| Variable                            | Description                                     |
-| ----------------------------------- | ----------------------------------------------- |
-| `NEXT_PUBLIC_GOOGLE_DOMAIN`         | Google Meet CVI gateway domain                  |
-| `NEXT_PUBLIC_TEAMS_DOMAIN`          | Teams CVI gateway domain (provider detection)   |
-| `NEXT_PUBLIC_PEXIP_DOMAIN`          | Pexip tenant domain suffix (provider detection) |
-
-### Dev Defaults (optional, pre-populate Settings on first launch)
-
-| Variable                           | Description                   |
-| ---------------------------------- | ----------------------------- |
-| `NEXT_PUBLIC_DEFAULT_NODE_DOMAIN`  | Default Pexip node domain     |
-| `NEXT_PUBLIC_DEFAULT_DISPLAY_NAME` | Default display name          |
-| `NEXT_PUBLIC_DEFAULT_ALIAS`        | Default registration alias    |
-| `NEXT_PUBLIC_DEFAULT_REG_USERNAME` | Default registration username |
-| `NEXT_PUBLIC_DEFAULT_REG_PASSWORD` | Default registration password |
-
-> OTJ credentials can also be provided per-user through the Settings modal, which passes them as headers to the API route.
+For dev convenience, contributors can copy `.env.dev.example` to `.env.dev.local` to pre-fill the Setup Wizard during `npm run dev`. See [Dev Defaults (optional)](#dev-defaults-optional) above for details.
 
 ---
 
