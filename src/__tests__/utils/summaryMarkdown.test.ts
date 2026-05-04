@@ -8,7 +8,7 @@ import {
   defaultSummaryFilename,
   gateReason,
 } from '@/utils/summaryMarkdown'
-import type { TranscriptEntry } from '@/hooks/useTranscription'
+import type { TranscriptEntry } from '@/hooks/useLocalTranscription'
 
 const entry = (text: string, ts = '2026-04-28T12:00:00.000Z'): TranscriptEntry => ({
   id: Math.random().toString(36).slice(2),
@@ -34,7 +34,6 @@ describe('buildPrompt', () => {
     const p = buildPrompt([entry('x')])
     expect(p).toMatch(/## Summary/)
     expect(p).toMatch(/## Key Points/)
-    expect(p).toMatch(/## Action Items/)
   })
 })
 

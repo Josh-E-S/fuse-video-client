@@ -1,23 +1,30 @@
-import type { TranscriptEntry } from '@/hooks/useTranscription'
+import type { TranscriptEntry } from '@/hooks/useLocalTranscription'
 
 const TOKENS_PER_WORD = 0.75
 const MAX_TOKENS = 25_000
 const MIN_ENTRIES = 5
 const MIN_WORDS = 50
 
-const PROMPT_INSTRUCTIONS = `You are a concise meeting note-taker. Read the transcript below and produce a clean markdown summary.
+const PROMPT_INSTRUCTIONS = `You are an AI Meeting Assistant. Analyze the raw, un-diarized transcript below and produce a concise, scannable markdown summary.
 
-Use exactly this structure. Omit any section that has no content. Do not invent details.
+Transcripts have no speaker labels and may run from short syncs to longer deep dives. Group related topics thematically rather than chronologically. Ignore filler, pleasantries, and abandoned thoughts — focus on decisions and key topics. Don't invent details; if a date, metric, or decision is vague, say it was discussed without resolution.
+
+This is a casual overview, not a perfect record — prioritize signal over completeness.
+
+If the conversation is casual or has no real business substance, output a single 2-3 sentence paragraph summarizing the gist and stop there.
+
+Otherwise, use exactly this structure. Omit any section that has no content.
+
+**Meeting Type:** Sales/Discovery, Technical/Engineering, Internal Sync, Customer Support/Success, or Casual
 
 ## Summary
-A 2-3 sentence overview.
+A 2-3 sentence overview of the meeting's purpose and outcome.
 
 ## Key Points
-- Concise bullet
-- Concise bullet
+- Concise thematic bullet (decision, debate, or problem)
+- Concise thematic bullet
 
-## Action Items
-- [ ] Owner: task (deadline if mentioned)`
+Pexip context: this product is video conferencing, so terms like Infinity, Conferencing Node, Management Node, Pexip Connect, VMR, dial string, gateway call, Teams/Zoom interop, SIP/H.323, PIN, alias, and call quality (jitter, packet loss) may appear. Treat these as real meeting terminology, not transcription errors.`
 
 function pad(n: number) {
   return n.toString().padStart(2, '0')

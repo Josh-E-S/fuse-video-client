@@ -6,6 +6,8 @@ import { AnimatePresence, useMotionValue } from 'framer-motion'
 import { toast } from 'sonner'
 import { ControlBar } from '@/components/meeting/ControlBar'
 import { DockPanel, type DockTab } from '@/components/meeting/DockPanel'
+import { SidePanelDock } from '@/components/meeting/SidePanelDock'
+import { StatusBanner } from '@/components/meeting/StatusBanner'
 import { BackgroundEngine } from '@/components/meeting/BackgroundEngine'
 import { SubtitleBar } from '@/components/meeting/SubtitleBar'
 import { MeetingHeader } from '@/components/meeting/MeetingHeader'
@@ -76,11 +78,11 @@ export default function MeetingPage() {
   const [selfViewVisible, setSelfViewVisible] = useState(true)
   const [pipLayout, setPipLayout] = useState<'portrait' | 'halves'>('portrait')
   const [dockTab, setDockTab] = useState<DockTab | null>(null)
-  const [dockMode, setDockMode] = useState<'bottom' | 'side'>('bottom')
+  const [stopRequestToken, setStopRequestToken] = useState(0)
   const [message, setMessage] = useState('')
   const [showDTMF, setShowDTMF] = useState(false)
 
-  const sideDockOpen = dockMode === 'side' && dockTab !== null
+  const sideDockOpen = dockTab !== null
 
   // Derive effective layout from window mode constraints
   const effectiveLayout: 'focus' | 'gallery' | 'side-by-side' =
@@ -99,7 +101,7 @@ export default function MeetingPage() {
   const pipX = useMotionValue(0)
   const pipY = useMotionValue(0)
 
-  const pipResetKey = `${effectiveLayout}-${isMini}-${isExpanded}-${dockTab}-${dockMode}-${targetAspectRatio}`
+  const pipResetKey = `${effectiveLayout}-${isMini}-${isExpanded}-${dockTab}-${targetAspectRatio}`
   const prevPipResetKey = useRef(pipResetKey)
   useEffect(() => {
     if (prevPipResetKey.current !== pipResetKey) {
@@ -147,7 +149,6 @@ export default function MeetingPage() {
   const popout = usePresentationPopout({ presentationStream })
 
   const transcription = useMeetingTranscription({
-    sipUri: currentMeetingId,
     connectionState,
     localStream,
     remoteStream,
@@ -159,9 +160,8 @@ export default function MeetingPage() {
   useEffect(() => {
     const bridge = getElectronBridge()
     if (!bridge) return
-    const shouldBeOpen = dockMode === 'side' && dockTab !== null
-    bridge.resizeToState({ sideDockOpen: shouldBeOpen })
-  }, [dockMode, dockTab])
+    bridge.resizeToState({ sideDockOpen: dockTab !== null })
+  }, [dockTab])
 
   // On unmount, ensure the window returns to a no-side-dock size.
   useEffect(() => {
@@ -217,13 +217,17 @@ export default function MeetingPage() {
     interimSpeaker: transcription.interimSpeaker,
     isTranscriptionConnected: transcription.isTranscriptionConnected,
     transcriptionEnabled: transcription.transcriptionEnabled,
-    onToggleTranscription: () => {
-      if (transcription.transcriptionEnabled) {
-        transcription.setTranscriptionEnabled(false)
-      } else {
-        setTranscriptionConsentRequest('toggle')
-      }
+    // DockPanel only invokes this for Start (Stop has its own save-modal flow).
+    onToggleTranscription: () => setTranscriptionConsentRequest('toggle'),
+    onDisableTranscription: () => {
+      transcription.setTranscriptionEnabled(false)
+      transcription.setCaptionsVisible(false)
     },
+    onClearTranscripts: transcription.clearTranscripts,
+    stopRequestToken,
+    localStream,
+    remoteStream,
+    audioVisualizerEnabled: settings.audioVisualizerEnabled,
   }
 
   // PiP mode
@@ -282,7 +286,7 @@ export default function MeetingPage() {
       {isElectron && (
         <div
           className="absolute top-0 left-0 h-12 z-100 [-webkit-app-region:drag]"
-          style={{ right: dockMode === 'side' && dockTab ? 336 : 0 }}
+          style={{ right: dockTab ? 336 : 0 }}
         />
       )}
       <BackgroundEngine
@@ -312,8 +316,8 @@ export default function MeetingPage() {
           onToggleExpand={toggleExpand}
         />
 
-        <div className={`flex flex-row flex-1 min-h-0 ${dockTab && dockMode === 'bottom' ? 'flex-[2]' : ''}`}>
-        <div className="flex flex-col flex-1 min-w-0">
+        <div className="flex flex-row flex-1 min-h-0">
+        <div className="relative flex flex-col flex-1 min-w-0">
 
         <VideoLayout
           layout={effectiveLayout}
@@ -342,59 +346,53 @@ export default function MeetingPage() {
           captionsVisible={transcription.transcriptionEnabled && transcription.captionsVisible}
         />
 
+        <StatusBanner
+          isMuted={isAudioMuted}
+          isTranscribing={transcription.transcriptionEnabled}
+        />
+
+        <SidePanelDock
+          activeTab={dockTab}
+          onTabChange={setDockTab}
+          onDTMF={() => setShowDTMF(true)}
+          onToggleLayout={isMini ? undefined : () =>
+            setLayout((l) => {
+              if (isExpanded) {
+                return l === 'focus' ? 'gallery' : l === 'gallery' ? 'side-by-side' : 'focus'
+              }
+              return l === 'focus' ? 'gallery' : 'focus'
+            })
+          }
+          layout={effectiveLayout}
+          participantCount={participants.length}
+          transcriptionEnabled={transcription.transcriptionEnabled}
+          onRequestTranscription={() => setTranscriptionConsentRequest('toggle')}
+        />
+
         </div>
 
         {/* Side dock */}
-        {dockMode === 'side' && (
-          <AnimatePresence>
-            {dockTab ? (
+        <AnimatePresence>
+          {dockTab ? (
+            <DockPanel
+              activeTab={dockTab}
+              onTabChange={setDockTab}
+              onClose={() => setDockTab(null)}
+              {...dockPanelProps}
+            />
+          ) : (
+            <div key="side-prerender" className="hidden">
               <DockPanel
-                activeTab={dockTab}
-                mode={dockMode}
-                onTabChange={setDockTab}
-                onClose={() => setDockTab(null)}
+                activeTab="transcript"
+                onTabChange={() => {}}
+                onClose={() => {}}
                 {...dockPanelProps}
               />
-            ) : (
-              <div key="side-prerender" className="hidden">
-                <DockPanel
-                  activeTab="transcript"
-                  mode="side"
-                  onTabChange={() => {}}
-                  onClose={() => {}}
-                  {...dockPanelProps}
-                />
-              </div>
-            )}
-          </AnimatePresence>
-        )}
+            </div>
+          )}
+        </AnimatePresence>
 
         </div>
-
-        {/* Bottom dock */}
-        {dockMode === 'bottom' && (
-          <AnimatePresence>
-            {dockTab ? (
-              <DockPanel
-                activeTab={dockTab}
-                mode={dockMode}
-                onTabChange={setDockTab}
-                onClose={() => setDockTab(null)}
-                {...dockPanelProps}
-              />
-            ) : (
-              <div key="bottom-prerender" className="hidden">
-                <DockPanel
-                  activeTab="transcript"
-                  mode="bottom"
-                  onTabChange={() => {}}
-                  onClose={() => {}}
-                  {...dockPanelProps}
-                />
-              </div>
-            )}
-          </AnimatePresence>
-        )}
 
         <div className="shrink-0 w-full pb-2 pt-1.5">
           <ControlBar
@@ -404,10 +402,6 @@ export default function MeetingPage() {
             isPipSupported={pip.isSupported}
             isPresenting={isPresenting}
             transcriptionEnabled={transcription.transcriptionEnabled}
-            captionsVisible={transcription.captionsVisible}
-            activeDockTab={dockTab}
-            dockMode={dockMode}
-            layout={effectiveLayout}
             selfViewVisible={selfViewVisible}
             onToggleSelfView={() => setSelfViewVisible((v) => !v)}
             audioInputId={settings.audioInput}
@@ -417,34 +411,18 @@ export default function MeetingPage() {
             onToggleMic={() => muteAudio(!isAudioMuted)}
             onToggleVideo={() => muteVideo(!isVideoMuted)}
             onTogglePip={() => (pip.isActive ? pip.closePip() : pip.openPip())}
-            onToggleLayout={isMini ? undefined : () =>
-              setLayout((l) => {
-                if (isExpanded) {
-                  return l === 'focus' ? 'gallery' : l === 'gallery' ? 'side-by-side' : 'focus'
-                }
-                return l === 'focus' ? 'gallery' : 'focus'
-              })
-            }
             onToggleShare={() => (isPresenting ? stopScreenShare() : startScreenShare())}
             onToggleTranscription={() => {
               if (transcription.transcriptionEnabled) {
-                transcription.setTranscriptionEnabled(false)
+                // Route stop through the dock's save modal so the user can
+                // save/discard before transcription actually ends.
+                setDockTab('transcript')
+                setStopRequestToken((n) => n + 1)
               } else {
                 setTranscriptionConsentRequest('toggle')
               }
             }}
-            onToggleCaptions={() => {
-              if (!transcription.transcriptionEnabled) {
-                setTranscriptionConsentRequest('enableWithCaptions')
-              } else {
-                transcription.setCaptionsVisible(!transcription.captionsVisible)
-              }
-            }}
-            onDockTab={(tab: DockTab) => setDockTab((prev) => (prev === tab ? null : tab))}
-            onDockClose={() => setDockTab(null)}
-            onDockModeChange={setDockMode}
             onSettings={() => setShowSettings(true)}
-            onDTMF={() => setShowDTMF(true)}
             onLeave={handleLeave}
           />
         </div>
@@ -469,12 +447,9 @@ export default function MeetingPage() {
       <TranscriptionConsentModal
         open={transcriptionConsentRequest !== null}
         onConfirm={() => {
-          if (transcriptionConsentRequest === 'enableWithCaptions') {
-            transcription.setTranscriptionEnabled(true)
-            transcription.setCaptionsVisible(true)
-          } else {
-            transcription.setTranscriptionEnabled(true)
-          }
+          transcription.setTranscriptionEnabled(true)
+          transcription.setCaptionsVisible(true)
+          setDockTab('transcript')
           setTranscriptionConsentRequest(null)
         }}
         onCancel={() => setTranscriptionConsentRequest(null)}

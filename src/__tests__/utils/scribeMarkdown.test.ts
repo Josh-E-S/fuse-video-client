@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { formatScribeMarkdown, defaultScribeFilename } from '@/utils/scribeMarkdown'
-import type { TranscriptEntry } from '@/hooks/useTranscription'
+import type { TranscriptEntry } from '@/hooks/useLocalTranscription'
 
 const startedAt = new Date('2026-04-28T14:32:00')
 

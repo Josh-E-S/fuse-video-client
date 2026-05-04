@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { getElectronBridge } from '@/hooks/useElectron'
-import type { TranscriptEntry } from '@/hooks/useTranscription'
+import type { TranscriptEntry } from '@/hooks/useLocalTranscription'
 import { buildPrompt, gateReason } from '@/utils/summaryMarkdown'
 import { log } from '@/utils/logger'
 
@@ -15,7 +15,7 @@ interface UseSummarizerReturn {
   error: string | null
   elapsedSeconds: number
   tokenCount: number
-  run: (entries: TranscriptEntry[]) => Promise<void>
+  run: (entries: TranscriptEntry[]) => Promise<string | null>
   clear: () => void
 }
 
@@ -65,8 +65,8 @@ export function useSummarizer(): UseSummarizerReturn {
     setTokenCount(0)
   }, [])
 
-  const run = useCallback(async (entries: TranscriptEntry[]) => {
-    if (inFlightRef.current) return
+  const run = useCallback(async (entries: TranscriptEntry[]): Promise<string | null> => {
+    if (inFlightRef.current) return null
     inFlightRef.current = true
 
     const myGen = ++generationRef.current
@@ -76,7 +76,7 @@ export function useSummarizer(): UseSummarizerReturn {
       inFlightRef.current = false
       setError('Summary engine not available outside the desktop app')
       setStatus('error')
-      return
+      return null
     }
 
     const reason = gateReason(entries)
@@ -84,7 +84,7 @@ export function useSummarizer(): UseSummarizerReturn {
       inFlightRef.current = false
       setError(reason)
       setStatus('error')
-      return
+      return null
     }
 
     setStatus('preparing')
@@ -108,22 +108,25 @@ export function useSummarizer(): UseSummarizerReturn {
       const prompt = buildPrompt(entries)
       const result = await bridge.summarizeRun(prompt)
 
-      if (generationRef.current !== myGen) return
+      if (generationRef.current !== myGen) return null
 
       if (result.ok) {
         setSummary(result.markdown)
         setTokenCount(result.tokenCount)
         setElapsedSeconds(Math.floor(result.elapsedMs / 1000))
         setStatus('done')
+        return result.markdown
       } else {
         setError(result.error)
         setStatus('error')
+        return null
       }
     } catch (err) {
-      if (generationRef.current !== myGen) return
+      if (generationRef.current !== myGen) return null
       log.media.warn('Summarizer call threw')
       setError(err instanceof Error ? err.message : "Couldn't generate summary. Try again.")
       setStatus('error')
+      return null
     } finally {
       inFlightRef.current = false
       if (tickRef.current) {

@@ -1,4 +1,4 @@
-import type { TranscriptEntry } from '@/hooks/useTranscription'
+import type { TranscriptEntry } from '@/hooks/useLocalTranscription'
 
 const DATE_FMT: Intl.DateTimeFormatOptions = {
   weekday: 'long',

@@ -26,6 +26,7 @@ import {
   Languages,
   Check,
   Sparkles,
+  AudioLines,
 } from 'lucide-react'
 import { useSettings } from '@/hooks/useSettings'
 import { useMediaDevices, useSpeakerTest } from '@/hooks/useMediaDevices'
@@ -95,7 +96,9 @@ export function SettingsModal({
       setGoogleDomain(settings.googleDomain)
       setPollInterval(Number(localStorage.getItem('fuse_poll_interval')) || 60)
       setRegAlias(
-        localStorage.getItem('fuse_reg_alias') ?? process.env.NEXT_PUBLIC_DEFAULT_ALIAS ?? '',
+        localStorage.getItem('fuse_reg_alias') ??
+          process.env.NEXT_PUBLIC_DEFAULT_REG_ALIAS ??
+          '',
       )
       setRegUsername(
         localStorage.getItem('fuse_reg_username') ??
@@ -368,7 +371,7 @@ export function SettingsModal({
                       value={nodeDomain}
                       onChange={(e) => setNodeDomain(e.target.value)}
                       onBlur={handleBlurSave}
-                      placeholder="e.g. pexipdemo.com"
+                      placeholder="e.g. pexip.example.com"
                       className="w-full px-4 py-3 rounded-xl bg-white/6 border border-white/10 text-white placeholder-white/20 focus:outline-none focus:border-white/30 transition-colors text-sm"
                     />
                   </div>
@@ -897,6 +900,32 @@ export function SettingsModal({
                     Generates meeting summaries from your transcripts. Optional — captions work
                     without this model.
                   </p>
+
+                  <div className="text-[10px] font-bold uppercase tracking-widest text-white/20 pl-1 pt-2">
+                    Display
+                  </div>
+
+                  <label className="px-4 py-3.5 rounded-xl bg-white/3 border border-white/6 flex items-center gap-3 cursor-pointer hover:bg-white/5 transition-colors">
+                    <div className="w-9 h-9 rounded-lg bg-white/6 border border-white/8 flex items-center justify-center shrink-0">
+                      <AudioLines size={16} className="text-white/40" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[13px] font-medium text-white/80">
+                        Audio visualizer
+                      </div>
+                      <div className="text-[11px] text-white/30">
+                        Live mic waveform shown while scribing
+                      </div>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={settings.audioVisualizerEnabled}
+                      onChange={(e) =>
+                        saveSettings({ audioVisualizerEnabled: e.target.checked })
+                      }
+                      className="accent-violet-400 w-4 h-4 cursor-pointer"
+                    />
+                  </label>
                 </div>
               )}
 

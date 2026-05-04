@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useEffect } from 'react'
+import { useRef, useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   MessageSquare,
@@ -13,22 +13,30 @@ import {
   Video,
   Share2,
   PanelRightClose,
-  PanelBottomClose,
   Play,
   Square,
   NotebookText,
+  ArrowLeft,
+  Trash2,
 } from 'lucide-react'
 import type { ChatMessage, Participant } from '@/types/pexrtc'
-import type { TranscriptEntry } from '@/hooks/useTranscription'
+import type { TranscriptEntry } from '@/hooks/useLocalTranscription'
 import { useSummarizer } from '@/hooks/useSummarizer'
-import { gateReason } from '@/utils/summaryMarkdown'
+import {
+  composeSavedMarkdown,
+  defaultSummaryFilename,
+  gateReason,
+} from '@/utils/summaryMarkdown'
+import { defaultScribeFilename, formatScribeMarkdown } from '@/utils/scribeMarkdown'
+import { MicVisualizer } from '@/components/scribe/MicVisualizer'
+import { ScribeSaveModal } from '@/components/scribe/ScribeSaveModal'
+import { ClearConfirmModal } from '@/components/scribe/ClearConfirmModal'
+import { SummaryMarkdown } from '@/components/scribe/SummaryMarkdown'
 
 export type DockTab = 'chat' | 'people' | 'transcript'
-export type DockMode = 'bottom' | 'side'
 
 interface DockPanelProps {
   activeTab: DockTab
-  mode: DockMode
   onTabChange: (tab: DockTab) => void
   onClose: () => void
 
@@ -44,6 +52,16 @@ interface DockPanelProps {
   isTranscriptionConnected: boolean
   transcriptionEnabled?: boolean
   onToggleTranscription?: () => void
+  onDisableTranscription?: () => void
+  onClearTranscripts?: () => void
+
+  // External request to open the save modal — increments each time
+  // the parent wants the dock to prompt the user to save before stopping.
+  stopRequestToken?: number
+
+  localStream?: MediaStream | null
+  remoteStream?: MediaStream | null
+  audioVisualizerEnabled?: boolean
 }
 
 const tabs: { id: DockTab; label: string }[] = [
@@ -60,7 +78,6 @@ const tabContentVariants = {
 
 export function DockPanel({
   activeTab,
-  mode,
   onTabChange,
   onClose,
   chatMessages,
@@ -74,13 +91,53 @@ export function DockPanel({
   isTranscriptionConnected,
   transcriptionEnabled,
   onToggleTranscription,
+  onDisableTranscription,
+  onClearTranscripts,
+  stopRequestToken,
+  localStream,
+  remoteStream,
+  audioVisualizerEnabled = true,
 }: DockPanelProps) {
   const chatScrollRef = useRef<HTMLDivElement>(null)
   const transcriptScrollRef = useRef<HTMLDivElement>(null)
   const isAtChatBottomRef = useRef(true)
   const isAtTranscriptBottomRef = useRef(true)
   const summarizer = useSummarizer()
-  const isBottom = mode === 'bottom'
+  const [view, setView] = useState<'transcript' | 'summary'>('transcript')
+  const [showSaveModal, setShowSaveModal] = useState(false)
+  const [saveModalIntent, setSaveModalIntent] = useState<'stop' | 'close'>('stop')
+  const [showClearConfirm, setShowClearConfirm] = useState(false)
+  const [includeFullTranscript, setIncludeFullTranscript] = useState(true)
+  const [generateSummary, setGenerateSummary] = useState(true)
+  const [handleVisible, setHandleVisible] = useState(true)
+  const handleHideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const transcriptGate = gateReason(transcripts)
+
+  // Auto-hide collapse handle: matches the side pill — fades after 2s of idle,
+  // returns on any mouse move.
+  useEffect(() => {
+    const scheduleHide = () => {
+      if (handleHideTimerRef.current) clearTimeout(handleHideTimerRef.current)
+      handleHideTimerRef.current = setTimeout(() => setHandleVisible(false), 2000)
+    }
+    const handleMove = () => {
+      setHandleVisible(true)
+      scheduleHide()
+    }
+    scheduleHide()
+    window.addEventListener('mousemove', handleMove)
+    return () => {
+      window.removeEventListener('mousemove', handleMove)
+      if (handleHideTimerRef.current) clearTimeout(handleHideTimerRef.current)
+    }
+  }, [])
+
+  const handleClearConfirm = () => {
+    onClearTranscripts?.()
+    summarizer.clear()
+    setView('transcript')
+    setShowClearConfirm(false)
+  }
 
   const handleChatScroll = () => {
     const el = chatScrollRef.current
@@ -94,6 +151,80 @@ export function DockPanel({
     if (!el) return
     const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight
     isAtTranscriptBottomRef.current = distanceFromBottom < 50
+  }
+
+  useEffect(() => {
+    if (summarizer.status === 'done' && summarizer.summary) {
+      setView('summary')
+    }
+  }, [summarizer.status, summarizer.summary])
+
+  // External stop request from the toolbar — open the save modal so the
+  // user can save/discard before transcription is actually stopped.
+  useEffect(() => {
+    if (stopRequestToken === undefined || stopRequestToken === 0) return
+    setSaveModalIntent('stop')
+    setShowSaveModal(true)
+  }, [stopRequestToken])
+
+  const writeMarkdown = (md: string, filename: string) => {
+    const blob = new Blob([md], { type: 'text/markdown' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = filename
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
+  const openSaveModal = (intent: 'stop' | 'close') => {
+    // Stop transcription up-front so audio capture halts while the user
+    // decides what to do with the transcript.
+    if (transcriptionEnabled && onDisableTranscription) onDisableTranscription()
+    setSaveModalIntent(intent)
+    setShowSaveModal(true)
+  }
+
+  const handleSave = async () => {
+    const startedAt = new Date()
+    const wantSummary = generateSummary && summarizer.available && !transcriptGate
+
+    let summaryText = summarizer.summary
+    if (wantSummary && !summaryText) {
+      const result = await summarizer.run(transcripts)
+      summaryText = result ?? null
+    }
+
+    if (summaryText) {
+      const md = composeSavedMarkdown({
+        summary: summaryText,
+        transcripts,
+        startedAt,
+        includeFullTranscript,
+      })
+      writeMarkdown(md, defaultSummaryFilename(startedAt))
+    } else {
+      const md = formatScribeMarkdown(transcripts, startedAt)
+      writeMarkdown(md, defaultScribeFilename(startedAt))
+    }
+
+    if (saveModalIntent === 'close') {
+      summarizer.clear()
+      setView('transcript')
+      setShowSaveModal(false)
+      onClose()
+    } else {
+      setShowSaveModal(false)
+    }
+  }
+
+  const handleDiscard = () => {
+    summarizer.clear()
+    setView('transcript')
+    setShowSaveModal(false)
+    if (saveModalIntent === 'close') onClose()
   }
 
   useEffect(() => {
@@ -154,13 +285,6 @@ export function DockPanel({
           )
         })}
       </div>
-      <button
-        onClick={onClose}
-        className="w-7 h-7 rounded-lg flex items-center justify-center text-white/30 hover:text-white/60 hover:bg-white/6 transition-colors"
-        title="Close panel"
-      >
-        {isBottom ? <PanelBottomClose size={14} /> : <PanelRightClose size={14} />}
-      </button>
     </div>
   )
 
@@ -321,94 +445,137 @@ export function DockPanel({
             transition={{ duration: 0.2, ease: 'easeOut' }}
             className="absolute inset-0 flex flex-col"
           >
-            <div
-              ref={transcriptScrollRef}
-              onScroll={handleTranscriptScroll}
-              className="flex-1 overflow-y-auto px-4 py-3"
-            >
-              {summarizer.status === 'error' && summarizer.error && (
-                <div className="mb-3 px-3 py-2 rounded-lg bg-rose-500/10 border border-rose-500/25 text-[12px] text-rose-300">
-                  {summarizer.error}{' '}
-                  <button
-                    onClick={() => summarizer.run(transcripts)}
-                    className="underline underline-offset-2 hover:text-rose-200"
-                  >
-                    Try again
-                  </button>
-                </div>
-              )}
-              {summarizer.summary && (
-                <div className="mb-3 p-3 rounded-xl bg-violet-400/8 border border-violet-400/20">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <NotebookText size={12} className="text-violet-300" />
-                      <span className="text-[10px] font-semibold tracking-wide uppercase text-violet-200/80">
-                        Summary
-                      </span>
+            {view === 'summary' && summarizer.summary ? (
+              <div className="flex-1 overflow-y-auto px-4 py-3">
+                <button
+                  type="button"
+                  onClick={() => setView('transcript')}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 mb-3 rounded-full bg-white/5 border border-white/10 text-[11px] font-medium text-white/60 hover:bg-white/10 hover:text-white/85 transition-colors"
+                >
+                  <ArrowLeft size={11} />
+                  Back to transcript
+                </button>
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-6 h-6 rounded-md bg-violet-400/15 border border-violet-400/30 flex items-center justify-center shrink-0">
+                    <NotebookText size={12} className="text-violet-200" />
+                  </div>
+                  <div>
+                    <div className="text-[12px] font-semibold text-white/90 leading-none">
+                      Meeting Summary
                     </div>
+                    <div className="text-[10px] text-white/35 mt-0.5">
+                      {transcripts.length} lines
+                    </div>
+                  </div>
+                </div>
+                <div className="p-3 rounded-xl bg-gradient-to-br from-violet-400/10 via-violet-400/5 to-transparent border border-violet-400/20">
+                  <SummaryMarkdown markdown={summarizer.summary} />
+                </div>
+              </div>
+            ) : (
+              <div
+                ref={transcriptScrollRef}
+                onScroll={handleTranscriptScroll}
+                className="flex-1 overflow-y-auto px-4 py-3"
+              >
+                {summarizer.status === 'error' && summarizer.error && (
+                  <div className="mb-3 px-3 py-2 rounded-lg bg-rose-500/10 border border-rose-500/25 text-[12px] text-rose-300">
+                    {summarizer.error}{' '}
                     <button
-                      onClick={summarizer.clear}
-                      className="px-2 py-0.5 rounded-md text-[10px] font-medium text-violet-200/80 hover:text-violet-100 hover:bg-violet-400/15 transition-colors"
+                      onClick={() => summarizer.run(transcripts)}
+                      className="underline underline-offset-2 hover:text-rose-200"
                     >
-                      Clear
+                      Try again
                     </button>
                   </div>
-                  <pre className="whitespace-pre-wrap text-[12px] leading-[1.5] text-white/90 font-sans">
-                    {summarizer.summary}
-                  </pre>
-                </div>
-              )}
-              {transcripts.length === 0 && !interimText ? (
-                <div className="flex flex-col items-center justify-center h-full text-white/25">
-                  <FileText size={20} className="mb-2 opacity-40" />
-                  <p className="text-xs">No transcripts yet</p>
-                  <p className="text-[10px] mt-1 text-white/20">
-                    {isTranscriptionConnected
-                      ? 'Speak to see captions'
-                      : transcriptionEnabled
-                        ? 'Connecting…'
-                        : 'Start transcription below'}
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {transcripts.map((entry) => {
-                    const time = new Date(entry.timestamp).toLocaleTimeString([], {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })
-                    return (
-                      <div key={entry.id} className="animate-[fadeInUp_0.3s_ease-out]">
-                        <div className="text-[11px] font-semibold text-blue-400 mb-0.5">
-                          {entry.speaker || 'Speaker'}
-                        </div>
-                        <div className="text-[13px] leading-[1.5] text-white/90">{entry.text}</div>
-                        <div className="text-[10px] text-white/25 mt-0.5">{time}</div>
-                      </div>
-                    )
-                  })}
-
-                  {interimText && (
-                    <div>
-                      <div className="text-[11px] font-semibold text-amber-400/60 mb-0.5">
-                        {interimSpeaker || '...'}
-                      </div>
-                      <div className="text-[13px] leading-[1.5] text-white/40 italic">
-                        {interimText}
-                      </div>
-                      <div className="text-[10px] text-white/20 mt-0.5">live</div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {(onToggleTranscription || summarizer.available) && (
-              <div className="shrink-0 px-4 pb-3 pt-2 border-t border-white/6 flex flex-col gap-2">
-                {onToggleTranscription && (
+                )}
+                {summarizer.summary && (
                   <button
-                    onClick={onToggleTranscription}
-                    className={`w-full h-9 rounded-xl flex items-center justify-center gap-2 text-[13px] font-medium border transition-colors ${
+                    type="button"
+                    onClick={() => setView('summary')}
+                    className="w-full mb-3 px-3 py-2 rounded-xl bg-violet-400/8 border border-violet-400/20 hover:bg-violet-400/12 transition-colors flex items-center gap-2 text-left"
+                  >
+                    <div className="w-6 h-6 rounded-md bg-violet-400/15 border border-violet-400/25 flex items-center justify-center shrink-0">
+                      <NotebookText size={11} className="text-violet-200" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[11px] font-semibold text-violet-100">
+                        View summary
+                      </div>
+                      <div className="text-[10px] text-violet-200/50 mt-0.5">
+                        Tap for generated notes
+                      </div>
+                    </div>
+                    <ArrowLeft size={11} className="text-violet-200/60 rotate-180" />
+                  </button>
+                )}
+                {transcripts.length === 0 && !interimText ? (
+                  <div className="flex flex-col items-center justify-center h-full text-white/25">
+                    <FileText size={20} className="mb-2 opacity-40" />
+                    <p className="text-xs">No transcripts yet</p>
+                    <p className="text-[10px] mt-1 text-white/20">
+                      {isTranscriptionConnected
+                        ? 'Speak to see captions'
+                        : transcriptionEnabled
+                          ? 'Connecting…'
+                          : 'Start transcription below'}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {transcripts.map((entry) => {
+                      const time = new Date(entry.timestamp).toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })
+                      return (
+                        <div key={entry.id} className="animate-[fadeInUp_0.3s_ease-out]">
+                          <div className="text-[11px] font-semibold text-blue-400 mb-0.5">
+                            {entry.speaker || 'Speaker'}
+                          </div>
+                          <div className="text-[13px] leading-[1.5] text-white/90">
+                            {entry.text}
+                          </div>
+                          <div className="text-[10px] text-white/25 mt-0.5">{time}</div>
+                        </div>
+                      )
+                    })}
+
+                    {interimText && (
+                      <div>
+                        <div className="text-[11px] font-semibold text-amber-400/60 mb-0.5">
+                          {interimSpeaker || '...'}
+                        </div>
+                        <div className="text-[13px] leading-[1.5] text-white/40 italic">
+                          {interimText}
+                        </div>
+                        <div className="text-[10px] text-white/20 mt-0.5">live</div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {onToggleTranscription && (
+              <div className="shrink-0 px-4 pb-3 pt-2 border-t border-white/6 flex flex-col gap-2.5">
+                {audioVisualizerEnabled && (
+                  <MicVisualizer
+                    stream={localStream ?? null}
+                    remoteStream={remoteStream ?? null}
+                    active={Boolean(transcriptionEnabled && isTranscriptionConnected)}
+                  />
+                )}
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => {
+                      if (transcriptionEnabled) {
+                        openSaveModal('stop')
+                      } else {
+                        onToggleTranscription()
+                      }
+                    }}
+                    className={`flex-1 h-9 rounded-xl flex items-center justify-center gap-2 text-[13px] font-medium border transition-colors ${
                       transcriptionEnabled
                         ? 'bg-rose-500/10 border-rose-500/25 text-rose-300 hover:bg-rose-500/15'
                         : 'bg-emerald-400/10 border-emerald-400/25 text-emerald-300 hover:bg-emerald-400/15'
@@ -426,29 +593,42 @@ export function DockPanel({
                       </>
                     )}
                   </button>
-                )}
-                {summarizer.available && (
-                  <button
-                    onClick={() => summarizer.run(transcripts)}
-                    disabled={
-                      transcripts.length === 0 ||
-                      summarizer.status === 'preparing' ||
-                      summarizer.status === 'running' ||
-                      Boolean(gateReason(transcripts))
-                    }
-                    title={gateReason(transcripts) ?? 'Generate summary'}
-                    className="w-full h-10 rounded-xl flex items-center justify-center gap-2 text-[13px] font-medium border bg-violet-400/12 border-violet-400/30 text-violet-100 hover:bg-violet-400/18 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                  >
-                    <NotebookText size={13} />
-                    {summarizer.status === 'running' || summarizer.status === 'preparing'
-                      ? `${summarizer.elapsedSeconds}s · ${summarizer.tokenCount}t`
-                      : summarizer.status === 'done'
-                        ? 'Regenerate'
-                        : 'Summarize'}
-                  </button>
-                )}
+                  {onClearTranscripts && transcripts.length > 0 && (
+                    <button
+                      onClick={() => setShowClearConfirm(true)}
+                      className="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center text-white/45 hover:text-rose-300 border border-white/10 hover:border-rose-500/25 hover:bg-rose-500/10 transition-colors"
+                      title="Clear transcript"
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  )}
+                </div>
               </div>
             )}
+
+            <ScribeSaveModal
+              open={showSaveModal}
+              intent={saveModalIntent}
+              hasContent={transcripts.length > 0}
+              summarizerAvailable={summarizer.available}
+              summarizerStatus={summarizer.status}
+              summarizerElapsed={summarizer.elapsedSeconds}
+              hasSummary={Boolean(summarizer.summary)}
+              gateReason={transcriptGate}
+              generateSummary={generateSummary}
+              includeFullTranscript={includeFullTranscript}
+              onGenerateSummaryChange={setGenerateSummary}
+              onIncludeFullTranscriptChange={setIncludeFullTranscript}
+              onSave={handleSave}
+              onDiscard={handleDiscard}
+              onCancel={() => setShowSaveModal(false)}
+            />
+
+            <ClearConfirmModal
+              open={showClearConfirm}
+              onConfirm={handleClearConfirm}
+              onCancel={() => setShowClearConfirm(false)}
+            />
           </motion.div>
         )}
       </AnimatePresence>
@@ -456,47 +636,35 @@ export function DockPanel({
   )
 
   // Side mode: outer wrapper animates width, inner panel floats with Gemini-style inset
-  if (!isBottom) {
-    return (
-      <motion.div
-        initial={{ width: 0, opacity: 0 }}
-        animate={{ width: 336, opacity: 1 }}
-        exit={{ width: 0, opacity: 0 }}
-        transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
-        className="shrink-0 self-stretch overflow-hidden"
-        style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
-      >
-        <div
-          className="flex flex-col w-[320px] ml-2 h-full rounded-2xl border border-white/8 overflow-hidden"
-          style={{
-            background: 'rgba(var(--theme-surface-base), 0.55)',
-            backdropFilter: 'blur(60px)',
-            WebkitBackdropFilter: 'blur(60px)',
-          }}
-        >
-          {tabBar}
-          {tabContent}
-        </div>
-      </motion.div>
-    )
-  }
-
-  // Bottom mode: slides up from below
   return (
     <motion.div
-      initial={{ height: 0, opacity: 0 }}
-      animate={{ height: 300, opacity: 1 }}
-      exit={{ height: 0, opacity: 0 }}
+      initial={{ width: 0, opacity: 0 }}
+      animate={{ width: 336, opacity: 1 }}
+      exit={{ width: 0, opacity: 0 }}
       transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
-      className="shrink-0 flex flex-col rounded-t-2xl border-t border-x border-white/8 overflow-hidden"
-      style={{
-        background: 'rgba(var(--theme-surface-base), 0.55)',
-        backdropFilter: 'blur(60px)',
-        WebkitBackdropFilter: 'blur(60px)',
-      }}
+      className="shrink-0 self-stretch overflow-hidden relative"
+      style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
     >
-      {tabBar}
-      {tabContent}
+      <button
+        onClick={onClose}
+        title="Collapse panel"
+        className={`absolute top-1/2 left-3 -translate-y-1/2 z-10 w-7 h-7 rounded-lg flex items-center justify-center text-white/30 hover:text-white/85 bg-black/30 hover:bg-black/65 border border-white/8 hover:border-white/20 backdrop-blur-md transition-all duration-200 ${
+          handleVisible ? 'opacity-100' : 'opacity-0 hover:opacity-100'
+        }`}
+      >
+        <PanelRightClose size={14} />
+      </button>
+      <div
+        className="flex flex-col w-[320px] ml-2 h-full rounded-2xl border border-white/8 overflow-hidden"
+        style={{
+          background: 'rgba(var(--theme-surface-base), 0.55)',
+          backdropFilter: 'blur(60px)',
+          WebkitBackdropFilter: 'blur(60px)',
+        }}
+      >
+        {tabBar}
+        {tabContent}
+      </div>
     </motion.div>
   )
 }

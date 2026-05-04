@@ -5,7 +5,7 @@
 <h1 align="center">Fuse Video Client</h1>
 
 <p align="center">
-  A native Electron video conferencing client that joins Pexip, Zoom, Google Meet, and Microsoft Teams meetings through a single interface. Built on <a href="https://www.pexip.com/">Pexip Infinity's</a> PexRTC client APIs with offline live transcription powered by NVIDIA's Parakeet speech model via Sherpa-ONNX.
+  A native Electron video conferencing client that joins Pexip, Zoom, Google Meet, and Microsoft Teams meetings through a single interface. Built on <a href="https://www.pexip.com/">Pexip Infinity's</a> PexRTC client APIs, with offline live transcription (NVIDIA Parakeet via Sherpa-ONNX) and offline meeting summarization (Qwen3-0.6B via node-llama-cpp).
 </p>
 
 <p align="center">
@@ -30,33 +30,72 @@
 
 <br/>
 
-<p align="center">
-  <strong>Compact</strong>                                                                                                                <strong>Expanded</strong>
-</p>
-<p align="center">
-  <img src="public/screenshots/home.png" alt="Compact" height="350" />   
-  <img src="public/screenshots/expanded-mode.png" alt="Expanded" height="350" />
-</p>
+<p align="center"><em>App view modes:</em></p>
 
-<br/>
+---
 
-<p align="center"><strong>Mini Mode</strong></p>
+#### Collapsed Mode
+
 <p align="center">
-  <img src="public/screenshots/mini-mode.png" alt="Mini Mode" width="320" />
-</p>
-
-<br/>
-
-<p align="center"><strong>Quick Join</strong></p>
-<p align="center">
-  <img src="public/screenshots/join-google.png" alt="Google Meet" height="280" /> 
-  <img src="public/screenshots/join-teams.png" alt="Teams" height="280" /> 
-  <img src="public/screenshots/join-zoom.png" alt="Zoom" height="280" /> 
-  <img src="public/screenshots/join-pexip.png" alt="Pexip" height="280" />
+  <img src="public/screenshots/collapsed-mode.png" alt="Collapsed" width="430" />   
+  <img src="public/screenshots/in-call-portrait.png" alt="Collapsed in call" width="430" />
 </p>
 <p align="center">
-  <em>Google Meet                           Teams                           Zoom                         Pexip</em>
+  <img src="public/screenshots/in-call-portrait-transcription.png" alt="Collapsed in call with transcription" width="700" />
 </p>
+<p align="center"><em>Idle · In Call · In Call with Transcription</em></p>
+
+---
+
+#### Expanded Mode
+
+<p align="center">
+  <img src="public/screenshots/expanded-mode.png" alt="Expanded" width="900" />
+</p>
+<p align="center">
+  <img src="public/screenshots/in-call-expanded-content-share.png" alt="Expanded in call with content share" width="900" />
+</p>
+<p align="center"><em>Idle · In Call with Content Share</em></p>
+
+---
+
+#### Mini Mode
+
+<p align="center">
+  <img src="public/screenshots/mini-mode.png" alt="Mini" width="430" />   
+  <img src="public/screenshots/in-call-mini.png" alt="Mini in call" width="430" />
+</p>
+<p align="center">
+  <img src="public/screenshots/in-call-mini-transcription.png" alt="Mini in call with transcription" width="700" />
+</p>
+<p align="center"><em>Idle · In Call · In Call with Transcription</em></p>
+
+---
+
+#### Side-bar Mode &amp; Live Transcription
+
+<p align="center">
+  <img src="public/screenshots/side-bar-mode.png" alt="Side-bar" width="220" />
+  <img src="public/screenshots/scribe-transcription.png" alt="Live transcript" width="320" />
+  <img src="public/screenshots/scribe-summary.png" alt="AI summary" width="320" />
+</p>
+<p align="center"><em>Side-bar · Live Transcript · AI Summary</em></p>
+
+---
+
+#### Quick Join
+
+<p align="center">
+  <img src="public/screenshots/join-google.png" alt="Google Meet" width="230" /> 
+  <img src="public/screenshots/join-teams.png" alt="Teams" width="230" /> 
+  <img src="public/screenshots/join-zoom.png" alt="Zoom" width="230" /> 
+  <img src="public/screenshots/join-pexip.png" alt="Pexip" width="230" />
+</p>
+<p align="center"><em>Google Meet · Teams · Zoom · Pexip</em></p>
+
+---
+
+> **Heads up:** This app's functionality requires the appropriate Pexip Infinity licenses and configuration. You can [request a developer license](https://developer.pexip.com/request-developer-license/) from Pexip.
 
 ---
 
@@ -64,45 +103,31 @@
 
 - **One-Touch Multi-Provider Joining** -- Join Zoom, Google Meet, Microsoft Teams, and Pexip meetings from a single interface via Pexip CVI gateway routing
 - **Calendar Integration** -- One Touch Join calendar pulls upcoming meetings with auto-detected provider icons and one-click joining
-- **Local Transcription** -- Offline speech-to-text powered by NVIDIA's Parakeet TDT-CTC 110M model running locally via Sherpa-ONNX (Electron only, no cloud dependency). Also supports remote WebSocket transcription services.
+- **Local Transcription** -- Offline speech-to-text powered by NVIDIA's Parakeet TDT-CTC 110M model running locally via Sherpa-ONNX (Electron only, no cloud dependency).
+- **Local Summarization** -- Offline meeting summaries from Qwen3-0.6B-Instruct (Q4_K_M GGUF) running in an Electron utility process via node-llama-cpp. Generates structured markdown from the live transcript without sending content off-device.
 - **Registered WebRTC Client** -- Register as a Pexip WebRTC device to receive incoming calls with configurable ringtones
-- **3 Window Modes** -- Compact (500x900), expanded (1220x900), and mini (320x180) floating PiP
-- **Setup Wizard** -- Guided first-launch onboarding: connection, registration, calendar, providers, devices, transcription model download, and system checks
+- **4 Window Modes** -- Collapsed (510x941), Side-bar (calendar dock), Expanded (1224x941), and Mini (640x360) floating PiP
+- **Setup Wizard** -- Guided first-launch onboarding: connection, registration, calendar, providers, devices, model downloads, and system checks
 - **Quick Join Toggles** -- Enable/disable provider buttons per your configured infrastructure
-
----
-
-## Table of Contents
-
-- [Tech Stack](#tech-stack)
-- [Prerequisites](#prerequisites)
-- [Getting Started](#getting-started)
-- [Configuration](#configuration)
-- [How It Works](#how-it-works)
-- [Environment Variables](#environment-variables)
-- [Available Scripts](#available-scripts)
-- [Electron Desktop App](#electron-desktop-app)
-- [Testing](#testing)
-- [Troubleshooting](#troubleshooting)
-- [Roadmap](#roadmap)
 
 ---
 
 ## Tech Stack
 
-| Layer          | Technology                                                            |
-| -------------- | --------------------------------------------------------------------- |
-| **Framework**  | Next.js 16 (App Router, standalone output)                            |
-| **Language**   | TypeScript 5 (strict mode)                                            |
-| **UI**         | React 19, Tailwind CSS v4, Framer Motion                              |
-| **Components** | Radix UI primitives, Lucide React icons, Sonner toasts                |
-| **WebRTC**     | PexRTC (Pexip Infinity browser SDK, loaded dynamically from node)     |
-| **Desktop**    | Electron 35 with sandbox, context isolation, CSP                      |
-| **Speech**     | NVIDIA Parakeet TDT-CTC 110M via Sherpa-ONNX (offline, Electron-only) |
-| **Validation** | Zod (API input schemas)                                               |
-| **Testing**    | Vitest 4, Testing Library, jsdom (96 tests)                           |
-| **CI/CD**      | GitHub Actions (lint, typecheck, test, build, security scanning)      |
-| **Linting**    | ESLint 9, Prettier                                                    |
+| Layer             | Technology                                                             |
+| ----------------- | ---------------------------------------------------------------------- |
+| **Framework**     | Next.js 16 (App Router, standalone output)                             |
+| **Language**      | TypeScript 5 (strict mode)                                             |
+| **UI**            | React 19, Tailwind CSS v4, Framer Motion                               |
+| **Components**    | Radix UI primitives, Lucide React icons, Sonner toasts                 |
+| **WebRTC**        | PexRTC (Pexip Infinity browser SDK, loaded dynamically from node)      |
+| **Desktop**       | Electron 35 with sandbox, context isolation, CSP                       |
+| **Speech**        | NVIDIA Parakeet TDT-CTC 110M via Sherpa-ONNX (offline, Electron-only)  |
+| **Summarization** | Qwen3-0.6B-Instruct Q4_K_M via node-llama-cpp (offline, Electron-only) |
+| **Validation**    | Zod (API input schemas)                                                |
+| **Testing**       | Vitest 4, Testing Library, jsdom                                       |
+| **CI/CD**         | GitHub Actions (lint, typecheck, test, build, security scanning)       |
+| **Linting**       | ESLint 9, Prettier                                                     |
 
 ---
 
@@ -114,7 +139,7 @@
 - _(Optional)_ Pexip OTJ portal credentials for calendar integration
 - _(Optional)_ Xcode Command Line Tools for Electron macOS builds
 
-> **Note**: All provider features (Zoom, Teams, Google Meet quick join) route through your Pexip node via CVI. Without a Pexip deployment and properly configured call routing rules, calls will not connect.
+> **Note**: All provider features (Zoom, Teams, Google Meet quick join) route through your Pexip node via CVI and require the appropriate Pexip licenses and call-routing configuration. Without these, calls will not connect. A developer license can be requested at https://developer.pexip.com/request-developer-license/.
 
 ---
 
@@ -162,7 +187,7 @@ The Setup Wizard walks you through:
 3. **Calendar** -- OTJ client credentials for meeting discovery
 4. **Providers** -- Google Meet domain and Pexip customer ID for Teams CVI
 5. **Devices** -- Camera, microphone, and speaker selection with live preview
-6. **Transcription** -- Download the speech model for offline captions (Electron only, ~126 MB)
+6. **Local Models** -- Download the speech model for offline captions and the summarization model for meeting summaries (Electron only, ~126 MB + ~400 MB)
 7. **System Check** -- Validates node reachability, registration, calendar auth, devices, and model status
 
 All settings can be changed later via the gear icon in the top bar.
@@ -191,25 +216,21 @@ All configuration persists in `localStorage` and syncs across windows:
 
 ### Dial String Builders
 
-Fuse constructs provider-specific dial strings automatically. All calls route through your Pexip node:
+Fuse constructs provider-specific dial strings automatically. All calls route through your Pexip node and require the appropriate Pexip licenses:
 
-| Provider            | Dial String Format                              | Config Required           |
-| ------------------- | ----------------------------------------------- | ------------------------- |
-| **Pexip**           | Alias passthrough                               | Node domain               |
-| **Zoom**            | `meetingId.passcode@zoomcrc.com`                | Node domain               |
-| **Google Meet**     | `meetingId@GOOGLE_DOMAIN`                       | Google domain             |
-| **Microsoft Teams** | `meetingId.encodedPasscode..CUSTOMER_ID@pex.ms` | Customer ID (server-side) |
-| **Generic**         | Alias passthrough                               | Node domain               |
+| Provider            | How it's built                                        | Config Required        |
+| ------------------- | ----------------------------------------------------- | ---------------------- |
+| **Pexip**           | Alias passthrough                                     | Node domain            |
+| **Zoom**            | Auto-built from meeting ID and passcode               | Node domain            |
+| **Google Meet**     | Auto-built from meeting ID and Google domain          | Google domain          |
+| **Microsoft Teams** | Auto-built from meeting ID, passcode, and customer ID | Customer ID (per-user) |
+| **Generic**         | Alias passthrough                                     | Node domain            |
 
 > Quick Join buttons are automatically hidden when their required configuration is missing. You can also toggle them manually in Settings > Meetings > Quick Join.
 
 ---
 
 ## How It Works
-
-### Meeting Join Flow
-
-![Join Flow](docs/join-flow.svg)
 
 ### State Architecture
 
@@ -231,6 +252,13 @@ Fuse constructs provider-specific dial strings automatically. All calls route th
 | `pexipOTJ`                | OAuth + REST client for the Pexip One Touch Join calendar API                            |
 
 ### Architecture Diagrams
+
+<details>
+<summary>Meeting Join Flow</summary>
+
+![Join Flow](docs/join-flow.svg)
+
+</details>
 
 <details>
 <summary>Connection Flow</summary>
@@ -272,57 +300,33 @@ electron/
 
 ## Environment Variables
 
-Copy `.env.example` to `.env.local`. All values are optional -- settings can be configured through the UI.
+Copy `.env.example` to `.env.local`. End users leave the `NEXT_PUBLIC_DEFAULT_*` keys blank and supply values through the Setup Wizard or Settings modal — they're stored per-user in `localStorage`. Contributors can fill them in to skip retyping during local dev.
 
 ### Server-Side (API routes only)
 
-| Variable                  | Description                                                |
-| ------------------------- | ---------------------------------------------------------- |
-| `PEXIP_OTJ_AUTH_URL`      | Pexip OAuth endpoint (default:`https://auth.otj.pexip.io`) |
-| `PEXIP_OTJ_API_URL`       | Pexip OTJ API endpoint (default:`https://otj.pexip.io`)    |
-| `PEXIP_OTJ_CLIENT_ID`     | OTJ OAuth client ID                                        |
-| `PEXIP_OTJ_CLIENT_SECRET` | OTJ OAuth client secret                                    |
-| `PEXIP_CUSTOMER_ID`       | Pexip customer ID for Teams CVI                            |
-
-### Client-Side
-
-| Variable                            | Description                                     |
-| ----------------------------------- | ----------------------------------------------- |
-| `NEXT_PUBLIC_GOOGLE_DOMAIN`         | Google Meet CVI gateway domain                  |
-| `NEXT_PUBLIC_TEAMS_DOMAIN`          | Teams CVI gateway domain (provider detection)   |
-| `NEXT_PUBLIC_PEXIP_DOMAIN`          | Pexip tenant domain suffix (provider detection) |
-| `NEXT_PUBLIC_TRANSCRIPTION_API_URL` | WebSocket transcription service URL             |
-
-### Dev Defaults (optional, pre-populate Settings on first launch)
-
-| Variable                           | Description                   |
-| ---------------------------------- | ----------------------------- |
-| `NEXT_PUBLIC_DEFAULT_NODE_DOMAIN`  | Default Pexip node domain     |
-| `NEXT_PUBLIC_DEFAULT_DISPLAY_NAME` | Default display name          |
-| `NEXT_PUBLIC_DEFAULT_ALIAS`        | Default registration alias    |
-| `NEXT_PUBLIC_DEFAULT_REG_USERNAME` | Default registration username |
-| `NEXT_PUBLIC_DEFAULT_REG_PASSWORD` | Default registration password |
-
-> OTJ credentials can also be provided per-user through the Settings modal, which passes them as headers to the API route.
+| Variable             | Description                                                 |
+| -------------------- | ----------------------------------------------------------- |
+| `PEXIP_OTJ_AUTH_URL` | Pexip OAuth endpoint (default: `https://auth.otj.pexip.io`) |
+| `PEXIP_OTJ_API_URL`  | Pexip OTJ API endpoint (default: `https://otj.pexip.io`)    |
 
 ---
 
 ## Available Scripts
 
-| Command                   | Description                                      |
-| ------------------------- | ------------------------------------------------ |
-| `npm run dev`             | Start Next.js dev server on port 3002            |
-| `npm run build`           | Production build (standalone output)             |
-| `npm start`               | Start production server                          |
-| `npm run lint`            | Run ESLint                                       |
-| `npm test`                | Run Vitest test suite                            |
-| `npm run test:watch`      | Run tests in watch mode                          |
-| `npm run format`          | Format code with Prettier                        |
-| `npm run format:check`    | Check formatting without writing                 |
-| `npm run electron:dev`    | Launch Electron in development mode              |
-| `npm run electron:build`  | Build Next.js + package as signed `.dmg`         |
-| `npm run electron:pack`   | Build + package Electron (unpacked, for testing) |
-| `npm run download-models` | Download Sherpa-ONNX Parakeet model (~126 MB)    |
+| Command                   | Description                                                           |
+| ------------------------- | --------------------------------------------------------------------- |
+| `npm run dev`             | Start Next.js dev server on port 3002                                 |
+| `npm run build`           | Production build (standalone output)                                  |
+| `npm start`               | Start production server                                               |
+| `npm run lint`            | Run ESLint                                                            |
+| `npm test`                | Run Vitest test suite                                                 |
+| `npm run test:watch`      | Run tests in watch mode                                               |
+| `npm run format`          | Format code with Prettier                                             |
+| `npm run format:check`    | Check formatting without writing                                      |
+| `npm run electron:dev`    | Launch Electron in development mode                                   |
+| `npm run electron:build`  | Build Next.js + package as signed `.dmg`                              |
+| `npm run electron:pack`   | Build + package Electron (unpacked, for testing)                      |
+| `npm run download-models` | Download Sherpa-ONNX Parakeet (~126 MB) and Qwen3-0.6B GGUF (~400 MB) |
 
 ---
 
@@ -330,13 +334,14 @@ Copy `.env.example` to `.env.local`. All values are optional -- settings can be 
 
 ### Window Modes
 
-| Mode         | Size       | Use Case                                                  |
-| ------------ | ---------- | --------------------------------------------------------- |
-| **Compact**  | 500 x 900  | Default home view                                         |
-| **Expanded** | 1220 x 900 | In-call with side panels (chat, transcript, participants) |
-| **Mini**     | 320 x 180  | Floating PiP centered under webcam                        |
+| Mode          | Size                    | Use Case                                                  |
+| ------------- | ----------------------- | --------------------------------------------------------- |
+| **Collapsed** | 510 x 941               | Default home view                                         |
+| **Side-bar**  | Narrow strip, full-edge | Persistent calendar dock pinned to the screen edge        |
+| **Expanded**  | 1224 x 941              | In-call with side panels (chat, transcript, participants) |
+| **Mini**      | 640 x 360               | Floating PiP centered under webcam                        |
 
-Mini mode joins calls fully muted with no preflight. It shows far-side video with a 64x48 self-view overlay and minimal controls.
+Mini mode joins calls fully muted with no preflight. It shows far-side video with a 128x96 self-view overlay and minimal controls.
 
 ### Building for macOS
 
@@ -354,11 +359,15 @@ Produces a code-signed `.dmg` in `dist-electron/`. Includes:
 
 Fuse runs NVIDIA's Parakeet TDT-CTC 110M speech model locally via Sherpa-ONNX -- no cloud transcription service required. The model (~126 MB) can be downloaded from:
 
-1. **Setup Wizard** -- Transcription step during first launch
+1. **Setup Wizard** -- Local Models step during first launch
 2. **Settings** -- Devices tab > Live Transcription
 3. **Terminal** -- `npm run download-models`
 
-Models are stored in `~/Library/Application Support/Fuse Video Client/models/` and persist across app updates.
+### Local Summarization
+
+Fuse summarizes meetings on-device using Qwen3-0.6B-Instruct (Q4_K_M GGUF, ~400 MB) running in an Electron utility process via node-llama-cpp. The transcript never leaves the machine. The summarizer reads the current live transcript and emits structured markdown (overview, decisions, action items). Download paths are the same as transcription: Setup Wizard, Settings, or `npm run download-models`.
+
+Both models are stored in `~/Library/Application Support/Fuse Video Client/models/` and persist across app updates.
 
 ---
 
@@ -369,30 +378,7 @@ npm test              # Run all tests
 npm run test:watch    # Watch mode
 ```
 
-96 tests across 15 files using **Vitest** with **Testing Library** and **jsdom**:
-
-```
-src/__tests__/
-├── api/
-│   └── teams-dial-string.test.ts # Teams CVI API route validation
-├── hooks/
-│   ├── useElectron.test.ts       # Electron bridge detection
-│   ├── useMediaQuery.test.ts     # Responsive breakpoint hook
-│   ├── usePresentationPopout.test.ts # Presentation window lifecycle
-│   ├── useQuickJoin.test.ts      # Provider toggle state
-│   ├── useRecentCalls.test.ts    # Call history with dedup/limits
-│   ├── useSettings.test.ts       # Settings persistence and sync
-│   ├── useTheme.test.ts          # Theme switching and localStorage
-│   └── useVideoRefs.test.ts      # Video element stream attachment
-├── services/
-│   ├── pexipOTJ.test.ts          # OTJ calendar API and transforms
-│   └── pexrtcLoader.test.ts      # PexRTC script loading and retry
-└── utils/
-    ├── media.test.ts             # Media constraints and fallback
-    ├── meetingDate.test.ts       # Date formatting helpers
-    ├── meetingProvider.test.ts   # Provider detection from aliases
-    └── stateTheme.test.ts        # Theme state utilities
-```
+144 tests across 20 files using **Vitest** with **Testing Library** and **jsdom**. Tests live in `src/__tests__/`, organized by type (`api/`, `contexts/`, `hooks/`, `services/`, `utils/`).
 
 ---
 
@@ -430,26 +416,34 @@ src/__tests__/
 
 ### Transcription not appearing
 
-- **Live mode**: Requires a WebSocket transcription service at `NEXT_PUBLIC_TRANSCRIPTION_API_URL`
-- **Local mode**: Requires Electron + downloaded model (check Settings > Devices > Live Transcription)
+- Live transcription requires Electron + the downloaded Parakeet model (check Settings > Devices > Live Transcription)
 - If the model shows "Ready" but captions are empty, check the Electron main process console for decode errors
+
+### Summarization fails or model missing
+
+- The summary feature requires Electron + the downloaded Qwen3 GGUF model (Settings > Devices > Local Models)
+- First-run inference is slower while the model warms up; subsequent summaries are faster
+- If `node-llama-cpp` fails to load (rare; tied to native binary compatibility), the Summarize button is hidden
 
 ---
 
-## Roadmap
+## Acknowledgments
 
-- [x] **Sandbox mode** -- Electron OS-level sandbox for renderer hardening
-- [x] **Content Security Policy** -- CSP headers on all windows
-- [x] **Navigation guards** -- `will-navigate` blocks unexpected URLs
-- [x] **Error boundaries** -- graceful error recovery at app, page, and meeting level
-- [x] **CI/CD** -- GitHub Actions for lint, typecheck, test, build, secrets scanning, dependency audit
-- [x] **API validation** -- Zod schemas for API route inputs
-- [x] **Accessibility** -- aria-labels on all controls, keyboard Escape for modals
-- [ ] **Auto-update** -- ship updates via `electron-updater` with GitHub Releases
-- [ ] **Notarization** -- macOS notarization for Gatekeeper-trusted distribution
-- [ ] **Supabase integration** -- cloud-synced settings, call history, and user profiles
-- [ ] **QR provisioning** -- scan a QR code to configure node domain and credentials
-- [ ] **Email discovery** -- auto-detect Pexip node from user email domain
+This project stands on the work of several open-source projects and model authors:
+
+- **[Pexip Infinity](https://www.pexip.com/) / PexRTC** -- the WebRTC SDK that drives every call. Pexip is a trademark of Pexip AS; this project is independent and unaffiliated.
+- **[Sherpa-ONNX](https://github.com/k2-fsa/sherpa-onnx)** (Apache 2.0) -- ONNX runtime for offline speech recognition.
+- **[NVIDIA Parakeet TDT-CTC 110M](https://huggingface.co/nvidia/parakeet-tdt-1.1b)** -- the speech recognition model. Used under NVIDIA's model license.
+- **[Qwen3-0.6B-Instruct](https://huggingface.co/Qwen/Qwen3-0.6B-Instruct)** (Apache 2.0) -- the on-device summarization model from Alibaba Cloud's Qwen team. The Q4_K_M GGUF re-quant used here is from [bartowski](https://huggingface.co/bartowski).
+- **[node-llama-cpp](https://github.com/withcatai/node-llama-cpp)** (MIT) -- Node.js bindings for llama.cpp; powers the local summarizer.
+- **[Radix UI](https://www.radix-ui.com/) / [shadcn/ui](https://ui.shadcn.com/)** (MIT) -- accessible UI primitives and component patterns.
+- **[Next.js](https://nextjs.org/)**, **[React](https://react.dev/)**, **[Electron](https://www.electronjs.org/)**, **[Tailwind CSS](https://tailwindcss.com/)**, **[Framer Motion](https://www.framer.com/motion/)**, **[Lucide](https://lucide.dev/)**, **[Sonner](https://sonner.emilkowal.ski/)**, **[Vitest](https://vitest.dev/)**, **[Zod](https://zod.dev/)**.
+
+---
+
+## Security
+
+For the threat model, CSP trade-offs, macOS entitlements rationale, and the model-download supply-chain note, see [SECURITY.md](SECURITY.md).
 
 ---
 

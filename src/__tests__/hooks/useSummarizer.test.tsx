@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
 import { useSummarizer } from '@/hooks/useSummarizer'
-import type { TranscriptEntry } from '@/hooks/useTranscription'
+import type { TranscriptEntry } from '@/hooks/useLocalTranscription'
 
 type ProgressPayload = { tokenCount: number; elapsedMs: number }
 
@@ -74,7 +74,7 @@ describe('useSummarizer', () => {
     installBridge({ summarizeRun: vi.fn().mockReturnValue(runPromise) })
 
     const { result } = renderHook(() => useSummarizer())
-    let runP: Promise<void>
+    let runP: Promise<string | null>
     await act(async () => {
       runP = result.current.run(longEntries)
     })
@@ -190,7 +190,7 @@ describe('useSummarizer', () => {
     })
 
     const { result } = renderHook(() => useSummarizer())
-    let runP: Promise<void>
+    let runP: Promise<string | null>
     await act(async () => {
       runP = result.current.run(longEntries)
     })
