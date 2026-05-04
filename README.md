@@ -112,20 +112,20 @@
 
 ## Tech Stack
 
-| Layer          | Technology                                                            |
-| -------------- | --------------------------------------------------------------------- |
-| **Framework**  | Next.js 16 (App Router, standalone output)                            |
-| **Language**   | TypeScript 5 (strict mode)                                            |
-| **UI**         | React 19, Tailwind CSS v4, Framer Motion                              |
-| **Components** | Radix UI primitives, Lucide React icons, Sonner toasts                |
-| **WebRTC**     | PexRTC (Pexip Infinity browser SDK, loaded dynamically from node)     |
-| **Desktop**    | Electron 35 with sandbox, context isolation, CSP                      |
-| **Speech**     | NVIDIA Parakeet TDT-CTC 110M via Sherpa-ONNX (offline, Electron-only) |
+| Layer             | Technology                                                             |
+| ----------------- | ---------------------------------------------------------------------- |
+| **Framework**     | Next.js 16 (App Router, standalone output)                             |
+| **Language**      | TypeScript 5 (strict mode)                                             |
+| **UI**            | React 19, Tailwind CSS v4, Framer Motion                               |
+| **Components**    | Radix UI primitives, Lucide React icons, Sonner toasts                 |
+| **WebRTC**        | PexRTC (Pexip Infinity browser SDK, loaded dynamically from node)      |
+| **Desktop**       | Electron 35 with sandbox, context isolation, CSP                       |
+| **Speech**        | NVIDIA Parakeet TDT-CTC 110M via Sherpa-ONNX (offline, Electron-only)  |
 | **Summarization** | Qwen3-0.6B-Instruct Q4_K_M via node-llama-cpp (offline, Electron-only) |
-| **Validation** | Zod (API input schemas)                                               |
-| **Testing**    | Vitest 4, Testing Library, jsdom                                      |
-| **CI/CD**      | GitHub Actions (lint, typecheck, test, build, security scanning)      |
-| **Linting**    | ESLint 9, Prettier                                                    |
+| **Validation**    | Zod (API input schemas)                                                |
+| **Testing**       | Vitest 4, Testing Library, jsdom                                       |
+| **CI/CD**         | GitHub Actions (lint, typecheck, test, build, security scanning)       |
+| **Linting**       | ESLint 9, Prettier                                                     |
 
 ---
 
@@ -305,10 +305,10 @@ Copy `.env.example` to `.env.local`. The two values are the public Pexip OTJ por
 
 ### Server-Side (API routes only)
 
-| Variable             | Description                                                  |
-| -------------------- | ------------------------------------------------------------ |
-| `PEXIP_OTJ_AUTH_URL` | Pexip OAuth endpoint (default: `https://auth.otj.pexip.io`)  |
-| `PEXIP_OTJ_API_URL`  | Pexip OTJ API endpoint (default: `https://otj.pexip.io`)     |
+| Variable             | Description                                                 |
+| -------------------- | ----------------------------------------------------------- |
+| `PEXIP_OTJ_AUTH_URL` | Pexip OAuth endpoint (default: `https://auth.otj.pexip.io`) |
+| `PEXIP_OTJ_API_URL`  | Pexip OTJ API endpoint (default: `https://otj.pexip.io`)    |
 
 For dev convenience, contributors can copy `.env.dev.example` to `.env.dev.local` to pre-fill the Setup Wizard during `npm run dev`. See [Dev Defaults (optional)](#dev-defaults-optional) above for details.
 
@@ -316,19 +316,19 @@ For dev convenience, contributors can copy `.env.dev.example` to `.env.dev.local
 
 ## Available Scripts
 
-| Command                   | Description                                      |
-| ------------------------- | ------------------------------------------------ |
-| `npm run dev`             | Start Next.js dev server on port 3002            |
-| `npm run build`           | Production build (standalone output)             |
-| `npm start`               | Start production server                          |
-| `npm run lint`            | Run ESLint                                       |
-| `npm test`                | Run Vitest test suite                            |
-| `npm run test:watch`      | Run tests in watch mode                          |
-| `npm run format`          | Format code with Prettier                        |
-| `npm run format:check`    | Check formatting without writing                 |
-| `npm run electron:dev`    | Launch Electron in development mode              |
-| `npm run electron:build`  | Build Next.js + package as signed `.dmg`         |
-| `npm run electron:pack`   | Build + package Electron (unpacked, for testing) |
+| Command                   | Description                                                           |
+| ------------------------- | --------------------------------------------------------------------- |
+| `npm run dev`             | Start Next.js dev server on port 3002                                 |
+| `npm run build`           | Production build (standalone output)                                  |
+| `npm start`               | Start production server                                               |
+| `npm run lint`            | Run ESLint                                                            |
+| `npm test`                | Run Vitest test suite                                                 |
+| `npm run test:watch`      | Run tests in watch mode                                               |
+| `npm run format`          | Format code with Prettier                                             |
+| `npm run format:check`    | Check formatting without writing                                      |
+| `npm run electron:dev`    | Launch Electron in development mode                                   |
+| `npm run electron:build`  | Build Next.js + package as signed `.dmg`                              |
+| `npm run electron:pack`   | Build + package Electron (unpacked, for testing)                      |
 | `npm run download-models` | Download Sherpa-ONNX Parakeet (~126 MB) and Qwen3-0.6B GGUF (~400 MB) |
 
 ---
