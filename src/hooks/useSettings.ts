@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { devDefaults } from '@/utils/devDefaults'
 
 const STORAGE_KEYS = {
   nodeDomain: 'fuse_node_domain',
@@ -48,33 +49,25 @@ export function useSettings() {
   function readAllSettings(): Settings {
     return {
       nodeDomain:
-        localStorage.getItem(STORAGE_KEYS.nodeDomain) ??
-        process.env.NEXT_PUBLIC_DEFAULT_NODE_DOMAIN ??
-        '',
+        localStorage.getItem(STORAGE_KEYS.nodeDomain) ?? devDefaults.nodeDomain ?? '',
       displayName:
-        localStorage.getItem(STORAGE_KEYS.displayName) ??
-        process.env.NEXT_PUBLIC_DEFAULT_DISPLAY_NAME ??
-        '',
+        localStorage.getItem(STORAGE_KEYS.displayName) ?? devDefaults.displayName ?? '',
       ringtone: localStorage.getItem(STORAGE_KEYS.ringtone) ?? 'ringtone3.mp3',
       audioInput: localStorage.getItem(STORAGE_KEYS.audioInput) ?? '',
       audioOutput: localStorage.getItem(STORAGE_KEYS.audioOutput) ?? '',
       videoInput: localStorage.getItem(STORAGE_KEYS.videoInput) ?? '',
       otjClientId:
-        localStorage.getItem(STORAGE_KEYS.otjClientId) ??
-        process.env.NEXT_PUBLIC_DEFAULT_OTJ_CLIENT_ID ??
-        '',
+        localStorage.getItem(STORAGE_KEYS.otjClientId) ?? devDefaults.otjClientId ?? '',
       otjClientSecret:
         localStorage.getItem(STORAGE_KEYS.otjClientSecret) ??
-        process.env.NEXT_PUBLIC_DEFAULT_OTJ_CLIENT_SECRET ??
+        devDefaults.otjClientSecret ??
         '',
       pexipCustomerId:
         localStorage.getItem(STORAGE_KEYS.pexipCustomerId) ??
-        process.env.NEXT_PUBLIC_DEFAULT_PEXIP_CUSTOMER_ID ??
+        devDefaults.pexipCustomerId ??
         '',
       googleDomain:
-        localStorage.getItem(STORAGE_KEYS.googleDomain) ??
-        process.env.NEXT_PUBLIC_GOOGLE_DOMAIN ??
-        '',
+        localStorage.getItem(STORAGE_KEYS.googleDomain) ?? devDefaults.googleDomain ?? '',
       audioVisualizerEnabled:
         localStorage.getItem(STORAGE_KEYS.audioVisualizerEnabled) !== 'false',
     }
