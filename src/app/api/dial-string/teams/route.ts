@@ -62,8 +62,9 @@ export async function POST(request: NextRequest) {
 
   const parsed = TeamsDialStringSchema.safeParse(body)
   if (!parsed.success) {
+    const message = parsed.error.issues.map((i) => i.message).join('; ')
     return NextResponse.json(
-      { error: 'invalid input', errors: parsed.error.flatten() },
+      { error: message, errors: parsed.error.flatten() },
       { status: 400 },
     )
   }

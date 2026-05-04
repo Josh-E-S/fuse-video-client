@@ -55,6 +55,14 @@ describe('POST /api/dial-string/teams', () => {
     expect(data.errors.fieldErrors.passcode).toBeDefined()
   })
 
+  it('returns actionable error message in error field', async () => {
+    const res = await POST(makeRequest({}))
+    const data = await res.json()
+    expect(res.status).toBe(400)
+    expect(data.error).toBeTruthy()
+    expect(data.error).not.toBe('invalid input')
+  })
+
   it('returns 400 for empty strings', async () => {
     const res = await POST(makeRequest({ meetingId: '', passcode: '' }))
     expect(res.status).toBe(400)
