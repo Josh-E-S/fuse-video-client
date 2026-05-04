@@ -1,9 +1,15 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import type { TranscriptEntry } from '@/hooks/useTranscription'
 import { getElectronBridge } from '@/hooks/useElectron'
 import { log } from '@/utils/logger'
+
+export interface TranscriptEntry {
+  id: string
+  text: string
+  timestamp: string
+  speaker?: string
+}
 
 interface UseLocalTranscriptionOptions {
   autoConnect?: boolean

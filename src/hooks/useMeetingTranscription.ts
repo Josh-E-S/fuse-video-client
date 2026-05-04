@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useTranscription } from '@/hooks/useTranscription'
 import { useLocalTranscription } from '@/hooks/useLocalTranscription'
 import { useElectron } from '@/hooks/useElectron'
 
@@ -14,7 +13,6 @@ interface UseMeetingTranscriptionOptions {
 }
 
 export function useMeetingTranscription({
-  sipUri,
   connectionState,
   localStream,
   remoteStream,
@@ -24,46 +22,23 @@ export function useMeetingTranscription({
   const [transcriptionEnabled, setTranscriptionEnabled] = useState(false)
   const [captionsVisible, setCaptionsVisible] = useState(true)
 
-  const {
-    transcripts: liveTranscripts,
-    latestTranscript,
-    interimText,
-    interimSpeaker,
-    isConnected: isTranscriptionConnected,
-    connect: connectTranscription,
-    disconnect: disconnectTranscription,
-    clearTranscripts: clearLiveTranscripts,
-  } = useTranscription({
-    sipUri,
-    autoConnect: false,
-  })
-
   const localTranscription = useLocalTranscription({
     autoConnect: false,
     localStream,
     remoteStream,
   })
 
-  const hasRemoteAgent = !!process.env.NEXT_PUBLIC_TRANSCRIPTION_API_URL
   const useLocal = isElectron && localTranscription.isAvailable
 
   useEffect(() => {
     if (transcriptionEnabled && connectionState === 'connected') {
       setMessageText('Live transcription is enabled for this meeting')
-      if (useLocal) {
-        localTranscription.connect()
-      } else if (hasRemoteAgent) {
-        connectTranscription()
-      }
+      if (useLocal) localTranscription.connect()
     } else if (!transcriptionEnabled) {
       setMessageText('')
-      if (useLocal) {
-        localTranscription.disconnect()
-      } else if (hasRemoteAgent) {
-        disconnectTranscription()
-      }
+      if (useLocal) localTranscription.disconnect()
     }
-  }, [transcriptionEnabled, connectionState, useLocal, hasRemoteAgent, setMessageText])
+  }, [transcriptionEnabled, connectionState, useLocal, setMessageText])
 
   useEffect(() => {
     if (connectionState === 'disconnected') {
@@ -71,27 +46,16 @@ export function useMeetingTranscription({
     }
   }, [connectionState])
 
-  const transcripts = useLocal ? localTranscription.transcripts : liveTranscripts
-  const activeLatest = useLocal ? localTranscription.latestTranscript : latestTranscript
-  const activeInterim = useLocal ? localTranscription.interimText : interimText
-  const activeInterimSpeaker = useLocal ? localTranscription.interimSpeaker : interimSpeaker
-  const activeConnected = useLocal ? localTranscription.isConnected : isTranscriptionConnected
-
-  const clearTranscripts = () => {
-    if (useLocal) localTranscription.clearTranscripts()
-    else clearLiveTranscripts()
-  }
-
   return {
     transcriptionEnabled,
     setTranscriptionEnabled,
     captionsVisible,
     setCaptionsVisible,
-    transcripts,
-    latestTranscript: activeLatest,
-    interimText: activeInterim,
-    interimSpeaker: activeInterimSpeaker,
-    isTranscriptionConnected: activeConnected,
-    clearTranscripts,
+    transcripts: localTranscription.transcripts,
+    latestTranscript: localTranscription.latestTranscript,
+    interimText: localTranscription.interimText,
+    interimSpeaker: localTranscription.interimSpeaker,
+    isTranscriptionConnected: localTranscription.isConnected,
+    clearTranscripts: localTranscription.clearTranscripts,
   }
 }

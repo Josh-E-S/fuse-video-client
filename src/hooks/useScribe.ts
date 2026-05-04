@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { log } from '@/utils/logger'
 import { getElectronBridge } from '@/hooks/useElectron'
-import type { TranscriptEntry } from '@/hooks/useTranscription'
+import type { TranscriptEntry } from '@/hooks/useLocalTranscription'
 
 export type ScribeStatus = 'idle' | 'starting' | 'recording' | 'stopping' | 'error'
 

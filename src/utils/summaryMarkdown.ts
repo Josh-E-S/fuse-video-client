@@ -1,4 +1,4 @@
-import type { TranscriptEntry } from '@/hooks/useTranscription'
+import type { TranscriptEntry } from '@/hooks/useLocalTranscription'
 
 const TOKENS_PER_WORD = 0.75
 const MAX_TOKENS = 25_000

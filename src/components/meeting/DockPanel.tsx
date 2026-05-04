@@ -20,7 +20,7 @@ import {
   Trash2,
 } from 'lucide-react'
 import type { ChatMessage, Participant } from '@/types/pexrtc'
-import type { TranscriptEntry } from '@/hooks/useTranscription'
+import type { TranscriptEntry } from '@/hooks/useLocalTranscription'
 import { useSummarizer } from '@/hooks/useSummarizer'
 import {
   composeSavedMarkdown,

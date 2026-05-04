@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { getElectronBridge } from '@/hooks/useElectron'
-import type { TranscriptEntry } from '@/hooks/useTranscription'
+import type { TranscriptEntry } from '@/hooks/useLocalTranscription'
 import { buildPrompt, gateReason } from '@/utils/summaryMarkdown'
 import { log } from '@/utils/logger'
 

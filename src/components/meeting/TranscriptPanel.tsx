@@ -3,7 +3,7 @@
 import { useRef, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { X, FileText } from 'lucide-react'
-import type { TranscriptEntry } from '@/hooks/useTranscription'
+import type { TranscriptEntry } from '@/hooks/useLocalTranscription'
 
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 
