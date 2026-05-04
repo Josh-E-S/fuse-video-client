@@ -1,13 +1,26 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { log } from '@/utils/logger'
 
-const CUSTOMER_ID = process.env.PEXIP_CUSTOMER_ID || ''
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
 
 const TeamsDialStringSchema = z.object({
-  meetingId: z.string().min(1, 'meetingId is required'),
-  passcode: z.string().min(1, 'passcode is required'),
+  meetingId: z.string().min(1, 'meetingId is required').max(128),
+  passcode: z.string().min(1, 'passcode is required').max(128),
 })
+
+function isSameOriginRequest(request: NextRequest): boolean {
+  const origin = request.headers.get('origin')
+  const host = request.headers.get('host')
+  if (!host) return false
+  if (!origin) return true
+  try {
+    return new URL(origin).host === host
+  } catch {
+    return false
+  }
+}
 
 function toBase32(input: string): string {
   const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'
@@ -26,10 +39,17 @@ function toBase32(input: string): string {
   return result
 }
 
-export async function POST(request: Request) {
-  const customerId = request.headers.get('x-pexip-customer-id') || CUSTOMER_ID
+export async function POST(request: NextRequest) {
+  if (!isSameOriginRequest(request)) {
+    return NextResponse.json({ error: 'forbidden' }, { status: 403 })
+  }
+
+  const customerId = request.headers.get('x-pexip-customer-id')
   if (!customerId) {
-    return NextResponse.json({ error: 'Pexip Cloud Customer ID not configured' }, { status: 500 })
+    return NextResponse.json(
+      { error: 'x-pexip-customer-id header required' },
+      { status: 400 },
+    )
   }
 
   let body: unknown
@@ -43,7 +63,7 @@ export async function POST(request: Request) {
   const parsed = TeamsDialStringSchema.safeParse(body)
   if (!parsed.success) {
     return NextResponse.json(
-      { error: parsed.error.issues[0].message },
+      { error: 'invalid input', errors: parsed.error.flatten() },
       { status: 400 },
     )
   }
