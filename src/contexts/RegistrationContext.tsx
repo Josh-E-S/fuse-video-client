@@ -54,7 +54,7 @@ export function RegistrationProvider({ children }: { children: React.ReactNode }
   }, [status])
 
   const [nodeDomain, setNodeDomain] = useState<string>(
-    process.env.NEXT_PUBLIC_DEFAULT_NODE_DOMAIN || '',
+    devDefaults.nodeDomain || '',
   )
 
   const nodeDomainRef = useRef(nodeDomain)
