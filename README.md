@@ -214,12 +214,6 @@ All configuration persists in `localStorage` and syncs across windows:
 | **Quick Join Toggles** | Show/hide provider buttons on the home screen              |
 | **Theme**              | 10 visual themes across 4 categories                       |
 
-### Dev Defaults (optional)
-
-If you're contributing or iterating locally and don't want to retype your test rig credentials every time you wipe localStorage, copy `.env.dev.example` to `.env.dev.local` and fill in the `NEXT_PUBLIC_DEV_*` values you want pre-populated in the Setup Wizard.
-
-`.env.dev.local` is gitignored. The `NEXT_PUBLIC_DEV_*` reads are guarded behind `process.env.NODE_ENV !== 'production'` in `src/utils/devDefaults.ts`, which Next.js evaluates at build time. In production builds the entire dev-defaults object is replaced with `{}`, so no `NEXT_PUBLIC_DEV_*` value can leak into the shipped bundle.
-
 ### Dial String Builders
 
 Fuse constructs provider-specific dial strings automatically. All calls route through your Pexip node and require the appropriate Pexip licenses:
@@ -306,7 +300,7 @@ electron/
 
 ## Environment Variables
 
-Copy `.env.example` to `.env.local`. The two values are the public Pexip OTJ portal URLs and rarely need overriding — every other setting is supplied per-user through the Setup Wizard or Settings modal.
+Copy `.env.example` to `.env.local`. End users leave the `NEXT_PUBLIC_DEFAULT_*` keys blank and supply values through the Setup Wizard or Settings modal — they're stored per-user in `localStorage`. Contributors can fill them in to skip retyping during local dev.
 
 ### Server-Side (API routes only)
 
@@ -314,8 +308,6 @@ Copy `.env.example` to `.env.local`. The two values are the public Pexip OTJ por
 | -------------------- | ----------------------------------------------------------- |
 | `PEXIP_OTJ_AUTH_URL` | Pexip OAuth endpoint (default: `https://auth.otj.pexip.io`) |
 | `PEXIP_OTJ_API_URL`  | Pexip OTJ API endpoint (default: `https://otj.pexip.io`)    |
-
-For dev convenience, contributors can copy `.env.dev.example` to `.env.dev.local` to pre-fill the Setup Wizard during `npm run dev`. See [Dev Defaults (optional)](#dev-defaults-optional) above for details.
 
 ---
 

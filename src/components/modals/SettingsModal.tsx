@@ -36,7 +36,6 @@ import { useQuickJoin } from '@/hooks/useQuickJoin'
 import { useEscapeKey } from '@/hooks/useEscapeKey'
 import type { RegistrationStatus, RegistrationCredentials } from '@/contexts/RegistrationContext'
 import { THEMES } from '@/themes/themes'
-import { devDefaults } from '@/utils/devDefaults'
 
 interface SettingsModalProps {
   open: boolean
@@ -97,13 +96,19 @@ export function SettingsModal({
       setGoogleDomain(settings.googleDomain)
       setPollInterval(Number(localStorage.getItem('fuse_poll_interval')) || 60)
       setRegAlias(
-        localStorage.getItem('fuse_reg_alias') ?? devDefaults.regAlias ?? '',
+        localStorage.getItem('fuse_reg_alias') ??
+          process.env.NEXT_PUBLIC_DEFAULT_REG_ALIAS ??
+          '',
       )
       setRegUsername(
-        localStorage.getItem('fuse_reg_username') ?? devDefaults.regUsername ?? '',
+        localStorage.getItem('fuse_reg_username') ??
+          process.env.NEXT_PUBLIC_DEFAULT_REG_USERNAME ??
+          '',
       )
       setRegPassword(
-        localStorage.getItem('fuse_reg_password') ?? devDefaults.regPassword ?? '',
+        localStorage.getItem('fuse_reg_password') ??
+          process.env.NEXT_PUBLIC_DEFAULT_REG_PASSWORD ??
+          '',
       )
       const bridge = getElectronBridge()
       setIsElectron(!!bridge)

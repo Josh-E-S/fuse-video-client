@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { log } from '@/utils/logger'
-import { devDefaults } from '@/utils/devDefaults'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Server,
@@ -106,13 +105,19 @@ export function SetupWizard({ open, onComplete, onRegister }: SetupWizardProps) 
       setNodeDomain(settings.nodeDomain)
       setDisplayName(settings.displayName)
       setRegAlias(
-        localStorage.getItem('fuse_reg_alias') ?? devDefaults.regAlias ?? '',
+        localStorage.getItem('fuse_reg_alias') ??
+          process.env.NEXT_PUBLIC_DEFAULT_REG_ALIAS ??
+          '',
       )
       setRegUsername(
-        localStorage.getItem('fuse_reg_username') ?? devDefaults.regUsername ?? '',
+        localStorage.getItem('fuse_reg_username') ??
+          process.env.NEXT_PUBLIC_DEFAULT_REG_USERNAME ??
+          '',
       )
       setRegPassword(
-        localStorage.getItem('fuse_reg_password') ?? devDefaults.regPassword ?? '',
+        localStorage.getItem('fuse_reg_password') ??
+          process.env.NEXT_PUBLIC_DEFAULT_REG_PASSWORD ??
+          '',
       )
       setOtjClientId(settings.otjClientId)
       setOtjClientSecret(settings.otjClientSecret)

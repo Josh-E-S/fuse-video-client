@@ -3,7 +3,6 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react'
 import { log } from '@/utils/logger'
 import { getElectronBridge } from '@/hooks/useElectron'
-import { devDefaults } from '@/utils/devDefaults'
 
 const STORAGE_KEYS = {
   alias: 'fuse_reg_alias',
@@ -54,7 +53,7 @@ export function RegistrationProvider({ children }: { children: React.ReactNode }
   }, [status])
 
   const [nodeDomain, setNodeDomain] = useState<string>(
-    devDefaults.nodeDomain || '',
+    process.env.NEXT_PUBLIC_DEFAULT_NODE_DOMAIN || '',
   )
 
   const nodeDomainRef = useRef(nodeDomain)
@@ -73,11 +72,15 @@ export function RegistrationProvider({ children }: { children: React.ReactNode }
 
   const getStoredCredentials = useCallback((): RegistrationCredentials | null => {
     if (typeof window === 'undefined') return null
-    const alias = localStorage.getItem(STORAGE_KEYS.alias) ?? devDefaults.regAlias
+    const alias =
+      localStorage.getItem(STORAGE_KEYS.alias) ?? process.env.NEXT_PUBLIC_DEFAULT_REG_ALIAS
     const username =
-      localStorage.getItem(STORAGE_KEYS.username) ?? devDefaults.regUsername
+      localStorage.getItem(STORAGE_KEYS.username) ??
+      process.env.NEXT_PUBLIC_DEFAULT_REG_USERNAME
     const password =
-      localStorage.getItem(STORAGE_KEYS.password) ?? devDefaults.regPassword ?? ''
+      localStorage.getItem(STORAGE_KEYS.password) ??
+      process.env.NEXT_PUBLIC_DEFAULT_REG_PASSWORD ??
+      ''
     if (alias && username) return { alias, username, password }
     return null
   }, [])
