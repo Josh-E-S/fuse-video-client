@@ -5,7 +5,7 @@
 <h1 align="center">Fuse Video Client</h1>
 
 <p align="center">
-  A native Electron video conferencing client that joins Pexip, Zoom, Google Meet, and Microsoft Teams meetings through a single interface. Built on <a href="https://www.pexip.com/">Pexip Infinity's</a> PexRTC client APIs with offline live transcription powered by NVIDIA's Parakeet speech model via Sherpa-ONNX.
+  A native Electron video conferencing client that joins Pexip, Zoom, Google Meet, and Microsoft Teams meetings through a single interface. Built on <a href="https://www.pexip.com/">Pexip Infinity's</a> PexRTC client APIs, with offline live transcription (NVIDIA Parakeet via Sherpa-ONNX) and offline meeting summarization (Qwen3-0.6B via node-llama-cpp).
 </p>
 
 <p align="center">
@@ -101,10 +101,11 @@
 
 - **One-Touch Multi-Provider Joining** -- Join Zoom, Google Meet, Microsoft Teams, and Pexip meetings from a single interface via Pexip CVI gateway routing
 - **Calendar Integration** -- One Touch Join calendar pulls upcoming meetings with auto-detected provider icons and one-click joining
-- **Local Transcription** -- Offline speech-to-text powered by NVIDIA's Parakeet TDT-CTC 110M model running locally via Sherpa-ONNX (Electron only, no cloud dependency). Also supports remote WebSocket transcription services.
+- **Local Transcription** -- Offline speech-to-text powered by NVIDIA's Parakeet TDT-CTC 110M model running locally via Sherpa-ONNX (Electron only, no cloud dependency). A remote WebSocket service is supported as an optional fallback.
+- **Local Summarization** -- Offline meeting summaries from Qwen3-0.6B-Instruct (Q4_K_M GGUF) running in an Electron utility process via node-llama-cpp. Generates structured markdown from the live transcript without sending content off-device.
 - **Registered WebRTC Client** -- Register as a Pexip WebRTC device to receive incoming calls with configurable ringtones
 - **4 Window Modes** -- Collapsed (510x941), Side-bar (calendar dock), Expanded (1224x941), and Mini (640x360) floating PiP
-- **Setup Wizard** -- Guided first-launch onboarding: connection, registration, calendar, providers, devices, transcription model download, and system checks
+- **Setup Wizard** -- Guided first-launch onboarding: connection, registration, calendar, providers, devices, model downloads, and system checks
 - **Quick Join Toggles** -- Enable/disable provider buttons per your configured infrastructure
 
 ---
@@ -120,8 +121,9 @@
 | **WebRTC**     | PexRTC (Pexip Infinity browser SDK, loaded dynamically from node)     |
 | **Desktop**    | Electron 35 with sandbox, context isolation, CSP                      |
 | **Speech**     | NVIDIA Parakeet TDT-CTC 110M via Sherpa-ONNX (offline, Electron-only) |
+| **Summarization** | Qwen3-0.6B-Instruct Q4_K_M via node-llama-cpp (offline, Electron-only) |
 | **Validation** | Zod (API input schemas)                                               |
-| **Testing**    | Vitest 4, Testing Library, jsdom (144 tests)                          |
+| **Testing**    | Vitest 4, Testing Library, jsdom                                      |
 | **CI/CD**      | GitHub Actions (lint, typecheck, test, build, security scanning)      |
 | **Linting**    | ESLint 9, Prettier                                                    |
 
@@ -183,7 +185,7 @@ The Setup Wizard walks you through:
 3. **Calendar** -- OTJ client credentials for meeting discovery
 4. **Providers** -- Google Meet domain and Pexip customer ID for Teams CVI
 5. **Devices** -- Camera, microphone, and speaker selection with live preview
-6. **Transcription** -- Download the speech model for offline captions (Electron only, ~126 MB)
+6. **Local Models** -- Download the speech model for offline captions and the summarization model for meeting summaries (Electron only, ~126 MB + ~400 MB)
 7. **System Check** -- Validates node reachability, registration, calendar auth, devices, and model status
 
 All settings can be changed later via the gear icon in the top bar.
@@ -343,7 +345,7 @@ Copy `.env.example` to `.env.local`. All values are optional -- settings can be 
 | `npm run electron:dev`    | Launch Electron in development mode              |
 | `npm run electron:build`  | Build Next.js + package as signed `.dmg`         |
 | `npm run electron:pack`   | Build + package Electron (unpacked, for testing) |
-| `npm run download-models` | Download Sherpa-ONNX Parakeet model (~126 MB)    |
+| `npm run download-models` | Download Sherpa-ONNX Parakeet (~126 MB) and Qwen3-0.6B GGUF (~400 MB) |
 
 ---
 
@@ -376,11 +378,15 @@ Produces a code-signed `.dmg` in `dist-electron/`. Includes:
 
 Fuse runs NVIDIA's Parakeet TDT-CTC 110M speech model locally via Sherpa-ONNX -- no cloud transcription service required. The model (~126 MB) can be downloaded from:
 
-1. **Setup Wizard** -- Transcription step during first launch
+1. **Setup Wizard** -- Local Models step during first launch
 2. **Settings** -- Devices tab > Live Transcription
 3. **Terminal** -- `npm run download-models`
 
-Models are stored in `~/Library/Application Support/Fuse Video Client/models/` and persist across app updates.
+### Local Summarization
+
+Fuse summarizes meetings on-device using Qwen3-0.6B-Instruct (Q4_K_M GGUF, ~400 MB) running in an Electron utility process via node-llama-cpp. The transcript never leaves the machine. The summarizer reads the current live transcript and emits structured markdown (overview, decisions, action items). Download paths are the same as transcription: Setup Wizard, Settings, or `npm run download-models`.
+
+Both models are stored in `~/Library/Application Support/Fuse Video Client/models/` and persist across app updates.
 
 ---
 
@@ -429,9 +435,35 @@ npm run test:watch    # Watch mode
 
 ### Transcription not appearing
 
-- **Live mode**: Requires a WebSocket transcription service at `NEXT_PUBLIC_TRANSCRIPTION_API_URL`
-- **Local mode**: Requires Electron + downloaded model (check Settings > Devices > Live Transcription)
+- **Local mode (default)**: Requires Electron + downloaded Parakeet model (check Settings > Devices > Live Transcription)
+- **Remote fallback**: Set `NEXT_PUBLIC_TRANSCRIPTION_API_URL` to a WebSocket transcription service if you cannot ship the model
 - If the model shows "Ready" but captions are empty, check the Electron main process console for decode errors
+
+### Summarization fails or model missing
+
+- The summary feature requires Electron + the downloaded Qwen3 GGUF model (Settings > Devices > Local Models)
+- First-run inference is slower while the model warms up; subsequent summaries are faster
+- If `node-llama-cpp` fails to load (rare; tied to native binary compatibility), the Summarize button is hidden
+
+---
+
+## Acknowledgments
+
+This project stands on the work of several open-source projects and model authors:
+
+- **[Pexip Infinity](https://www.pexip.com/) / PexRTC** -- the WebRTC SDK that drives every call. Pexip is a trademark of Pexip AS; this project is independent and unaffiliated.
+- **[Sherpa-ONNX](https://github.com/k2-fsa/sherpa-onnx)** (Apache 2.0) -- ONNX runtime for offline speech recognition.
+- **[NVIDIA Parakeet TDT-CTC 110M](https://huggingface.co/nvidia/parakeet-tdt-1.1b)** -- the speech recognition model. Used under NVIDIA's model license.
+- **[Qwen3-0.6B-Instruct](https://huggingface.co/Qwen/Qwen3-0.6B-Instruct)** (Apache 2.0) -- the on-device summarization model from Alibaba Cloud's Qwen team. The Q4_K_M GGUF re-quant used here is from [bartowski](https://huggingface.co/bartowski).
+- **[node-llama-cpp](https://github.com/withcatai/node-llama-cpp)** (MIT) -- Node.js bindings for llama.cpp; powers the local summarizer.
+- **[Radix UI](https://www.radix-ui.com/) / [shadcn/ui](https://ui.shadcn.com/)** (MIT) -- accessible UI primitives and component patterns.
+- **[Next.js](https://nextjs.org/)**, **[React](https://react.dev/)**, **[Electron](https://www.electronjs.org/)**, **[Tailwind CSS](https://tailwindcss.com/)**, **[Framer Motion](https://www.framer.com/motion/)**, **[Lucide](https://lucide.dev/)**, **[Sonner](https://sonner.emilkowal.ski/)**, **[Vitest](https://vitest.dev/)**, **[Zod](https://zod.dev/)**.
+
+---
+
+## Security
+
+For the threat model, CSP trade-offs, macOS entitlements rationale, and the model-download supply-chain note, see [SECURITY.md](SECURITY.md).
 
 ---
 
