@@ -1,5 +1,3 @@
-import * as Sentry from '@sentry/nextjs'
-
 type LogLevel = 'debug' | 'info' | 'warn' | 'error'
 
 const LEVEL_PRIORITY: Record<LogLevel, number> = {
@@ -40,30 +38,11 @@ function createLogger(scope: string) {
       if (!shouldLog('warn')) return
       if (data) console.warn(prefix, message, data)
       else console.warn(prefix, message)
-
-      Sentry.addBreadcrumb({
-        category: scope,
-        message,
-        level: 'warning',
-        data,
-      })
     },
 
     error(message: string, error?: unknown, data?: Record<string, unknown>) {
       if (!shouldLog('error')) return
       console.error(prefix, message, error ?? '', data ?? '')
-
-      if (error instanceof Error) {
-        Sentry.captureException(error, {
-          tags: { scope },
-          extra: data,
-        })
-      } else {
-        Sentry.captureMessage(`${scope}: ${message}`, {
-          level: 'error',
-          extra: { ...data, rawError: String(error) },
-        })
-      }
     },
   }
 }
