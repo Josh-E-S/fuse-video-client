@@ -435,16 +435,6 @@ npm run test:watch    # Watch mode
 
 ---
 
-## Roadmap
-
-- [ ] **Auto-update** -- ship updates via `electron-updater` with GitHub Releases
-- [ ] **Notarization** -- macOS notarization for Gatekeeper-trusted distribution
-- [ ] **Supabase integration** -- cloud-synced settings, call history, and user profiles
-- [ ] **QR provisioning** -- scan a QR code to configure node domain and credentials
-- [ ] **Email discovery** -- auto-detect Pexip node from user email domain
-
----
-
 ## License
 
 MIT. See [LICENSE](LICENSE) for details.
