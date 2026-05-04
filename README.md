@@ -101,7 +101,7 @@
 
 - **One-Touch Multi-Provider Joining** -- Join Zoom, Google Meet, Microsoft Teams, and Pexip meetings from a single interface via Pexip CVI gateway routing
 - **Calendar Integration** -- One Touch Join calendar pulls upcoming meetings with auto-detected provider icons and one-click joining
-- **Local Transcription** -- Offline speech-to-text powered by NVIDIA's Parakeet TDT-CTC 110M model running locally via Sherpa-ONNX (Electron only, no cloud dependency). A remote WebSocket service is supported as an optional fallback.
+- **Local Transcription** -- Offline speech-to-text powered by NVIDIA's Parakeet TDT-CTC 110M model running locally via Sherpa-ONNX (Electron only, no cloud dependency).
 - **Local Summarization** -- Offline meeting summaries from Qwen3-0.6B-Instruct (Q4_K_M GGUF) running in an Electron utility process via node-llama-cpp. Generates structured markdown from the live transcript without sending content off-device.
 - **Registered WebRTC Client** -- Register as a Pexip WebRTC device to receive incoming calls with configurable ringtones
 - **4 Window Modes** -- Collapsed (510x941), Side-bar (calendar dock), Expanded (1224x941), and Mini (640x360) floating PiP
@@ -212,6 +212,12 @@ All configuration persists in `localStorage` and syncs across windows:
 | **Quick Join Toggles** | Show/hide provider buttons on the home screen              |
 | **Theme**              | 10 visual themes across 4 categories                       |
 
+### Dev Defaults (optional)
+
+If you're contributing or iterating locally and don't want to retype your test rig credentials every time you wipe localStorage, copy `.env.dev.example` to `.env.dev.local` and fill in the `NEXT_PUBLIC_DEV_*` values you want pre-populated in the Setup Wizard.
+
+`.env.dev.local` is gitignored. The `NEXT_PUBLIC_DEV_*` reads are guarded behind `process.env.NODE_ENV !== 'production'` in `src/utils/devDefaults.ts`, which Next.js evaluates at build time. In production builds the entire dev-defaults object is replaced with `{}`, so no `NEXT_PUBLIC_DEV_*` value can leak into the shipped bundle.
+
 ### Dial String Builders
 
 Fuse constructs provider-specific dial strings automatically. All calls route through your Pexip node:
@@ -314,7 +320,6 @@ Copy `.env.example` to `.env.local`. All values are optional -- settings can be 
 | `NEXT_PUBLIC_GOOGLE_DOMAIN`         | Google Meet CVI gateway domain                  |
 | `NEXT_PUBLIC_TEAMS_DOMAIN`          | Teams CVI gateway domain (provider detection)   |
 | `NEXT_PUBLIC_PEXIP_DOMAIN`          | Pexip tenant domain suffix (provider detection) |
-| `NEXT_PUBLIC_TRANSCRIPTION_API_URL` | WebSocket transcription service URL             |
 
 ### Dev Defaults (optional, pre-populate Settings on first launch)
 
@@ -435,8 +440,7 @@ npm run test:watch    # Watch mode
 
 ### Transcription not appearing
 
-- **Local mode (default)**: Requires Electron + downloaded Parakeet model (check Settings > Devices > Live Transcription)
-- **Remote fallback**: Set `NEXT_PUBLIC_TRANSCRIPTION_API_URL` to a WebSocket transcription service if you cannot ship the model
+- Live transcription requires Electron + the downloaded Parakeet model (check Settings > Devices > Live Transcription)
 - If the model shows "Ready" but captions are empty, check the Electron main process console for decode errors
 
 ### Summarization fails or model missing
