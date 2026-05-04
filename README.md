@@ -36,11 +36,11 @@
 
 <p align="center"><strong>Collapsed Mode</strong></p>
 <p align="center">
-  <img src="public/screenshots/collapsed-mode.png" alt="Collapsed home" width="430" />   
+  <img src="public/screenshots/collapsed-mode.png" alt="Collapsed" width="430" />   
   <img src="public/screenshots/in-call-portrait.png" alt="Collapsed in call" width="430" />
 </p>
 <p align="center">
-  <em>Home                                                                      In Call</em>
+  <em>Collapsed                                                                Collapsed In Call</em>
 </p>
 <p align="center">
   <img src="public/screenshots/in-call-portrait-transcription.png" alt="Collapsed in call with transcription" width="700" />
@@ -51,9 +51,9 @@
 
 <p align="center"><strong>Expanded Mode</strong></p>
 <p align="center">
-  <img src="public/screenshots/expanded-mode.png" alt="Expanded home" width="900" />
+  <img src="public/screenshots/expanded-mode.png" alt="Expanded" width="900" />
 </p>
-<p align="center"><em>Home</em></p>
+<p align="center"><em>Expanded</em></p>
 <p align="center">
   <img src="public/screenshots/in-call-expanded-content-share.png" alt="Expanded in call with content share" width="900" />
 </p>
@@ -63,11 +63,11 @@
 
 <p align="center"><strong>Mini Mode</strong></p>
 <p align="center">
-  <img src="public/screenshots/mini-mode.png" alt="Mini home" width="430" />   
+  <img src="public/screenshots/mini-mode.png" alt="Mini" width="430" />   
   <img src="public/screenshots/in-call-mini.png" alt="Mini in call" width="430" />
 </p>
 <p align="center">
-  <em>Home                                                                      In Call</em>
+  <em>Mini                                                                      Mini In Call</em>
 </p>
 <p align="center">
   <img src="public/screenshots/in-call-mini-transcription.png" alt="Mini in call with transcription" width="700" />
