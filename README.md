@@ -222,13 +222,13 @@ If you're contributing or iterating locally and don't want to retype your test r
 
 Fuse constructs provider-specific dial strings automatically. All calls route through your Pexip node:
 
-| Provider            | Dial String Format                              | Config Required           |
-| ------------------- | ----------------------------------------------- | ------------------------- |
-| **Pexip**           | Alias passthrough                               | Node domain               |
-| **Zoom**            | `meetingId.passcode@zoomcrc.com`                | Node domain               |
-| **Google Meet**     | `meetingId@GOOGLE_DOMAIN`                       | Google domain             |
-| **Microsoft Teams** | `meetingId.encodedPasscode..CUSTOMER_ID@pex.ms` | Customer ID (server-side) |
-| **Generic**         | Alias passthrough                               | Node domain               |
+| Provider            | How it's built                                        | Config Required        |
+| ------------------- | ----------------------------------------------------- | ---------------------- |
+| **Pexip**           | Alias passthrough                                     | Node domain            |
+| **Zoom**            | Auto-built from meeting ID and passcode               | Node domain            |
+| **Google Meet**     | Auto-built from meeting ID and Google domain          | Google domain          |
+| **Microsoft Teams** | Auto-built from meeting ID, passcode, and customer ID | Customer ID (per-user) |
+| **Generic**         | Alias passthrough                                     | Node domain            |
 
 > Quick Join buttons are automatically hidden when their required configuration is missing. You can also toggle them manually in Settings > Meetings > Quick Join.
 
