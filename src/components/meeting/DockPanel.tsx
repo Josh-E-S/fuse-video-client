@@ -52,7 +52,12 @@ interface DockPanelProps {
   isTranscriptionConnected: boolean
   transcriptionEnabled?: boolean
   onToggleTranscription?: () => void
+  onDisableTranscription?: () => void
   onClearTranscripts?: () => void
+
+  // External request to open the save modal — increments each time
+  // the parent wants the dock to prompt the user to save before stopping.
+  stopRequestToken?: number
 
   localStream?: MediaStream | null
   remoteStream?: MediaStream | null
@@ -86,7 +91,9 @@ export function DockPanel({
   isTranscriptionConnected,
   transcriptionEnabled,
   onToggleTranscription,
+  onDisableTranscription,
   onClearTranscripts,
+  stopRequestToken,
   localStream,
   remoteStream,
   audioVisualizerEnabled = true,
@@ -152,6 +159,14 @@ export function DockPanel({
     }
   }, [summarizer.status, summarizer.summary])
 
+  // External stop request from the toolbar — open the save modal so the
+  // user can save/discard before transcription is actually stopped.
+  useEffect(() => {
+    if (stopRequestToken === undefined || stopRequestToken === 0) return
+    setSaveModalIntent('stop')
+    setShowSaveModal(true)
+  }, [stopRequestToken])
+
   const writeMarkdown = (md: string, filename: string) => {
     const blob = new Blob([md], { type: 'text/markdown' })
     const url = URL.createObjectURL(blob)
@@ -165,7 +180,9 @@ export function DockPanel({
   }
 
   const openSaveModal = (intent: 'stop' | 'close') => {
-    if (transcriptionEnabled && onToggleTranscription) onToggleTranscription()
+    // Stop transcription up-front so audio capture halts while the user
+    // decides what to do with the transcript.
+    if (transcriptionEnabled && onDisableTranscription) onDisableTranscription()
     setSaveModalIntent(intent)
     setShowSaveModal(true)
   }

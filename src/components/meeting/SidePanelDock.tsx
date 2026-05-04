@@ -106,11 +106,11 @@ export function SidePanelDock({
   ]
 
   const handleTabClick = (tab: DockTab) => {
-    // Convenience: clicking transcript when transcription is off both starts
-    // transcription and opens the panel — single click does the right thing.
+    // When transcription is off, clicking the transcript pill triggers the
+    // consent flow. The parent's onConfirm opens the dock — we deliberately
+    // do NOT open it here, so cancelling consent doesn't leave an empty dock.
     if (tab === 'transcript' && !transcriptionEnabled && onRequestTranscription) {
       onRequestTranscription()
-      onTabChange('transcript')
       return
     }
     onTabChange(activeTab === tab ? null : tab)

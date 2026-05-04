@@ -78,6 +78,7 @@ export default function MeetingPage() {
   const [selfViewVisible, setSelfViewVisible] = useState(true)
   const [pipLayout, setPipLayout] = useState<'portrait' | 'halves'>('portrait')
   const [dockTab, setDockTab] = useState<DockTab | null>(null)
+  const [stopRequestToken, setStopRequestToken] = useState(0)
   const [message, setMessage] = useState('')
   const [showDTMF, setShowDTMF] = useState(false)
 
@@ -217,15 +218,14 @@ export default function MeetingPage() {
     interimSpeaker: transcription.interimSpeaker,
     isTranscriptionConnected: transcription.isTranscriptionConnected,
     transcriptionEnabled: transcription.transcriptionEnabled,
-    onToggleTranscription: () => {
-      if (transcription.transcriptionEnabled) {
-        transcription.setTranscriptionEnabled(false)
-        transcription.setCaptionsVisible(false)
-      } else {
-        setTranscriptionConsentRequest('toggle')
-      }
+    // DockPanel only invokes this for Start (Stop has its own save-modal flow).
+    onToggleTranscription: () => setTranscriptionConsentRequest('toggle'),
+    onDisableTranscription: () => {
+      transcription.setTranscriptionEnabled(false)
+      transcription.setCaptionsVisible(false)
     },
     onClearTranscripts: transcription.clearTranscripts,
+    stopRequestToken,
     localStream,
     remoteStream,
     audioVisualizerEnabled: settings.audioVisualizerEnabled,
@@ -415,8 +415,10 @@ export default function MeetingPage() {
             onToggleShare={() => (isPresenting ? stopScreenShare() : startScreenShare())}
             onToggleTranscription={() => {
               if (transcription.transcriptionEnabled) {
-                transcription.setTranscriptionEnabled(false)
-                transcription.setCaptionsVisible(false)
+                // Route stop through the dock's save modal so the user can
+                // save/discard before transcription actually ends.
+                setDockTab('transcript')
+                setStopRequestToken((n) => n + 1)
               } else {
                 setTranscriptionConsentRequest('toggle')
               }
