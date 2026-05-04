@@ -122,7 +122,6 @@ function registerTranscriptionHandlers() {
       if (buf.offset >= DECODE_SAMPLES) {
         const text = decodeBuffer(buf.raw);
         if (text) {
-          console.log(`[Transcription] [${speaker}] "${text}"`);
           event.sender.send("transcription:result", text, speaker);
         }
         buf.raw = new Float32Array(DECODE_SAMPLES);
