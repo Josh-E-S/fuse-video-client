@@ -97,6 +97,10 @@
 
 ---
 
+> **Heads up:** This app's functionality requires the appropriate Pexip Infinity licenses and configuration. You can [request a developer license](https://developer.pexip.com/request-developer-license/) from Pexip.
+
+---
+
 ## Key Features
 
 - **One-Touch Multi-Provider Joining** -- Join Zoom, Google Meet, Microsoft Teams, and Pexip meetings from a single interface via Pexip CVI gateway routing
@@ -137,7 +141,7 @@
 - _(Optional)_ Pexip OTJ portal credentials for calendar integration
 - _(Optional)_ Xcode Command Line Tools for Electron macOS builds
 
-> **Note**: All provider features (Zoom, Teams, Google Meet quick join) route through your Pexip node via CVI. Without a Pexip deployment and properly configured call routing rules, calls will not connect.
+> **Note**: All provider features (Zoom, Teams, Google Meet quick join) route through your Pexip node via CVI and require the appropriate Pexip licenses and call-routing configuration. Without these, calls will not connect. A developer license can be requested at https://developer.pexip.com/request-developer-license/.
 
 ---
 
@@ -220,7 +224,7 @@ If you're contributing or iterating locally and don't want to retype your test r
 
 ### Dial String Builders
 
-Fuse constructs provider-specific dial strings automatically. All calls route through your Pexip node:
+Fuse constructs provider-specific dial strings automatically. All calls route through your Pexip node and require the appropriate Pexip licenses:
 
 | Provider            | How it's built                                        | Config Required        |
 | ------------------- | ----------------------------------------------------- | ---------------------- |
