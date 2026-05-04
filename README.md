@@ -30,32 +30,69 @@
 
 <br/>
 
+<p align="center"><strong>Collapsed</strong></p>
 <p align="center">
-  <strong>Compact</strong>                                                                                                                <strong>Expanded</strong>
+  <img src="public/screenshots/collapsed-mode.png" alt="Collapsed home" width="430" />   
+  <img src="public/screenshots/in-call-portrait.png" alt="Collapsed in call" width="430" />
 </p>
 <p align="center">
-  <img src="public/screenshots/home.png" alt="Compact" height="350" />   
-  <img src="public/screenshots/expanded-mode.png" alt="Expanded" height="350" />
+  <em>Home                                                                      In Call</em>
 </p>
+<p align="center">
+  <img src="public/screenshots/in-call-portrait-transcription.png" alt="Collapsed in call with transcription" width="700" />
+</p>
+<p align="center"><em>In Call · Transcription</em></p>
 
 <br/>
 
-<p align="center"><strong>Mini Mode</strong></p>
+<p align="center"><strong>Expanded</strong></p>
 <p align="center">
-  <img src="public/screenshots/mini-mode.png" alt="Mini Mode" width="320" />
+  <img src="public/screenshots/expanded-mode.png" alt="Expanded home" width="900" />
+</p>
+<p align="center"><em>Home</em></p>
+<p align="center">
+  <img src="public/screenshots/in-call-expanded-content-share.png" alt="Expanded in call with content share" width="900" />
+</p>
+<p align="center"><em>In Call · Content Share</em></p>
+
+<br/>
+
+<p align="center"><strong>Mini</strong></p>
+<p align="center">
+  <img src="public/screenshots/mini-mode.png" alt="Mini home" width="430" />   
+  <img src="public/screenshots/in-call-mini.png" alt="Mini in call" width="430" />
+</p>
+<p align="center">
+  <em>Home                                                                      In Call</em>
+</p>
+<p align="center">
+  <img src="public/screenshots/in-call-mini-transcription.png" alt="Mini in call with transcription" width="700" />
+</p>
+<p align="center"><em>In Call · Transcription</em></p>
+
+<br/>
+
+<p align="center"><strong>Side-bar &amp; Live Transcription</strong></p>
+<p align="center">
+  <img src="public/screenshots/side-bar-mode.png" alt="Side-bar" width="220" />   
+  <img src="public/screenshots/scribe-transcription.png" alt="Live transcript" width="320" />   
+  <img src="public/screenshots/scribe-summary.png" alt="AI summary" width="320" />
+</p>
+<p align="center">
+  <em>Side-bar                                                            Live Transcript                                                  AI Summary</em>
 </p>
 
 <br/>
 
 <p align="center"><strong>Quick Join</strong></p>
 <p align="center">
-  <img src="public/screenshots/join-google.png" alt="Google Meet" height="280" /> 
-  <img src="public/screenshots/join-teams.png" alt="Teams" height="280" /> 
-  <img src="public/screenshots/join-zoom.png" alt="Zoom" height="280" /> 
-  <img src="public/screenshots/join-pexip.png" alt="Pexip" height="280" />
+  <img src="public/screenshots/join-google.png" alt="Google Meet" width="230" /> 
+  <img src="public/screenshots/join-teams.png" alt="Teams" width="230" /> 
+  <img src="public/screenshots/join-zoom.png" alt="Zoom" width="230" /> 
+  <img src="public/screenshots/join-pexip.png" alt="Pexip" width="230" />
 </p>
 <p align="center">
-  <em>Google Meet                           Teams                           Zoom                         Pexip</em>
+  <em>Google Meet&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Teams&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Zoom&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Pexip</em>
 </p>
 
 ---
@@ -66,25 +103,9 @@
 - **Calendar Integration** -- One Touch Join calendar pulls upcoming meetings with auto-detected provider icons and one-click joining
 - **Local Transcription** -- Offline speech-to-text powered by NVIDIA's Parakeet TDT-CTC 110M model running locally via Sherpa-ONNX (Electron only, no cloud dependency). Also supports remote WebSocket transcription services.
 - **Registered WebRTC Client** -- Register as a Pexip WebRTC device to receive incoming calls with configurable ringtones
-- **3 Window Modes** -- Compact (500x900), expanded (1220x900), and mini (320x180) floating PiP
+- **4 Window Modes** -- Collapsed (510x941), Side-bar (calendar dock), Expanded (1224x941), and Mini (640x360) floating PiP
 - **Setup Wizard** -- Guided first-launch onboarding: connection, registration, calendar, providers, devices, transcription model download, and system checks
 - **Quick Join Toggles** -- Enable/disable provider buttons per your configured infrastructure
-
----
-
-## Table of Contents
-
-- [Tech Stack](#tech-stack)
-- [Prerequisites](#prerequisites)
-- [Getting Started](#getting-started)
-- [Configuration](#configuration)
-- [How It Works](#how-it-works)
-- [Environment Variables](#environment-variables)
-- [Available Scripts](#available-scripts)
-- [Electron Desktop App](#electron-desktop-app)
-- [Testing](#testing)
-- [Troubleshooting](#troubleshooting)
-- [Roadmap](#roadmap)
 
 ---
 
@@ -100,7 +121,7 @@
 | **Desktop**    | Electron 35 with sandbox, context isolation, CSP                      |
 | **Speech**     | NVIDIA Parakeet TDT-CTC 110M via Sherpa-ONNX (offline, Electron-only) |
 | **Validation** | Zod (API input schemas)                                               |
-| **Testing**    | Vitest 4, Testing Library, jsdom (96 tests)                           |
+| **Testing**    | Vitest 4, Testing Library, jsdom (144 tests)                          |
 | **CI/CD**      | GitHub Actions (lint, typecheck, test, build, security scanning)      |
 | **Linting**    | ESLint 9, Prettier                                                    |
 
@@ -330,13 +351,14 @@ Copy `.env.example` to `.env.local`. All values are optional -- settings can be 
 
 ### Window Modes
 
-| Mode         | Size       | Use Case                                                  |
-| ------------ | ---------- | --------------------------------------------------------- |
-| **Compact**  | 500 x 900  | Default home view                                         |
-| **Expanded** | 1220 x 900 | In-call with side panels (chat, transcript, participants) |
-| **Mini**     | 320 x 180  | Floating PiP centered under webcam                        |
+| Mode          | Size                    | Use Case                                                  |
+| ------------- | ----------------------- | --------------------------------------------------------- |
+| **Collapsed** | 510 x 941               | Default home view                                         |
+| **Side-bar**  | Narrow strip, full-edge | Persistent calendar dock pinned to the screen edge        |
+| **Expanded**  | 1224 x 941              | In-call with side panels (chat, transcript, participants) |
+| **Mini**      | 640 x 360               | Floating PiP centered under webcam                        |
 
-Mini mode joins calls fully muted with no preflight. It shows far-side video with a 64x48 self-view overlay and minimal controls.
+Mini mode joins calls fully muted with no preflight. It shows far-side video with a 128x96 self-view overlay and minimal controls.
 
 ### Building for macOS
 
@@ -369,30 +391,7 @@ npm test              # Run all tests
 npm run test:watch    # Watch mode
 ```
 
-96 tests across 15 files using **Vitest** with **Testing Library** and **jsdom**:
-
-```
-src/__tests__/
-├── api/
-│   └── teams-dial-string.test.ts # Teams CVI API route validation
-├── hooks/
-│   ├── useElectron.test.ts       # Electron bridge detection
-│   ├── useMediaQuery.test.ts     # Responsive breakpoint hook
-│   ├── usePresentationPopout.test.ts # Presentation window lifecycle
-│   ├── useQuickJoin.test.ts      # Provider toggle state
-│   ├── useRecentCalls.test.ts    # Call history with dedup/limits
-│   ├── useSettings.test.ts       # Settings persistence and sync
-│   ├── useTheme.test.ts          # Theme switching and localStorage
-│   └── useVideoRefs.test.ts      # Video element stream attachment
-├── services/
-│   ├── pexipOTJ.test.ts          # OTJ calendar API and transforms
-│   └── pexrtcLoader.test.ts      # PexRTC script loading and retry
-└── utils/
-    ├── media.test.ts             # Media constraints and fallback
-    ├── meetingDate.test.ts       # Date formatting helpers
-    ├── meetingProvider.test.ts   # Provider detection from aliases
-    └── stateTheme.test.ts        # Theme state utilities
-```
+144 tests across 20 files using **Vitest** with **Testing Library** and **jsdom**. Tests live in `src/__tests__/`, organized by type (`api/`, `contexts/`, `hooks/`, `services/`, `utils/`).
 
 ---
 
@@ -438,13 +437,6 @@ src/__tests__/
 
 ## Roadmap
 
-- [x] **Sandbox mode** -- Electron OS-level sandbox for renderer hardening
-- [x] **Content Security Policy** -- CSP headers on all windows
-- [x] **Navigation guards** -- `will-navigate` blocks unexpected URLs
-- [x] **Error boundaries** -- graceful error recovery at app, page, and meeting level
-- [x] **CI/CD** -- GitHub Actions for lint, typecheck, test, build, secrets scanning, dependency audit
-- [x] **API validation** -- Zod schemas for API route inputs
-- [x] **Accessibility** -- aria-labels on all controls, keyboard Escape for modals
 - [ ] **Auto-update** -- ship updates via `electron-updater` with GitHub Releases
 - [ ] **Notarization** -- macOS notarization for Gatekeeper-trusted distribution
 - [ ] **Supabase integration** -- cloud-synced settings, call history, and user profiles
