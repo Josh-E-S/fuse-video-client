@@ -30,7 +30,11 @@
 
 <br/>
 
-<p align="center"><strong>Collapsed</strong></p>
+<p align="center"><em>Here are the different app view modes:</em></p>
+
+<br/>
+
+<p align="center"><strong>Collapsed Mode</strong></p>
 <p align="center">
   <img src="public/screenshots/collapsed-mode.png" alt="Collapsed home" width="430" />   
   <img src="public/screenshots/in-call-portrait.png" alt="Collapsed in call" width="430" />
@@ -45,7 +49,7 @@
 
 <br/>
 
-<p align="center"><strong>Expanded</strong></p>
+<p align="center"><strong>Expanded Mode</strong></p>
 <p align="center">
   <img src="public/screenshots/expanded-mode.png" alt="Expanded home" width="900" />
 </p>
@@ -57,7 +61,7 @@
 
 <br/>
 
-<p align="center"><strong>Mini</strong></p>
+<p align="center"><strong>Mini Mode</strong></p>
 <p align="center">
   <img src="public/screenshots/mini-mode.png" alt="Mini home" width="430" />   
   <img src="public/screenshots/in-call-mini.png" alt="Mini in call" width="430" />
@@ -72,7 +76,7 @@
 
 <br/>
 
-<p align="center"><strong>Side-bar &amp; Live Transcription</strong></p>
+<p align="center"><strong>Side-bar Mode &amp; Live Transcription</strong></p>
 <p align="center">
   <img src="public/screenshots/side-bar-mode.png" alt="Side-bar" width="220" />   
   <img src="public/screenshots/scribe-transcription.png" alt="Live transcript" width="320" />   
