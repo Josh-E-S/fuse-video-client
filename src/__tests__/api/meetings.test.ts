@@ -66,4 +66,31 @@ describe('GET /api/meetings', () => {
     expect(fetchMock).toHaveBeenCalledTimes(2)
     fetchMock.mockRestore()
   })
+
+  it('returns 500 with reason=error when upstream meetings fetch fails', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation(async (url) => {
+      const u = String(url)
+      if (u.endsWith('/oauth/token')) {
+        return new Response(
+          JSON.stringify({ access_token: 'tok', expires_in: 3600 }),
+          { status: 200 },
+        )
+      }
+      if (u.endsWith('/v1/meetings')) {
+        return new Response('upstream boom', { status: 500 })
+      }
+      throw new Error(`unexpected fetch: ${u}`)
+    })
+
+    const req = makeRequest({
+      origin: 'http://localhost:3002',
+      'x-otj-client-id': 'cid',
+      'x-otj-client-secret': 'csec',
+    })
+    const res = await GET(req as unknown as Parameters<typeof GET>[0])
+    expect(res.status).toBe(500)
+    expect(await res.json()).toEqual({ meetings: [], reason: 'error' })
+
+    fetchMock.mockRestore()
+  })
 })
