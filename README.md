@@ -30,74 +30,68 @@
 
 <br/>
 
-<p align="center"><em>Here are the different app view modes:</em></p>
+<p align="center"><em>App view modes:</em></p>
 
-<br/>
+---
 
-<p align="center"><strong>Collapsed Mode</strong></p>
+#### Collapsed Mode
+
 <p align="center">
   <img src="public/screenshots/collapsed-mode.png" alt="Collapsed" width="430" />   
   <img src="public/screenshots/in-call-portrait.png" alt="Collapsed in call" width="430" />
 </p>
 <p align="center">
-  <em>Collapsed                                                                Collapsed In Call</em>
-</p>
-<p align="center">
   <img src="public/screenshots/in-call-portrait-transcription.png" alt="Collapsed in call with transcription" width="700" />
 </p>
-<p align="center"><em>In Call · Transcription</em></p>
+<p align="center"><em>Idle · In Call · In Call with Transcription</em></p>
 
-<br/>
+---
 
-<p align="center"><strong>Expanded Mode</strong></p>
+#### Expanded Mode
+
 <p align="center">
   <img src="public/screenshots/expanded-mode.png" alt="Expanded" width="900" />
 </p>
-<p align="center"><em>Expanded</em></p>
 <p align="center">
   <img src="public/screenshots/in-call-expanded-content-share.png" alt="Expanded in call with content share" width="900" />
 </p>
-<p align="center"><em>In Call · Content Share</em></p>
+<p align="center"><em>Idle · In Call with Content Share</em></p>
 
-<br/>
+---
 
-<p align="center"><strong>Mini Mode</strong></p>
+#### Mini Mode
+
 <p align="center">
   <img src="public/screenshots/mini-mode.png" alt="Mini" width="430" />   
   <img src="public/screenshots/in-call-mini.png" alt="Mini in call" width="430" />
 </p>
 <p align="center">
-  <em>Mini                                                                      Mini In Call</em>
-</p>
-<p align="center">
   <img src="public/screenshots/in-call-mini-transcription.png" alt="Mini in call with transcription" width="700" />
 </p>
-<p align="center"><em>In Call · Transcription</em></p>
+<p align="center"><em>Idle · In Call · In Call with Transcription</em></p>
 
-<br/>
+---
 
-<p align="center"><strong>Side-bar Mode &amp; Live Transcription</strong></p>
+#### Side-bar Mode &amp; Live Transcription
+
 <p align="center">
-  <img src="public/screenshots/side-bar-mode.png" alt="Side-bar" width="220" />   
-  <img src="public/screenshots/scribe-transcription.png" alt="Live transcript" width="320" />   
+  <img src="public/screenshots/side-bar-mode.png" alt="Side-bar" width="220" />
+  <img src="public/screenshots/scribe-transcription.png" alt="Live transcript" width="320" />
   <img src="public/screenshots/scribe-summary.png" alt="AI summary" width="320" />
 </p>
-<p align="center">
-  <em>Side-bar                                                            Live Transcript                                                  AI Summary</em>
-</p>
+<p align="center"><em>Side-bar · Live Transcript · AI Summary</em></p>
 
-<br/>
+---
 
-<p align="center"><strong>Quick Join</strong></p>
+#### Quick Join
+
 <p align="center">
   <img src="public/screenshots/join-google.png" alt="Google Meet" width="230" /> 
   <img src="public/screenshots/join-teams.png" alt="Teams" width="230" /> 
   <img src="public/screenshots/join-zoom.png" alt="Zoom" width="230" /> 
   <img src="public/screenshots/join-pexip.png" alt="Pexip" width="230" />
 </p>
-<p align="center">
-  <em>Google Meet&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Teams&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Zoom&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Pexip</em>
-</p>
+<p align="center"><em>Google Meet · Teams · Zoom · Pexip</em></p>
 
 ---
 
