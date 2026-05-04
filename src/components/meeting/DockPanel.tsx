@@ -132,6 +132,20 @@ export function DockPanel({
     setShowClearConfirm(false)
   }
 
+  const handleChatScroll = () => {
+    const el = chatScrollRef.current
+    if (!el) return
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight
+    isAtChatBottomRef.current = distanceFromBottom < 50
+  }
+
+  const handleTranscriptScroll = () => {
+    const el = transcriptScrollRef.current
+    if (!el) return
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight
+    isAtTranscriptBottomRef.current = distanceFromBottom < 50
+  }
+
   useEffect(() => {
     if (summarizer.status === 'done' && summarizer.summary) {
       setView('summary')
@@ -194,20 +208,6 @@ export function DockPanel({
     setView('transcript')
     setShowSaveModal(false)
     if (saveModalIntent === 'close') onClose()
-  }
-
-  const handleChatScroll = () => {
-    const el = chatScrollRef.current
-    if (!el) return
-    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight
-    isAtChatBottomRef.current = distanceFromBottom < 50
-  }
-
-  const handleTranscriptScroll = () => {
-    const el = transcriptScrollRef.current
-    if (!el) return
-    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight
-    isAtTranscriptBottomRef.current = distanceFromBottom < 50
   }
 
   useEffect(() => {

@@ -44,7 +44,9 @@ export default function MeetingPage() {
   const { isElectron, isExpanded, isMini, toggleExpand, toggleMini } = useElectron()
   const [showSettings, setShowSettings] = useState(false)
   const [showStats, setShowStats] = useState(false)
-  const [transcriptionConsentRequest, setTranscriptionConsentRequest] = useState<boolean>(false)
+  const [transcriptionConsentRequest, setTranscriptionConsentRequest] = useState<
+    null | 'toggle' | 'enableWithCaptions'
+  >(null)
 
   const {
     connectionState,
@@ -220,7 +222,7 @@ export default function MeetingPage() {
         transcription.setTranscriptionEnabled(false)
         transcription.setCaptionsVisible(false)
       } else {
-        setTranscriptionConsentRequest(true)
+        setTranscriptionConsentRequest('toggle')
       }
     },
     onClearTranscripts: transcription.clearTranscripts,
@@ -365,7 +367,7 @@ export default function MeetingPage() {
           layout={effectiveLayout}
           participantCount={participants.length}
           transcriptionEnabled={transcription.transcriptionEnabled}
-          onRequestTranscription={() => setTranscriptionConsentRequest(true)}
+          onRequestTranscription={() => setTranscriptionConsentRequest('toggle')}
         />
 
         </div>
@@ -416,7 +418,7 @@ export default function MeetingPage() {
                 transcription.setTranscriptionEnabled(false)
                 transcription.setCaptionsVisible(false)
               } else {
-                setTranscriptionConsentRequest(true)
+                setTranscriptionConsentRequest('toggle')
               }
             }}
             onSettings={() => setShowSettings(true)}
@@ -442,13 +444,17 @@ export default function MeetingPage() {
       />
 
       <TranscriptionConsentModal
-        open={transcriptionConsentRequest}
+        open={transcriptionConsentRequest !== null}
         onConfirm={() => {
-          transcription.setTranscriptionEnabled(true)
-          transcription.setCaptionsVisible(true)
-          setTranscriptionConsentRequest(false)
+          if (transcriptionConsentRequest === 'enableWithCaptions') {
+            transcription.setTranscriptionEnabled(true)
+            transcription.setCaptionsVisible(true)
+          } else {
+            transcription.setTranscriptionEnabled(true)
+          }
+          setTranscriptionConsentRequest(null)
         }}
-        onCancel={() => setTranscriptionConsentRequest(false)}
+        onCancel={() => setTranscriptionConsentRequest(null)}
       />
 
       <AnimatePresence>
