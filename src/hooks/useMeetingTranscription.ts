@@ -5,7 +5,6 @@ import { useLocalTranscription } from '@/hooks/useLocalTranscription'
 import { useElectron } from '@/hooks/useElectron'
 
 interface UseMeetingTranscriptionOptions {
-  sipUri: string | null
   connectionState: string
   localStream: MediaStream | null
   remoteStream: MediaStream | null

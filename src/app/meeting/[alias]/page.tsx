@@ -149,7 +149,6 @@ export default function MeetingPage() {
   const popout = usePresentationPopout({ presentationStream })
 
   const transcription = useMeetingTranscription({
-    sipUri: currentMeetingId,
     connectionState,
     localStream,
     remoteStream,
