@@ -446,12 +446,9 @@ export default function MeetingPage() {
       <TranscriptionConsentModal
         open={transcriptionConsentRequest !== null}
         onConfirm={() => {
-          if (transcriptionConsentRequest === 'enableWithCaptions') {
-            transcription.setTranscriptionEnabled(true)
-            transcription.setCaptionsVisible(true)
-          } else {
-            transcription.setTranscriptionEnabled(true)
-          }
+          transcription.setTranscriptionEnabled(true)
+          transcription.setCaptionsVisible(true)
+          setDockTab('transcript')
           setTranscriptionConsentRequest(null)
         }}
         onCancel={() => setTranscriptionConsentRequest(null)}
