@@ -238,10 +238,6 @@ Fuse constructs provider-specific dial strings automatically. All calls route th
 
 ## How It Works
 
-### Meeting Join Flow
-
-![Join Flow](docs/join-flow.svg)
-
 ### State Architecture
 
 | Layer                  | Mechanism           | Scope                                                 |
@@ -262,6 +258,13 @@ Fuse constructs provider-specific dial strings automatically. All calls route th
 | `pexipOTJ`                | OAuth + REST client for the Pexip One Touch Join calendar API                            |
 
 ### Architecture Diagrams
+
+<details>
+<summary>Meeting Join Flow</summary>
+
+![Join Flow](docs/join-flow.svg)
+
+</details>
 
 <details>
 <summary>Connection Flow</summary>
