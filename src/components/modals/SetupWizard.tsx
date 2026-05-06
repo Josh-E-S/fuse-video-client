@@ -26,11 +26,23 @@ import { getElectronBridge } from '@/hooks/useElectron'
 
 const SETUP_KEY = 'fuse_setup_complete'
 
+// In dev, skip the wizard when the minimum env vars are present (node domain
+// + display name). Lets developers iterate without re-running the wizard
+// after every localStorage clear. Production behavior is unchanged.
+function devBypass(): boolean {
+  if (process.env.NODE_ENV !== 'development') return false
+  return (
+    !!process.env.NEXT_PUBLIC_DEFAULT_NODE_DOMAIN &&
+    !!process.env.NEXT_PUBLIC_DEFAULT_DISPLAY_NAME
+  )
+}
+
 export function useSetupRequired() {
-  const [required, setRequired] = useState(false)
-  useEffect(() => {
-    setRequired(!localStorage.getItem(SETUP_KEY))
-  }, [])
+  const [required, setRequired] = useState(() => {
+    if (typeof window === 'undefined') return false
+    if (devBypass()) return false
+    return !localStorage.getItem(SETUP_KEY)
+  })
   return {
     required,
     complete: () => {

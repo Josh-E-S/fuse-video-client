@@ -1,4 +1,14 @@
-const { app, BrowserWindow, session, ipcMain, systemPreferences, desktopCapturer, utilityProcess, powerMonitor } = require("electron");
+// Electron main process. Owns the desktop window, native OS integrations
+// (camera/mic permissions, sleep/wake, system dialogs), and the IPC contract
+// the renderer uses for window-mode controls and AI workers.
+//
+// Layout:
+//   1. Constants & helpers (sizes, port utilities)
+//   2. Window-mode IPC handlers (registered once at app ready)
+//   3. createWindow — security setup + window creation
+//   4. App lifecycle (whenReady, window-all-closed, activate)
+
+const { app, BrowserWindow, session, ipcMain, systemPreferences, powerMonitor, dialog } = require("electron");
 const { spawn, fork } = require("child_process");
 const path = require("path");
 const net = require("net");
@@ -38,7 +48,9 @@ let isExpanded = false;
 let isMini = false;
 let isSidebar = false;
 let sideDockOpen = false;
-let preMiniBounds = null;
+// Records the mode in effect before mini was entered, so exiting mini can
+// restore it. Shape: { kind: 'sidebar' } or { kind: 'normal', bounds: <Rectangle> }.
+let preMiniMode = null;
 let preSidebarBounds = null;
 let preSidebarExpanded = false;
 
@@ -53,6 +65,23 @@ function getFreePort() {
     });
     server.on("error", reject);
   });
+}
+
+function isPortFree(port) {
+  return new Promise((resolve) => {
+    const server = net.createServer();
+    server.once("error", () => resolve(false));
+    server.once("listening", () => {
+      server.close(() => resolve(true));
+    });
+    server.listen(port, "127.0.0.1");
+  });
+}
+
+async function getPortWithFallback(preferred) {
+  if (await isPortFree(preferred)) return preferred;
+  console.warn(`Port ${preferred} in use, falling back to a free port`);
+  return getFreePort();
 }
 
 function waitForServer(port, retries = 60) {
@@ -119,7 +148,152 @@ function getAllowedOrigin() {
   return `http://127.0.0.1:${serverPort}`;
 }
 
-async function createWindow(port) {
+// Window-mode IPC. Registered once at app ready, not per-window — re-registering
+// the same channel name throws, and the activate handler can recreate the window.
+// All handlers operate on the module-scoped mainWindow + mode flags.
+function registerWindowIpc() {
+  ipcMain.handle("toggle-expand", () => {
+    if (!mainWindow) return false;
+    // Manual mid-call resize cancels any auto-restore-to-sidebar intent.
+    preSidebarBounds = null;
+    if (isSidebar) {
+      isSidebar = false;
+    }
+    isExpanded = !isExpanded;
+    const [currentX, currentY] = mainWindow.getPosition();
+    mainWindow.setBounds({ x: currentX, y: currentY, ...getTargetSize(isExpanded, sideDockOpen) }, true);
+    return isExpanded;
+  });
+
+  ipcMain.handle("get-expanded", () => isExpanded);
+
+  ipcMain.handle("toggle-mini", () => {
+    if (!mainWindow) return { isMini: false, isSidebar };
+    if (!isMini) {
+      // Entering mini — remember the mode we came from so exit can restore it.
+      preMiniMode = isSidebar
+        ? { kind: "sidebar" }
+        : { kind: "normal", bounds: mainWindow.getBounds() };
+      isSidebar = false;
+      isMini = true;
+      mainWindow.setResizable(false);
+      const { screen } = require("electron");
+      const display = screen.getDisplayNearestPoint(
+        screen.getCursorScreenPoint()
+      );
+      const { width: screenW } = display.workArea;
+      const x = Math.round(display.workArea.x + (screenW - MINI_SIZE.width) / 2);
+      const y = display.workArea.y + 8;
+      mainWindow.setBounds({ x, y, ...MINI_SIZE }, true);
+    } else {
+      // Exiting mini — restore the previous mode.
+      isMini = false;
+      mainWindow.setResizable(true);
+      if (preMiniMode && preMiniMode.kind === "sidebar") {
+        isSidebar = true;
+        mainWindow.setBounds(getSidebarBounds(), true);
+      } else if (preMiniMode && preMiniMode.kind === "normal") {
+        mainWindow.setBounds(preMiniMode.bounds, true);
+      } else {
+        const [currentX, currentY] = mainWindow.getPosition();
+        mainWindow.setBounds({ x: currentX, y: currentY, ...getTargetSize(isExpanded, sideDockOpen) }, true);
+      }
+      preMiniMode = null;
+    }
+    return { isMini, isSidebar };
+  });
+
+  ipcMain.handle("get-mini", () => isMini);
+
+  // Mini-mode-only width tweak. Used by MiniModeView to slide the
+  // transcript panel in/out (±640px). All other window resizes
+  // (expanded toggle, side dock open/close) go through resize-to-state.
+  ipcMain.handle("adjust-width", (_event, delta) => {
+    if (!mainWindow) return;
+    if (typeof delta !== "number" || !Number.isFinite(delta) || Math.abs(delta) > 1000) {
+      console.warn(`Rejected invalid adjust-width delta: ${delta}`);
+      return;
+    }
+    const [x, y] = mainWindow.getPosition();
+    const [w, h] = mainWindow.getSize();
+    mainWindow.setBounds({ x, y, width: w + delta, height: h }, true);
+  });
+
+  // Resize the window to one of the four fixed sizes from the size matrix
+  // (collapsed/expanded × dock closed/open). The renderer tells us its
+  // intended mode + dock state; we update our tracking variables and
+  // resize. Main owns the state — the renderer doesn't track sizes itself.
+  ipcMain.handle("resize-to-state", (_event, state) => {
+    if (!mainWindow) return;
+    if (!state || typeof state !== "object") {
+      console.warn("Rejected invalid resize-to-state payload:", state);
+      return;
+    }
+    const nextExpanded = typeof state.expanded === "boolean" ? state.expanded : isExpanded;
+    const nextSideDockOpen = typeof state.sideDockOpen === "boolean" ? state.sideDockOpen : sideDockOpen;
+    isExpanded = nextExpanded;
+    sideDockOpen = nextSideDockOpen;
+    // Don't resize while in sidebar/mini — those modes own their own bounds.
+    if (isMini || isSidebar) return;
+    const [currentX, currentY] = mainWindow.getPosition();
+    mainWindow.setBounds({ x: currentX, y: currentY, ...getTargetSize(isExpanded, sideDockOpen) }, true);
+  });
+
+  ipcMain.handle("toggle-sidebar", () => {
+    if (!mainWindow) return false;
+    if (!isSidebar) {
+      // Entering sidebar — snapshot current bounds + expanded flag for later restore.
+      // If we're coming from mini, re-enable resize first; mini disabled it.
+      preSidebarBounds = isMini ? null : mainWindow.getBounds();
+      preSidebarExpanded = isExpanded;
+      isSidebar = true;
+      isMini = false;
+      mainWindow.setResizable(true);
+      mainWindow.setBounds(getSidebarBounds(), true);
+    } else {
+      // Exiting sidebar — restore previous bounds (or fall back to canonical size).
+      isSidebar = false;
+      if (preSidebarBounds) {
+        mainWindow.setBounds(preSidebarBounds, true);
+        preSidebarBounds = null;
+      } else {
+        isExpanded = preSidebarExpanded;
+        const [currentX, currentY] = mainWindow.getPosition();
+        mainWindow.setBounds({ x: currentX, y: currentY, ...getTargetSize(isExpanded, sideDockOpen) }, true);
+      }
+    }
+    return isSidebar;
+  });
+
+  ipcMain.handle("get-sidebar", () => isSidebar);
+
+  // Promote out of sidebar (for an incoming/outgoing call). Remembers we came from
+  // sidebar so the matching restore-sidebar handler can put us back when the call ends.
+  ipcMain.handle("promote-from-sidebar", () => {
+    if (!mainWindow || !isSidebar) return false;
+    isSidebar = false;
+    isExpanded = preSidebarExpanded;
+    if (preSidebarBounds) {
+      mainWindow.setBounds(preSidebarBounds, true);
+    } else {
+      const [currentX, currentY] = mainWindow.getPosition();
+      mainWindow.setBounds({ x: currentX, y: currentY, ...getTargetSize(isExpanded, sideDockOpen) }, true);
+    }
+    return true;
+  });
+
+  ipcMain.handle("restore-sidebar", () => {
+    if (!mainWindow) return false;
+    if (isSidebar) return true;
+    if (!preSidebarBounds) return false;
+    isSidebar = true;
+    isMini = false;
+    mainWindow.setBounds(getSidebarBounds(), true);
+    return true;
+  });
+}
+
+async function createWindow() {
   const allowedPermissions = new Set([
     "media",
     "camera",
@@ -194,6 +368,8 @@ async function createWindow(port) {
     minHeight: 180,
     titleBarStyle: "hiddenInset",
     trafficLightPosition: { x: 16, y: 16 },
+    // Floats above other apps so an incoming call is never hidden behind a
+    // full-screen window. Standard for video calling clients.
     alwaysOnTop: true,
     backgroundColor: "#000000",
     webPreferences: {
@@ -240,137 +416,6 @@ async function createWindow(port) {
     return { action: "deny" };
   });
 
-  // IPC handlers
-  ipcMain.handle("toggle-expand", () => {
-    if (!mainWindow) return false;
-    // Manual mid-call resize cancels any auto-restore-to-sidebar intent.
-    preSidebarBounds = null;
-    if (isSidebar) {
-      isSidebar = false;
-    }
-    isExpanded = !isExpanded;
-    const [currentX, currentY] = mainWindow.getPosition();
-    mainWindow.setBounds({ x: currentX, y: currentY, ...getTargetSize(isExpanded, sideDockOpen) }, true);
-    return isExpanded;
-  });
-
-  ipcMain.handle("get-expanded", () => isExpanded);
-
-  ipcMain.handle("toggle-mini", () => {
-    if (!mainWindow) return false;
-    if (isSidebar) {
-      isSidebar = false;
-      preSidebarBounds = null;
-    }
-    isMini = !isMini;
-    if (isMini) {
-      preMiniBounds = mainWindow.getBounds();
-      mainWindow.setResizable(false);
-      const { screen } = require("electron");
-      const display = screen.getDisplayNearestPoint(
-        screen.getCursorScreenPoint()
-      );
-      const { width: screenW } = display.workArea;
-      const x = Math.round(display.workArea.x + (screenW - MINI_SIZE.width) / 2);
-      const y = display.workArea.y + 8;
-      mainWindow.setBounds({ x, y, ...MINI_SIZE }, true);
-    } else {
-      mainWindow.setResizable(true);
-      if (preMiniBounds) {
-        mainWindow.setBounds(preMiniBounds, true);
-        preMiniBounds = null;
-      } else {
-        const [currentX, currentY] = mainWindow.getPosition();
-        mainWindow.setBounds({ x: currentX, y: currentY, ...getTargetSize(isExpanded, sideDockOpen) }, true);
-      }
-    }
-    return isMini;
-  });
-
-  ipcMain.handle("get-mini", () => isMini);
-
-  // Mini-mode-only width tweak (transcript panel). The main (expanded/sideDock) matrix
-  // uses resize-to-state instead.
-  ipcMain.handle("adjust-width", (_event, delta) => {
-    if (!mainWindow) return;
-    if (typeof delta !== "number" || !Number.isFinite(delta) || Math.abs(delta) > 1000) {
-      console.warn(`Rejected invalid adjust-width delta: ${delta}`);
-      return;
-    }
-    const [x, y] = mainWindow.getPosition();
-    const [w, h] = mainWindow.getSize();
-    mainWindow.setBounds({ x, y, width: w + delta, height: h }, true);
-  });
-
-  // Snap window to the canonical size for the given (expanded, sideDockOpen) state.
-  // Source of truth is main — renderer passes whether the side dock should be open.
-  ipcMain.handle("resize-to-state", (_event, state) => {
-    if (!mainWindow) return;
-    if (!state || typeof state !== "object") {
-      console.warn("Rejected invalid resize-to-state payload:", state);
-      return;
-    }
-    const nextExpanded = typeof state.expanded === "boolean" ? state.expanded : isExpanded;
-    const nextSideDockOpen = typeof state.sideDockOpen === "boolean" ? state.sideDockOpen : sideDockOpen;
-    isExpanded = nextExpanded;
-    sideDockOpen = nextSideDockOpen;
-    // Don't resize while in sidebar/mini — those modes own their own bounds.
-    if (isMini || isSidebar) return;
-    const [currentX, currentY] = mainWindow.getPosition();
-    mainWindow.setBounds({ x: currentX, y: currentY, ...getTargetSize(isExpanded, sideDockOpen) }, true);
-  });
-
-  ipcMain.handle("toggle-sidebar", () => {
-    if (!mainWindow) return false;
-    if (!isSidebar) {
-      // Entering sidebar — snapshot current bounds + expanded flag for later restore.
-      preSidebarBounds = mainWindow.getBounds();
-      preSidebarExpanded = isExpanded;
-      isSidebar = true;
-      isMini = false;
-      mainWindow.setBounds(getSidebarBounds(), true);
-    } else {
-      // Exiting sidebar — restore previous bounds (or fall back to canonical size).
-      isSidebar = false;
-      if (preSidebarBounds) {
-        mainWindow.setBounds(preSidebarBounds, true);
-        preSidebarBounds = null;
-      } else {
-        isExpanded = preSidebarExpanded;
-        const [currentX, currentY] = mainWindow.getPosition();
-        mainWindow.setBounds({ x: currentX, y: currentY, ...getTargetSize(isExpanded, sideDockOpen) }, true);
-      }
-    }
-    return isSidebar;
-  });
-
-  ipcMain.handle("get-sidebar", () => isSidebar);
-
-  // Promote out of sidebar (for an incoming/outgoing call). Remembers we came from
-  // sidebar so the matching restore-sidebar handler can put us back when the call ends.
-  ipcMain.handle("promote-from-sidebar", () => {
-    if (!mainWindow || !isSidebar) return false;
-    isSidebar = false;
-    isExpanded = preSidebarExpanded;
-    if (preSidebarBounds) {
-      mainWindow.setBounds(preSidebarBounds, true);
-    } else {
-      const [currentX, currentY] = mainWindow.getPosition();
-      mainWindow.setBounds({ x: currentX, y: currentY, ...getTargetSize(isExpanded, sideDockOpen) }, true);
-    }
-    return true;
-  });
-
-  ipcMain.handle("restore-sidebar", () => {
-    if (!mainWindow) return false;
-    if (isSidebar) return true;
-    if (!preSidebarBounds) return false;
-    isSidebar = true;
-    isMini = false;
-    mainWindow.setBounds(getSidebarBounds(), true);
-    return true;
-  });
-
   session.defaultSession.setDisplayMediaRequestHandler(
     (_request, callback) => {
       callback({ video: mainWindow, audio: "loopback" });
@@ -397,6 +442,9 @@ app.whenReady().then(async () => {
     });
   });
 
+  // Register IPC handlers once at app ready. The window-mode handlers reference
+  // mainWindow lazily so it's fine that the window doesn't exist yet.
+  registerWindowIpc();
   registerTranscriptionHandlers();
   registerModelHandlers();
   registerSummarizerHandlers();
@@ -412,18 +460,26 @@ app.whenReady().then(async () => {
   powerMonitor.on("resume", sendPowerResume);
   powerMonitor.on("unlock-screen", sendPowerResume);
 
-  serverPort = isDev ? await getFreePort() : FIXED_PORT;
+  serverPort = isDev ? await getFreePort() : await getPortWithFallback(FIXED_PORT);
   console.log(`Starting Next.js on port ${serverPort}...`);
 
-  await createWindow(serverPort);
+  await createWindow();
 
-  await startNextServer(serverPort);
-  await Promise.all([
-    waitForServer(serverPort),
-    requestMediaPermissions(),
-  ]);
-
-  mainWindow.loadURL(`http://127.0.0.1:${serverPort}`);
+  try {
+    await startNextServer(serverPort);
+    await Promise.all([
+      waitForServer(serverPort),
+      requestMediaPermissions(),
+    ]);
+    mainWindow.loadURL(`http://127.0.0.1:${serverPort}`);
+  } catch (err) {
+    console.error("Startup failed:", err);
+    dialog.showErrorBox(
+      "Fuse Video Client failed to start",
+      `${err.message}\n\nPlease quit and try again. If the problem persists, restart your computer.`
+    );
+    app.quit();
+  }
 });
 
 app.on("window-all-closed", () => {
@@ -441,15 +497,24 @@ app.on("before-quit", () => {
 
 app.on("activate", async () => {
   if (mainWindow === null) {
-    if (!nextProcess) {
-      serverPort = isDev ? await getFreePort() : FIXED_PORT;
-      await createWindow(serverPort);
-      await startNextServer(serverPort);
-      await waitForServer(serverPort);
-      mainWindow.loadURL(`http://127.0.0.1:${serverPort}`);
-    } else {
-      await createWindow(serverPort);
-      mainWindow.loadURL(`http://127.0.0.1:${serverPort}`);
+    try {
+      if (!nextProcess) {
+        serverPort = isDev ? await getFreePort() : await getPortWithFallback(FIXED_PORT);
+        await createWindow();
+        await startNextServer(serverPort);
+        await waitForServer(serverPort);
+        mainWindow.loadURL(`http://127.0.0.1:${serverPort}`);
+      } else {
+        await createWindow();
+        mainWindow.loadURL(`http://127.0.0.1:${serverPort}`);
+      }
+    } catch (err) {
+      console.error("Re-activation failed:", err);
+      dialog.showErrorBox(
+        "Fuse Video Client failed to reopen",
+        `${err.message}\n\nPlease quit and try again.`
+      );
+      app.quit();
     }
   }
 });

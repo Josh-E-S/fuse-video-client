@@ -6,7 +6,7 @@ interface ElectronBridge {
   isElectron: boolean
   toggleExpand: () => Promise<boolean>
   getExpanded: () => Promise<boolean>
-  toggleMini: () => Promise<boolean>
+  toggleMini: () => Promise<{ isMini: boolean; isSidebar: boolean }>
   getMini: () => Promise<boolean>
   toggleSidebar: () => Promise<boolean>
   getSidebar: () => Promise<boolean>
@@ -81,9 +81,9 @@ export function useElectron() {
   const toggleMini = useCallback(async () => {
     const bridge = getElectronBridge()
     if (!bridge) return false
-    const mini = await bridge.toggleMini()
+    const { isMini: mini, isSidebar: sidebar } = await bridge.toggleMini()
     setIsMini(mini)
-    setIsSidebar(false)
+    setIsSidebar(sidebar)
     return mini
   }, [])
 
