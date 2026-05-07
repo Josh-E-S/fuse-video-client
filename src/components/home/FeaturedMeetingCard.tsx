@@ -38,6 +38,8 @@ export function FeaturedMeetingCard({
   const [showUpcoming, setShowUpcoming] = useState(false)
 
   useEffect(() => {
+    // Bridge: sync controlled `expanded` prop into local state when parent toggles.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (expanded !== undefined) setShowUpcoming(expanded)
   }, [expanded])
   const [copied, setCopied] = useState(false)

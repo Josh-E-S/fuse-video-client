@@ -155,6 +155,8 @@ export function DockPanel({
 
   useEffect(() => {
     if (summarizer.status === 'done' && summarizer.summary) {
+      // Bridge: switch view when the summarizer (external system) finishes.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setView('summary')
     }
   }, [summarizer.status, summarizer.summary])
@@ -163,6 +165,8 @@ export function DockPanel({
   // user can save/discard before transcription is actually stopped.
   useEffect(() => {
     if (stopRequestToken === undefined || stopRequestToken === 0) return
+    // Bridge: parent toolbar requested stop — surface the save modal.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSaveModalIntent('stop')
     setShowSaveModal(true)
   }, [stopRequestToken])

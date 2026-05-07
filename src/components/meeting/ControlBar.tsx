@@ -257,6 +257,8 @@ export function ControlBar({
 
   // Enumerate on mount and on device changes
   useEffect(() => {
+    // Bridge: read mediaDevices on mount + subscribe to devicechange (external API).
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     enumerateDevices()
     navigator.mediaDevices.addEventListener('devicechange', enumerateDevices)
     return () => navigator.mediaDevices.removeEventListener('devicechange', enumerateDevices)

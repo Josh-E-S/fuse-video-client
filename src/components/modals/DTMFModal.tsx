@@ -23,6 +23,8 @@ export function DTMFModal({ open, onClose, onSendDTMF }: DTMFModalProps) {
   const [input, setInput] = useState('')
 
   useEffect(() => {
+    // Bridge: reset input when the modal closes (controlled `open` prop into local form state).
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (!open) setInput('')
   }, [open])
 

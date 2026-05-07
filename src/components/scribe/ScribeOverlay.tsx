@@ -53,6 +53,8 @@ export function ScribeOverlay({ open, onClose }: ScribeOverlayProps) {
 
   useEffect(() => {
     if (summarizer.status === 'done' && summarizer.summary) {
+      // Bridge: switch view when the summarizer (external system) finishes.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setView('summary')
     }
   }, [summarizer.status, summarizer.summary])

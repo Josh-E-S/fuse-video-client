@@ -133,6 +133,8 @@ export default function HomePage() {
     if (isVideoOff) {
       if (previewStream) {
         previewStream.getTracks().forEach((t) => t.stop())
+        // Bridge: clear preview stream after stopping its tracks (external resource teardown).
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setPreviewStream(null)
       }
       return
@@ -165,6 +167,8 @@ export default function HomePage() {
     if (connectionState === 'connected' && pendingAlias) {
       if (previewStream) {
         previewStream.getTracks().forEach((t) => t.stop())
+        // Bridge: release preview stream + reset preflight when the call is connected.
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setPreviewStream(null)
       }
       setPreflightAlias(null)
@@ -193,6 +197,8 @@ export default function HomePage() {
       !showJoin &&
       !isMini
     ) {
+      // Bridge: pin prompt arrives from PexRTC connection state — surface the join modal.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setPreflightAlias(null)
       const prov = getMeetingProvider(pendingAlias)
       setJoinProvider(prov ? { id: prov.id, icon: prov.icon, label: prov.label } : null)
@@ -244,6 +250,8 @@ export default function HomePage() {
 
     if (connectionState === 'disconnected' || connectionState === 'error') {
       isInboundAnswerRef.current = false
+      // Bridge: PexRTC connection ended — reset call-related UI state.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsJoining(false)
 
       const wasInCall = !!(preflightAlias || pendingAlias)
@@ -438,10 +446,14 @@ export default function HomePage() {
   const [miniIdx, setMiniIdx] = useState(0)
   const [miniPin, setMiniPin] = useState('')
   useEffect(() => {
+    // Bridge: reset carousel index when the meetings list changes length.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMiniIdx(0)
   }, [meetings.length])
   const [userSelected, setUserSelected] = useState(false)
   useEffect(() => {
+    // Bridge: reset featured selection when the meetings list changes length.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setFeaturedIdx(0)
     setUserSelected(false)
   }, [meetings.length])

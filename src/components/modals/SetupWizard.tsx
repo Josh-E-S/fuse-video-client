@@ -92,6 +92,8 @@ export function SetupWizard({ open, onComplete, onRegister }: SetupWizardProps) 
 
   const [isElectron, setIsElectron] = useState(false)
   useEffect(() => {
+    // Bridge: detect Electron after hydration (window APIs aren't available on the server).
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsElectron(!!getElectronBridge())
   }, [])
 
@@ -118,6 +120,8 @@ export function SetupWizard({ open, onComplete, onRegister }: SetupWizardProps) 
 
   useEffect(() => {
     if (open) {
+      // Bridge: snapshot persisted settings + localStorage into wizard form state on open.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setNodeDomain(settings.nodeDomain)
       setDisplayName(settings.displayName)
       setRegAlias(

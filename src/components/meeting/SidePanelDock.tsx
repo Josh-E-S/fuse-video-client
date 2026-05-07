@@ -91,6 +91,8 @@ export function SidePanelDock({
 
   // Pin while the more menu is open so it doesn't disappear mid-interaction.
   useEffect(() => {
+    // Bridge: pin the dock whenever the menu opens so it can't auto-hide mid-interaction.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (showMore) setPinned(true)
   }, [showMore])
 

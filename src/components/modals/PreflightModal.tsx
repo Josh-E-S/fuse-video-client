@@ -64,6 +64,8 @@ export function PreflightModal({ open, alias, connecting, onClose, onJoin }: Pre
 
   useEffect(() => {
     if (!open) {
+      // Bridge: reset preflight UI when the modal closes (controlled `open` prop).
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setAudioOff(false)
       setVideoOff(false)
       setShowAudioMenu(false)

@@ -89,6 +89,8 @@ export function JoinModal({
 
   useEffect(() => {
     if (!open) {
+      // Bridge: reset form state when the modal closes (controlled `open` prop).
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setAlias('')
       setPin('')
       setShowRecents(false)

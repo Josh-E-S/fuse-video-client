@@ -88,6 +88,8 @@ export function SettingsModal({
   // Sync local state when modal opens
   useEffect(() => {
     if (open) {
+      // Bridge: snapshot persisted settings + localStorage into form state on modal open.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setNodeDomain(settings.nodeDomain)
       setDisplayName(settings.displayName)
       setOtjClientId(settings.otjClientId)
