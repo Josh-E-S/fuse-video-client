@@ -456,7 +456,7 @@ export function SetupWizard({ open, onComplete, onRegister }: SetupWizardProps) 
                       />
                       <h2 className="text-2xl font-light text-white/90">Welcome to Fuse</h2>
                       <p className="text-sm text-white/40 leading-relaxed max-w-sm mx-auto">
-                        Let's get you set up in a few quick steps. You can always change these later
+                        Let&apos;s get you set up in a few quick steps. You can always change these later
                         in Settings.
                       </p>
                     </div>
@@ -543,7 +543,7 @@ export function SetupWizard({ open, onComplete, onRegister }: SetupWizardProps) 
                         />
                       </div>
                       <p className="text-[11px] text-white/20">
-                        Optional. Skip if you don't need to receive incoming calls.
+                        Optional. Skip if you don&apos;t need to receive incoming calls.
                       </p>
                     </div>
                   )}
@@ -581,7 +581,7 @@ export function SetupWizard({ open, onComplete, onRegister }: SetupWizardProps) 
                         />
                       </div>
                       <p className="text-[11px] text-white/20">
-                        Optional. Skip if you don't use calendar integration.
+                        Optional. Skip if you don&apos;t use calendar integration.
                       </p>
                     </div>
                   )}
@@ -912,7 +912,7 @@ export function SetupWizard({ open, onComplete, onRegister }: SetupWizardProps) 
                       <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mx-auto">
                         <Check size={28} className="text-emerald-400" />
                       </div>
-                      <h2 className="text-2xl font-light text-white/90">You're all set</h2>
+                      <h2 className="text-2xl font-light text-white/90">You&apos;re all set</h2>
                       <p className="text-sm text-white/40 leading-relaxed max-w-sm mx-auto">
                         Everything is configured. You can change any of these settings later from
                         the settings menu.
@@ -959,7 +959,7 @@ export function SetupWizard({ open, onComplete, onRegister }: SetupWizardProps) 
                   onClick={saveAndNext}
                   className="ml-auto py-3 px-6 rounded-xl bg-white/8 border border-white/10 text-white font-medium text-sm hover:bg-white/12 transition-colors flex items-center gap-2"
                 >
-                  Let's go <ChevronRight size={16} />
+                  Let&apos;s go <ChevronRight size={16} />
                 </button>
               ) : (
                 <div className="flex items-center gap-3">
