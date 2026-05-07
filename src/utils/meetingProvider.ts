@@ -23,7 +23,9 @@ const PROVIDERS: MeetingProvider[] = [
   { id: 'webex', label: 'Webex', color: '#00CF4F', icon: '/icons/meeting-providers/webex.svg' },
 ]
 
-function buildDomainMap(): [string, MeetingProvider][] {
+// Built once at module load — env vars are read at build time for NEXT_PUBLIC_*,
+// so the map never changes during a session.
+const DOMAIN_MAP: [string, MeetingProvider][] = (() => {
   const map: [string, MeetingProvider][] = []
   const googleDomain = process.env.NEXT_PUBLIC_GOOGLE_DOMAIN?.toLowerCase().trim()
   if (googleDomain) map.push([googleDomain, PROVIDERS[0]])
@@ -34,7 +36,7 @@ function buildDomainMap(): [string, MeetingProvider][] {
   map.push(['zoomcrc.com', PROVIDERS[3]])
   map.push(['webex.com', PROVIDERS[4]])
   return map
-}
+})()
 
 export function getMeetingProvider(alias: string | null | undefined): MeetingProvider | null {
   if (!alias) return null
@@ -42,7 +44,7 @@ export function getMeetingProvider(alias: string | null | undefined): MeetingPro
   // Extract domain after @ if present, otherwise use the full alias
   const atIdx = lower.indexOf('@')
   const domainPart = atIdx >= 0 ? lower.slice(atIdx + 1) : lower
-  for (const [rawDomain, provider] of buildDomainMap()) {
+  for (const [rawDomain, provider] of DOMAIN_MAP) {
     const domain = rawDomain.replace(/^\.+/, '')
     if (domainPart === domain || domainPart.endsWith('.' + domain)) return provider
   }

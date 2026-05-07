@@ -1,5 +1,11 @@
-// Centralized semantic state theme resolver
-// Every visual element pulls from this to guarantee consistency across all 4 states
+// Centralized semantic state theme resolver. Every visual element pulls from
+// this to guarantee consistency across all 4 states.
+//
+// The four state objects below are intentionally *not* DRY. Each lists every
+// property explicitly so adding a new state forces you to think through every
+// visual decision (orb, mic, join button, lock, mesh, glass, controls). A
+// helper that derived these from a base palette would be shorter but would
+// hide the design surface.
 
 export type SemanticState = 'muted' | 'audioOnly' | 'broadcasting' | 'late'
 

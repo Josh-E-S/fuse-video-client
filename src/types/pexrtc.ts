@@ -1,3 +1,11 @@
+// Type contract for the Pexip PexRTC SDK. Pexip ships no types of their own;
+// this file mirrors the runtime shape of the script loaded into window.PexRTC.
+//
+// Two intentional oddities below, both reflecting the real wire format:
+//   1. snake_case field names on Participant — match Pexip's API verbatim
+//   2. boolean | string unions — Pexip returns "YES"/"NO" strings in places
+//      where you'd expect a boolean. Don't "fix" these.
+
 export interface PexRTCConfig {
   nodeDomain: string
   conferenceAlias: string

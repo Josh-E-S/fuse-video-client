@@ -47,6 +47,9 @@ export function estimateTokens(wordCount: number): number {
 
 export function buildPrompt(entries: TranscriptEntry[]): string {
   const transcript = entries.map((e) => `${timeOf(e.timestamp)} — ${e.text.trim()}`).join('\n')
+  // /no_think is a Qwen3 control directive that suppresses the model's
+  // chain-of-thought output. We strip <think> blocks defensively too in
+  // stripThinkBlocks; this just prevents them from being generated.
   return `/no_think\n\n${PROMPT_INSTRUCTIONS}\n\nTRANSCRIPT:\n${transcript}`
 }
 

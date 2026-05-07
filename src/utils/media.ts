@@ -1,3 +1,8 @@
+// Acquire camera + microphone, with an automatic audio-only fallback if the
+// camera fails. Common reason: camera is in use by another app (Zoom, Teams,
+// browser tab). We don't want a dropped video device to block the call —
+// joining audio-only is better than failing to join.
+
 import { log } from '@/utils/logger'
 
 interface MediaSettings {
@@ -18,14 +23,14 @@ export async function acquireUserMedia(settings: MediaSettings): Promise<MediaSt
       audio: audioConstraint,
       video: videoConstraint,
     })
-  } catch (err) {
+  } catch {
     log.media.warn('getUserMedia with video failed, trying audio-only fallback')
     try {
       return await navigator.mediaDevices.getUserMedia({
         audio: audioConstraint,
         video: false,
       })
-    } catch (err) {
+    } catch {
       log.media.warn('Audio-only getUserMedia fallback also failed')
       return undefined
     }

@@ -1,3 +1,13 @@
+// Renderer logger. Mirrors electron/logger.js for the React side — the two
+// run in different processes, so they can't share an instance. Wraps console.*
+// with scopes (pexrtc, registration, media, ...) and a level threshold
+// (warn+ in production, all in dev).
+//
+// In Electron, renderer console output also lands in the main log file via
+// electron-log's bridge. In a regular browser tab, it stays in DevTools only.
+
+/* eslint-disable no-console */
+
 type LogLevel = 'debug' | 'info' | 'warn' | 'error'
 
 const LEVEL_PRIORITY: Record<LogLevel, number> = {
