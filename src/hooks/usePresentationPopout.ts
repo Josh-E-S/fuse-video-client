@@ -66,6 +66,9 @@ export function usePresentationPopout({ presentationStream }: UsePresentationPop
       win.__presentationStream = presentationStream
     }
     if (!presentationStream && presentationPopped) {
+      // Bridge: when the source stream disappears (presenter stopped), close
+      // the popup window — that's a real DOM side effect, not derivable.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       closePresentationPopout()
     }
   }, [presentationStream, presentationPopped, closePresentationPopout])

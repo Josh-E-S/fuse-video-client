@@ -42,6 +42,10 @@ export function useTheme() {
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY)
     const id = stored && stored in THEMES ? stored : DEFAULT_THEME_ID
+    // Bridge: reconcile React state with whatever the layout.tsx bootstrap
+    // script applied to the DOM. Cannot be derived — localStorage and the
+    // pre-hydration script both run client-side only.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setThemeId(id)
     applyThemeToDocument(THEMES[id])
   }, [])

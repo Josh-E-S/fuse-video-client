@@ -92,6 +92,10 @@ export function useSettings() {
   }
 
   useEffect(() => {
+    // Bridge: pull real values from localStorage once after hydration (the
+    // initial state is intentionally the SSR-safe defaults). Cannot be
+    // derived — localStorage doesn't exist on the server.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSettings(readAllSettings())
     function handleSync() {
       setSettings(readAllSettings())

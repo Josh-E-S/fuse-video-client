@@ -11,6 +11,9 @@ export function useMediaQuery(query: string): boolean {
 
   useEffect(() => {
     const media = window.matchMedia(query)
+    // Bridge: read the real client-side match once after hydration. Cannot be
+    // derived (window doesn't exist on the server) — this is the SSR fix.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMatches(media.matches)
 
     const listener = (e: MediaQueryListEvent) => setMatches(e.matches)
