@@ -73,6 +73,9 @@ export function PreflightModal({ open, alias, connecting, onClose, onJoin }: Pre
       setShowOutputMenu(false)
       speakerTest.stop()
     }
+    // Reason: speakerTest object identity changes each render; depending on it
+    // would re-run this effect every render and reset modal state mid-use.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
 
   useEffect(() => {

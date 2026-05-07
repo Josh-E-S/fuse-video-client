@@ -357,6 +357,7 @@ export function JoinModal({
                             >
                               <div className="w-8 h-8 rounded-full bg-white/4 flex items-center justify-center shrink-0 group-hover:bg-white/8 transition-colors">
                                 {prov ? (
+                                  // eslint-disable-next-line @next/next/no-img-element
                                   <img
                                     src={prov.icon}
                                     alt=""

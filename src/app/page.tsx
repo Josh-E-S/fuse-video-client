@@ -87,6 +87,9 @@ export default function HomePage() {
 
   const handleNotificationJoin = useCallback((meeting: CalendarMeeting) => {
     if (meeting.alias) handleJoin(meeting.alias)
+    // Reason: handleJoin is redefined per render; depending on it would force
+    // useMeetingNotifications to rebuild its listener subscriptions every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useMeetingNotifications(meetings, handleNotificationJoin)
@@ -161,6 +164,9 @@ export default function HomePage() {
     return () => {
       cancelled = true
     }
+    // Reason: previewStream is set inside this effect (including it loops);
+    // muteVideo is a stable PexRTC context handle (useCallback).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isVideoOff, settings.videoInput])
 
   useEffect(() => {
@@ -270,6 +276,10 @@ export default function HomePage() {
         ringingAudioRef.current = null
       }
     }
+    // Reason: this effect should only react to connection/ringtone changes;
+    // including error/pendingAlias/preflightAlias would re-fire the disconnect
+    // cleanup branch as those values churn.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [connectionState, settings.ringtone])
 
   // Inject cosmetic theme into PiP window

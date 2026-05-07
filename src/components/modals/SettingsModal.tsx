@@ -116,6 +116,10 @@ export function SettingsModal({
       setIsElectron(!!bridge)
       refreshModelStatus()
     }
+    // Reason: snapshot persisted settings into form state on modal open only;
+    // depending on the remaining settings.* fields would clobber in-progress
+    // edits whenever those values change externally while the modal is open.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, settings.nodeDomain, settings.displayName, refreshModelStatus])
 
   const { audioInputs, audioOutputs, videoInputs, previewStream, cameraError, micLevel } =
@@ -188,6 +192,9 @@ export function SettingsModal({
       stopRingtone()
       speakerTest.stop()
     }
+    // Reason: speakerTest object identity changes each render; depending on it
+    // would re-run this effect every render and stop the ringtone mid-preview.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
 
   const [regBusy, setRegBusy] = useState(false)
