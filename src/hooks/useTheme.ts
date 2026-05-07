@@ -1,5 +1,16 @@
 'use client'
 
+// Theme state + CSS variable application. Pairs with the inline bootstrap
+// script in src/app/layout.tsx that reads `fuse_theme` from localStorage and
+// pre-applies the core CSS variables before React hydrates — without that the
+// first paint would flash the default theme on every load. This hook then
+// reconciles React state with whatever the script applied and handles
+// subsequent theme switches.
+//
+// applyThemeToDocument takes an explicit Document so callers can re-apply the
+// theme to popout/PiP windows (different document), where the bootstrap
+// script never runs.
+
 import { useState, useEffect, useCallback } from 'react'
 import { THEMES, DEFAULT_THEME_ID } from '@/themes/themes'
 import type { CosmeticTheme } from '@/themes/types'

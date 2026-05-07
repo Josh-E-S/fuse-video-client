@@ -1,5 +1,16 @@
 'use client'
 
+// localStorage-backed user settings. There is no SettingsProvider — many
+// components call useSettings() independently, and the `fuse-settings-changed`
+// window event is what keeps every live instance in sync after a save. The
+// dispatching tab/window also re-reads via the same listener so a single
+// saveSettings() updates all subscribers in one shot.
+//
+// Initial state intentionally matches the empty-string / default-true values
+// rather than reading localStorage at render time. Reading storage during the
+// initial render would diverge from the server-rendered HTML and trigger a
+// hydration mismatch under the App Router; values are populated on mount.
+
 import { useState, useEffect } from 'react'
 
 const STORAGE_KEYS = {
