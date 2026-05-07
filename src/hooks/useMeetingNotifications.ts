@@ -1,5 +1,13 @@
 'use client'
 
+// Polls every 30s; if a meeting starts within the next 5 minutes, fires a
+// sonner toast with a "Join" action button. Per-meeting cooldown of 5
+// minutes prevents the same meeting from notifying twice.
+//
+// In-app toasts only — no system/OS notifications. The user has to be
+// looking at the app to see them. System notifications would need
+// Notification.requestPermission() + new Notification(); deferred for now.
+
 import { useEffect, useRef } from 'react'
 import { toast } from 'sonner'
 import type { CalendarMeeting } from '@/types/meetings'

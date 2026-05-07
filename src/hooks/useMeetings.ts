@@ -1,5 +1,12 @@
 'use client'
 
+// Polls the OTJ portal for upcoming meetings on a 60s interval, transforms
+// them into the renderer shape, and caps at 20. Auto-points the carousel at
+// the currently-live meeting (if any) on every refresh — so a meeting that
+// goes live during the session gets focus, even if the user had navigated
+// elsewhere in the carousel. Trade-off: manual navigation is overridden
+// when a new meeting begins. Acceptable for "join the live meeting fast."
+
 import { useState, useEffect, useCallback } from 'react'
 import { pexipOTJ } from '@/services/pexipOTJ'
 import type { CalendarMeeting } from '@/types/meetings'
@@ -43,6 +50,10 @@ export function useMeetings({
   }, [otjClientId, otjClientSecret])
 
   useEffect(() => {
+    // Initial fetch + 60s poll. fetchMeetings sets state; the lint rule flags
+    // any setState chain from an effect, but kicking off async network work
+    // on mount is exactly what effects are for.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchMeetings()
     const interval = setInterval(fetchMeetings, pollInterval)
     return () => clearInterval(interval)

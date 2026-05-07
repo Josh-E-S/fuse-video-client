@@ -1,5 +1,14 @@
 'use client'
 
+// Provider-toggle state for the home-screen quick-join row (Google/Teams/
+// Zoom/Pexip). Each toggle persists in its own localStorage key; the
+// SYNC_EVENT custom event keeps multiple consumers in the *same* window in
+// sync (settings modal toggling a provider → home view updating instantly).
+//
+// Cross-window sync (e.g. presentation popout) is NOT handled here — would
+// need the native `storage` event. Acceptable for the demo since these
+// toggles only show up in the main home view.
+
 import { useState, useEffect } from 'react'
 import { useSettings } from './useSettings'
 
@@ -39,6 +48,9 @@ export function useQuickJoin() {
   const [toggles, setToggles] = useState<Record<string, boolean>>({})
 
   useEffect(() => {
+    // Initial localStorage hydration (initial state was {} to match SSR) +
+    // subscribe to same-window updates from setEnabled().
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setToggles(readAllToggles())
     function handleSync() {
       setToggles(readAllToggles())

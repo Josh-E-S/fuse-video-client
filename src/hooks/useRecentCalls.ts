@@ -1,3 +1,7 @@
+// Tracks the user's recent ad-hoc dial-out aliases. Stored in localStorage,
+// capped at 10, dedupes by alias (case-insensitive) and bumps existing
+// entries to the top so the most-recent is always first.
+
 import { useState, useEffect, useCallback } from 'react'
 import { log } from '@/utils/logger'
 
@@ -13,15 +17,17 @@ const MAX_RECENT_CALLS = 10
 export function useRecentCalls() {
   const [recentCalls, setRecentCalls] = useState<RecentCall[]>([])
 
-  // Load from local storage on mount
+  // Load from localStorage on mount. Initial state is [] to match SSR; the
+  // effect promotes to the stored value on the client.
   useEffect(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY)
       if (stored) {
         const parsed = JSON.parse(stored) as RecentCall[]
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setRecentCalls(parsed)
       }
-    } catch (err) {
+    } catch {
       log.ui.debug('localStorage unavailable when loading recent calls')
     }
   }, [])
@@ -46,7 +52,7 @@ export function useRecentCalls() {
       // Save to localStorage
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
-      } catch (err) {
+      } catch {
         log.ui.debug('localStorage unavailable when saving recent calls')
       }
 
@@ -59,7 +65,7 @@ export function useRecentCalls() {
     setRecentCalls([])
     try {
       localStorage.removeItem(STORAGE_KEY)
-    } catch (err) {
+    } catch {
       log.ui.debug('localStorage unavailable when clearing recent calls')
     }
   }, [])
