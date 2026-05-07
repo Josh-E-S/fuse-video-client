@@ -1,5 +1,17 @@
 'use client'
 
+// Reduces a MediaStream's frequency spectrum to 20 normalized levels (0..1)
+// for the mic preview meter. startVisualization accepts an optional external
+// AnalyserNode so callers that already own one (e.g. PexRTC's pipeline) can
+// share it instead of forcing a second AudioContext on the same stream —
+// some browsers (Safari) refuse a second createMediaStreamSource on the same
+// track and the meter would silently flatline.
+//
+// Cleanup closes the AudioContext rather than just disconnecting: leaving it
+// open keeps the audio hardware/worklet alive and accumulates contexts across
+// device-swap toggles, which Chrome eventually rate-limits with a console
+// warning. The state !== 'closed' guard avoids a throw on double-stop.
+
 import { useState, useRef, useCallback, useEffect } from 'react'
 
 export function useAudioAnalyser() {
