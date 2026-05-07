@@ -1,5 +1,19 @@
 'use client'
 
+// Pops the incoming presentation stream into a separate browser window so the
+// content can stay visible while the user works in another app. The popup
+// route lives at /presentation-popout (src/app/presentation-popout/page.tsx)
+// and reads the stream off `window.opener.__presentationStream`.
+//
+// Why the global stash: a MediaStream cannot be cloned through postMessage or
+// passed via a URL param. Sharing the live track requires the popup to grab
+// the same object reference from its opener, so we expose it on the opener's
+// window object and clean up when the popup closes.
+//
+// Why the 500ms poll: window.open() popups don't dispatch a reliable cross-
+// window close event back to the opener (no equivalent of Document PiP's
+// pagehide), so we poll `popup.closed` to keep our local state in sync.
+
 import { useEffect, useRef, useState, useCallback } from 'react'
 
 interface UsePresentationPopoutOptions {
