@@ -15,6 +15,7 @@
 // pagehide), so we poll `popup.closed` to keep our local state in sync.
 
 import { useEffect, useRef, useState, useCallback } from 'react'
+import { log } from '@/utils/logger'
 
 interface UsePresentationPopoutOptions {
   presentationStream: MediaStream | null
@@ -43,6 +44,9 @@ export function usePresentationPopout({ presentationStream }: UsePresentationPop
           delete win.__presentationStream
         }
       }, 500)
+    } else {
+      delete win.__presentationStream
+      log.ui.warn('Presentation popout blocked: browser popup blocker prevented opening the window')
     }
   }, [presentationStream])
 
