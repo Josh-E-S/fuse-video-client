@@ -29,12 +29,14 @@ function log(level, message) {
   }
 }
 
+// Load the llama.cpp bindings. Two paths because node's resolver looks up from
+// the worker's own location: in dev the standard import works, but in a
+// packaged build the worker sits at app.asar.unpacked/electron/ which can't
+// see node-llama-cpp from there. The fallback walks into the unpacked
+// standalone bundle and imports the entry file directly.
 async function loadLlamaModule() {
   if (llama) return llama;
   try {
-    // First try the standard resolution. In dev this just works; in a packaged
-    // build the worker file lives at app.asar.unpacked/electron/, and node's
-    // resolver won't find node-llama-cpp from there directly.
     llama = await import("node-llama-cpp").catch(async () => {
       const { pathToFileURL } = require("url");
       // From <unpacked>/electron/ go up one level into <unpacked>/.next/standalone/...
@@ -65,6 +67,8 @@ async function ensureLoaded(modelPath) {
     return null;
   }
 
+  // Single-caller assumption holds via the parent's isRunning guard, so the
+  // poll-loop is a defense-in-depth against the model load racing itself.
   if (isLoading) {
     while (isLoading) await new Promise((r) => setTimeout(r, 100));
     return _model;
@@ -92,7 +96,7 @@ async function ensureLoaded(modelPath) {
 function send(msg) {
   try {
     process.parentPort.postMessage(msg);
-  } catch (err) {
+  } catch {
     // If the parent has gone away there's nothing we can do.
   }
 }

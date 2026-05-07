@@ -1,7 +1,20 @@
+// Security bridge between the Electron main process and the React renderer.
+// Each method here is the entire surface the UI can call via IPC — anything
+// not listed is unreachable from the renderer.
+//
+// Channel names are hardcoded per-method (no dynamic channel argument), so a
+// compromised renderer can't talk to handlers we didn't intend to expose.
+// Subscriptions return an unsubscribe function — callers must invoke it
+// (e.g. in a useEffect cleanup) or the listener leaks.
+//
+// TS mirror of this surface lives in src/hooks/useElectron.ts (ElectronBridge).
+
 const { contextBridge, ipcRenderer } = require("electron");
 
 contextBridge.exposeInMainWorld("electron", {
   isElectron: true,
+
+  // Window mode controls — handled by registerWindowIpc() in main.js.
   toggleExpand: () => ipcRenderer.invoke("toggle-expand"),
   getExpanded: () => ipcRenderer.invoke("get-expanded"),
   toggleMini: () => ipcRenderer.invoke("toggle-mini"),

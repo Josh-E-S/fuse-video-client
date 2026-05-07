@@ -14,6 +14,10 @@ const path = require("path");
 const net = require("net");
 const { registerTranscriptionHandlers, registerModelHandlers } = require("./transcription");
 const { registerSummarizerHandlers, registerSummarizerModelHandlers } = require("./summarizer");
+const { scoped } = require("./logger");
+
+const log = scoped("main");
+const nextLog = scoped("next");
 
 // Window size matrix — keyed by (expanded, sideDockOpen).
 // Uniform height (941) across all non-mini states so mode toggles never jump vertically.
@@ -80,7 +84,7 @@ function isPortFree(port) {
 
 async function getPortWithFallback(preferred) {
   if (await isPortFree(preferred)) return preferred;
-  console.warn(`Port ${preferred} in use, falling back to a free port`);
+  log.warn(`Port ${preferred} in use, falling back to a free port`);
   return getFreePort();
 }
 
@@ -125,15 +129,15 @@ async function startNextServer(port) {
   }
 
   nextProcess.stdout.on("data", (data) => {
-    console.log(`[next] ${data.toString().trim()}`);
+    nextLog.info(data.toString().trim());
   });
 
   nextProcess.stderr.on("data", (data) => {
-    console.error(`[next] ${data.toString().trim()}`);
+    nextLog.error(data.toString().trim());
   });
 
   nextProcess.on("close", (code) => {
-    console.log(`Next.js exited with code ${code}`);
+    nextLog.info(`exited with code ${code}`);
   });
 }
 
@@ -211,7 +215,7 @@ function registerWindowIpc() {
   ipcMain.handle("adjust-width", (_event, delta) => {
     if (!mainWindow) return;
     if (typeof delta !== "number" || !Number.isFinite(delta) || Math.abs(delta) > 1000) {
-      console.warn(`Rejected invalid adjust-width delta: ${delta}`);
+      log.warn(`Rejected invalid adjust-width delta: ${delta}`);
       return;
     }
     const [x, y] = mainWindow.getPosition();
@@ -226,7 +230,7 @@ function registerWindowIpc() {
   ipcMain.handle("resize-to-state", (_event, state) => {
     if (!mainWindow) return;
     if (!state || typeof state !== "object") {
-      console.warn("Rejected invalid resize-to-state payload:", state);
+      log.warn("Rejected invalid resize-to-state payload:", state);
       return;
     }
     const nextExpanded = typeof state.expanded === "boolean" ? state.expanded : isExpanded;
@@ -387,7 +391,7 @@ async function createWindow() {
     const allowed = getAllowedOrigin();
     if (!url.startsWith(allowed) && !url.startsWith("file://")) {
       event.preventDefault();
-      console.warn(`Blocked navigation to: ${url}`);
+      log.warn(`Blocked navigation to: ${url}`);
     }
   });
 
@@ -412,7 +416,7 @@ async function createWindow() {
         },
       };
     }
-    console.warn(`Blocked window open: ${url}`);
+    log.warn(`Blocked window open: ${url}`);
     return { action: "deny" };
   });
 
@@ -461,7 +465,7 @@ app.whenReady().then(async () => {
   powerMonitor.on("unlock-screen", sendPowerResume);
 
   serverPort = isDev ? await getFreePort() : await getPortWithFallback(FIXED_PORT);
-  console.log(`Starting Next.js on port ${serverPort}...`);
+  log.info(`Starting Next.js on port ${serverPort}...`);
 
   await createWindow();
 
@@ -473,7 +477,7 @@ app.whenReady().then(async () => {
     ]);
     mainWindow.loadURL(`http://127.0.0.1:${serverPort}`);
   } catch (err) {
-    console.error("Startup failed:", err);
+    log.error("Startup failed:", err);
     dialog.showErrorBox(
       "Fuse Video Client failed to start",
       `${err.message}\n\nPlease quit and try again. If the problem persists, restart your computer.`
@@ -509,7 +513,7 @@ app.on("activate", async () => {
         mainWindow.loadURL(`http://127.0.0.1:${serverPort}`);
       }
     } catch (err) {
-      console.error("Re-activation failed:", err);
+      log.error("Re-activation failed:", err);
       dialog.showErrorBox(
         "Fuse Video Client failed to reopen",
         `${err.message}\n\nPlease quit and try again.`

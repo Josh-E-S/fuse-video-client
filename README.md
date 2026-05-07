@@ -133,6 +133,7 @@
 
 ## Prerequisites
 
+- **Platform: macOS only.** The Electron build, AI model loading, and screen-capture paths assume macOS APIs. Windows and Linux are not supported.
 - **Node.js** 20+
 - **npm** (ships with Node.js)
 - A **Pexip Infinity** deployment (node domain) -- the app cannot function without one
