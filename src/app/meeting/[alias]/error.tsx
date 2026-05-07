@@ -3,6 +3,7 @@
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { PhoneOff, RotateCcw, Home } from 'lucide-react'
+import { log } from '@/utils/logger'
 
 export default function MeetingError({
   error,
@@ -14,7 +15,7 @@ export default function MeetingError({
   const router = useRouter()
 
   useEffect(() => {
-    console.error('[Fuse] Meeting error:', error)
+    log.ui.error('[Fuse] Meeting error:', error)
   }, [error])
 
   return (

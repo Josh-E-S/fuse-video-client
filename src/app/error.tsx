@@ -3,6 +3,7 @@
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { AlertTriangle, Home, RotateCcw } from 'lucide-react'
+import { log } from '@/utils/logger'
 
 export default function Error({
   error,
@@ -14,7 +15,7 @@ export default function Error({
   const router = useRouter()
 
   useEffect(() => {
-    console.error('[Fuse] Unhandled error:', error)
+    log.ui.error('[Fuse] Unhandled error:', error)
   }, [error])
 
   return (
