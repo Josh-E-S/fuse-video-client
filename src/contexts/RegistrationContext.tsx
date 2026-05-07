@@ -64,19 +64,21 @@ export function RegistrationProvider({ children }: { children: React.ReactNode }
     statusRef.current = status
   }, [status])
 
-  // Initial value: localStorage override if present, else env-default, else empty.
-  // Computed in the initializer (not an effect) so we never render with the
-  // wrong value and avoid a post-mount re-render.
-  const [nodeDomain, setNodeDomain] = useState<string>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem(STORAGE_KEYS.node)
-      if (saved) return saved
-    }
-    return process.env.NEXT_PUBLIC_DEFAULT_NODE_DOMAIN || ''
-  })
+  // Initial value matches the server (env default or empty). The effect
+  // below promotes to the localStorage override if present. Going through an
+  // effect — rather than computing in the initializer — keeps server and
+  // client first-renders identical.
+  const [nodeDomain, setNodeDomain] = useState<string>(
+    process.env.NEXT_PUBLIC_DEFAULT_NODE_DOMAIN || '',
+  )
 
   const nodeDomainRef = useRef(nodeDomain)
   useEffect(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.node)
+    if (saved && saved !== nodeDomain) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setNodeDomain(saved)
+    }
     nodeDomainRef.current = nodeDomain
   }, [nodeDomain])
 

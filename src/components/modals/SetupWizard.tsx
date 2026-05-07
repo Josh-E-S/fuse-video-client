@@ -38,11 +38,16 @@ function devBypass(): boolean {
 }
 
 export function useSetupRequired() {
-  const [required, setRequired] = useState(() => {
-    if (typeof window === 'undefined') return false
-    if (devBypass()) return false
-    return !localStorage.getItem(SETUP_KEY)
-  })
+  // Starts false to match the server (no localStorage). The effect promotes
+  // to the real value on the client; the wizard appears on the next tick if
+  // setup is needed. Avoids a hydration mismatch where the server-rendered
+  // HTML wouldn't include the modal but the client wants to show it.
+  const [required, setRequired] = useState(false)
+  useEffect(() => {
+    if (devBypass()) return
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setRequired(!localStorage.getItem(SETUP_KEY))
+  }, [])
   return {
     required,
     complete: () => {

@@ -53,19 +53,20 @@ export function getElectronBridge(): ElectronBridge | null {
 }
 
 export function useElectron() {
-  // isElectron is sync (just a window check), so compute it once at mount
-  // instead of via a post-mount setState.
-  const [isElectron] = useState(() => getElectronBridge() !== null)
+  // All four flags start false to match the server-rendered HTML and avoid a
+  // hydration mismatch. The effect below promotes them to their real values
+  // on the client; the initial render briefly shows non-Electron defaults
+  // (no window controls) which is fine — the swap happens on the same tick.
+  const [isElectron, setIsElectron] = useState(false)
   const [isExpanded, setIsExpanded] = useState(false)
   const [isMini, setIsMini] = useState(false)
   const [isSidebar, setIsSidebar] = useState(false)
 
-  // Window-mode flags do require an async hop to main, so they hydrate via
-  // an effect. Initial false is a safe default — the flags update before the
-  // user can interact with the controls that read them.
   useEffect(() => {
     const bridge = getElectronBridge()
     if (!bridge) return
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setIsElectron(true)
     bridge.getExpanded().then(setIsExpanded).catch(() => {})
     bridge.getMini().then(setIsMini).catch(() => {})
     bridge.getSidebar?.().then(setIsSidebar).catch(() => {})

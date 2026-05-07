@@ -35,10 +35,16 @@ const PipContext = createContext<PipContextValue | null>(null)
 
 export function PipProvider({ children }: { children: React.ReactNode }) {
   const [pipWindow, setPipWindow] = useState<Window | null>(null)
-  const [isSupported] = useState(() =>
-    typeof window !== 'undefined' && 'documentPictureInPicture' in window,
-  )
+  // Starts false to match the server-rendered HTML (no window). The effect
+  // below updates to the real value on the client and avoids a hydration
+  // mismatch.
+  const [isSupported, setIsSupported] = useState(false)
   const pipRef = useRef<Window | null>(null)
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setIsSupported('documentPictureInPicture' in window)
+  }, [])
 
   useEffect(() => {
     pipRef.current = pipWindow
