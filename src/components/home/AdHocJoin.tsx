@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Phone, Grid3X3, History, X } from 'lucide-react'
+import { Phone, History, X } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { getProviderById, getMeetingProvider } from '@/utils/meetingProvider'
 import { useEscapeKey } from '@/hooks/useEscapeKey'

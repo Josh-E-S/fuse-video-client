@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useEffect, useState } from 'react'
+import { useRef, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { X, MessageSquare, Send } from 'lucide-react'
 import type { ChatMessage, Participant } from '@/types/pexrtc'

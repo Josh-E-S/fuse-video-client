@@ -16,7 +16,6 @@ import {
   ScrollText,
   ChevronDown,
   Check,
-  Grid3X3,
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useElectron } from '@/hooks/useElectron'

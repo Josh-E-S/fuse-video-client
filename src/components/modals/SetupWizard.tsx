@@ -6,7 +6,6 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   Server,
   User,
-  CalendarDays,
   KeyRound,
   Key,
   Cloud,
