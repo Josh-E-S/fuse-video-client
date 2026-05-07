@@ -58,7 +58,20 @@ export function FeaturedMeetingCard({
       h = h % 12 || 12
       setClockStr(`${h}:${m}`)
       const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+      const months = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
+      ]
       setDateStr(`${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()}`)
     }
     tick()
@@ -133,7 +146,8 @@ export function FeaturedMeetingCard({
             whileTap={{ scale: 0.98 }}
             style={{
               borderLeftColor: 'var(--theme-accent)',
-              background: 'linear-gradient(to right, color-mix(in srgb, var(--theme-accent) 15%, transparent), color-mix(in srgb, var(--theme-accent) 5%, transparent) 98%, transparent)',
+              background:
+                'linear-gradient(to right, color-mix(in srgb, var(--theme-accent) 15%, transparent), color-mix(in srgb, var(--theme-accent) 5%, transparent) 98%, transparent)',
             }}
           >
             {(provider || compact) && (
@@ -156,21 +170,30 @@ export function FeaturedMeetingCard({
               </div>
             )}
             <div className="flex-1 min-w-0">
-              {meeting.isNow ? (
-                <div className="flex items-center gap-1.5 mb-0.5">
-                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  <span className={`font-semibold text-emerald-400 uppercase tracking-wide ${compact ? 'text-[10px]' : 'text-[11px]'}`}>
-                    Live now
-                  </span>
-                </div>
-              ) : countdown ? (
-                <div className={`font-semibold text-blue-400/85 tracking-wide ${compact ? 'text-[10px] mb-0.5' : 'text-xs mb-1.5'}`}>
-                  {countdown}
-                </div>
-              ) : null}
               <div
-                className={`font-semibold text-white/95 tracking-[-0.015em] leading-snug ${
-                  compact ? 'text-[13px] line-clamp-2' : 'text-xl'
+                className={`flex items-center gap-1.5 leading-none overflow-hidden ${compact ? 'mb-1 h-[12px]' : 'mb-1.5 h-[14px]'}`}
+                style={{ visibility: meeting.isNow || countdown ? 'visible' : 'hidden' }}
+              >
+                {meeting.isNow ? (
+                  <>
+                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse flex-shrink-0" />
+                    <span
+                      className={`font-semibold text-emerald-400 uppercase tracking-wide leading-none ${compact ? 'text-[10px]' : 'text-[11px]'}`}
+                    >
+                      Live now
+                    </span>
+                  </>
+                ) : (
+                  <span
+                    className={`font-semibold text-blue-400/85 tracking-wide leading-none ${compact ? 'text-[10px]' : 'text-xs'}`}
+                  >
+                    {countdown ?? ' '}
+                  </span>
+                )}
+              </div>
+              <div
+                className={`font-semibold text-white/95 tracking-[-0.015em] leading-snug line-clamp-2 ${
+                  compact ? 'text-[13px] min-h-[36px]' : 'text-xl min-h-[58px]'
                 }`}
               >
                 {meeting.title}
@@ -199,7 +222,7 @@ export function FeaturedMeetingCard({
                 onClick={onJoin}
                 disabled={isBusy}
                 className={`rounded-xl flex items-center justify-center cursor-pointer transition-all hover:scale-105 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0 font-semibold ${
-                  compact ? 'px-3 py-1.5 text-[12px]' : 'px-6 py-3 text-[14px]'
+                  compact ? 'w-[64px] h-[28px] text-[12px]' : 'w-[78px] h-10 text-[14px]'
                 }`}
                 style={{
                   color: 'var(--theme-accent)',
@@ -211,118 +234,163 @@ export function FeaturedMeetingCard({
                 Join
               </button>
             ) : !meeting.alias ? (
-              <div className="relative group flex-shrink-0">
-                <div className={`rounded-lg flex items-center justify-center text-white/20 group-hover:text-white/45 transition-colors ${compact ? 'w-6 h-6' : 'w-8 h-8'}`}>
+              <div
+                className={`relative group flex-shrink-0 ${compact ? 'w-[64px]' : 'w-[78px]'} flex items-center justify-end`}
+              >
+                <div
+                  className={`rounded-lg flex items-center justify-center text-white/20 group-hover:text-white/45 transition-colors ${compact ? 'w-6 h-6' : 'w-8 h-8'}`}
+                >
                   <Info size={compact ? 13 : 15} strokeWidth={1.5} />
                 </div>
                 <div className="absolute bottom-full right-0 mb-2 px-2.5 py-1.5 rounded-lg bg-black/80 backdrop-blur-sm border border-white/10 text-[11px] text-white/70 whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity">
                   No dial info found
                 </div>
               </div>
-            ) : null}
+            ) : (
+              <div
+                aria-hidden
+                className={`flex-shrink-0 ${compact ? 'w-[64px] h-[28px]' : 'w-[78px] h-10'}`}
+              />
+            )}
           </motion.div>
         </AnimatePresence>
 
-        {laterMeetings.length > 0 && (() => {
+        {(() => {
           const VISIBLE_COUNT = compact ? 5 : 3
-          const visibleMeetings = laterMeetings.slice(0, VISIBLE_COUNT)
-          const overflowMeetings = laterMeetings.slice(VISIBLE_COUNT)
+          const todayAll = laterMeetings.filter((m) => getDayLabel(m.startTime) === 'Today')
+          const tomorrowAll = laterMeetings.filter((m) => getDayLabel(m.startTime) === 'Tomorrow')
+          const beyondAll = laterMeetings.filter((m) => {
+            const d = getDayLabel(m.startTime)
+            return d !== 'Today' && d !== 'Tomorrow'
+          })
+          const todayInline = todayAll.slice(0, VISIBLE_COUNT)
+          const tomorrowInline = tomorrowAll.slice(
+            0,
+            Math.max(0, VISIBLE_COUNT - todayInline.length),
+          )
+          const overflowCount =
+            todayAll.length -
+            todayInline.length +
+            (tomorrowAll.length - tomorrowInline.length) +
+            beyondAll.length
 
-          function renderMeetingRow(m: CalendarMeeting, showDayHeader: boolean, day: string) {
+          function renderRow(m: CalendarMeeting) {
             const prov = getMeetingProvider(m.alias)
             if (compact) {
               return (
-                <div key={m.id}>
-                  {showDayHeader && (
-                    <div className="text-[10px] font-bold uppercase tracking-widest text-white/20 pt-3 pb-1.5">
-                      {day}
-                    </div>
-                  )}
-                  <button
-                    onClick={() => onSelectMeeting(m.id)}
-                    className="flex items-center cursor-pointer text-left w-full px-3 py-2 gap-3 border-l-[3px] border-white/10 rounded-r-lg hover:bg-white/3 hover:border-white/20 transition-colors"
-                  >
-                    <div className="w-7 h-7 rounded-lg bg-white/3 flex items-center justify-center shrink-0">
-                      {prov ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={prov.icon}
-                          alt={prov.label}
-                          width={18}
-                          height={18}
-                          className="opacity-60"
-                        />
-                      ) : (
-                        <CalendarDays size={15} className="text-white/35" strokeWidth={1.5} />
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-[13px] font-semibold text-white/65 tracking-[-0.015em] leading-snug line-clamp-2">
-                        {m.title}
-                      </div>
-                      <div className="text-[11px] text-white/35 mt-0.5">
-                        {formatMeetingTime(m.startTime)} - {formatMeetingTime(m.endTime)}
-                      </div>
-                    </div>
-                  </button>
-                </div>
-              )
-            }
-            return (
-              <div key={m.id}>
-                {showDayHeader && (
-                  <div className="text-[10px] font-bold uppercase tracking-widest text-white/20 pt-2 pb-1 pl-0.5">
-                    {day}
-                  </div>
-                )}
                 <button
+                  key={m.id}
                   onClick={() => onSelectMeeting(m.id)}
-                  className="flex items-center gap-3 w-full rounded-lg px-1.5 py-2.5 -mx-1.5 hover:bg-white/4 transition-colors cursor-pointer text-left"
+                  className="flex items-center cursor-pointer text-left w-full px-3 h-10 gap-3 border-l-[3px] border-white/10 rounded-r-lg hover:bg-white/3 hover:border-white/20 transition-colors"
                 >
-                  {prov ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={prov.icon}
-                      alt=""
-                      width={12}
-                      height={12}
-                      className="opacity-60 flex-shrink-0"
-                    />
-                  ) : (
-                    <div className="w-3 h-3 rounded-full bg-white/10 flex-shrink-0" />
-                  )}
-                  <span className="text-[12px] text-white/40 flex-1 truncate">
+                  <div className="w-6 h-6 rounded-md bg-white/3 flex items-center justify-center shrink-0">
+                    {prov ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={prov.icon}
+                        alt={prov.label}
+                        width={14}
+                        height={14}
+                        className="opacity-60"
+                      />
+                    ) : (
+                      <CalendarDays size={13} className="text-white/35" strokeWidth={1.5} />
+                    )}
+                  </div>
+                  <span className="text-[12px] font-semibold text-white/65 tracking-[-0.015em] flex-1 truncate">
                     {m.title}
                   </span>
-                  <span className="text-[11px] text-white/25 tabular-nums flex-shrink-0">
+                  <span className="text-[10px] text-white/35 tabular-nums flex-shrink-0">
                     {formatMeetingTime(m.startTime)}
                   </span>
                 </button>
+              )
+            }
+            return (
+              <button
+                key={m.id}
+                onClick={() => onSelectMeeting(m.id)}
+                className="flex items-center gap-3 w-full rounded-lg px-1.5 h-9 -mx-1.5 hover:bg-white/4 transition-colors cursor-pointer text-left"
+              >
+                {prov ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={prov.icon}
+                    alt=""
+                    width={12}
+                    height={12}
+                    className="opacity-60 flex-shrink-0"
+                  />
+                ) : (
+                  <div className="w-3 h-3 rounded-full bg-white/10 flex-shrink-0" />
+                )}
+                <span className="text-[12px] text-white/40 flex-1 truncate">{m.title}</span>
+                <span className="text-[11px] text-white/25 tabular-nums flex-shrink-0">
+                  {formatMeetingTime(m.startTime)}
+                </span>
+              </button>
+            )
+          }
+
+          const rowH = compact ? 40 : 36 // matches h-10 / h-9 above
+          const headerH = compact ? 26 : 22
+
+          function renderRowSlot(m: CalendarMeeting | null, key: string) {
+            return (
+              <div key={key} style={{ height: rowH }}>
+                {m ? renderRow(m) : null}
               </div>
             )
           }
 
-          let lastDay = ''
-          return (
-            <div className={compact ? 'pb-2 pt-2 space-y-1.5' : 'px-5 pb-3 pt-1'}>
-              {visibleMeetings.map((m) => {
-                const day = getDayLabel(m.startTime)
-                const showHeader = day !== lastDay
-                lastDay = day
-                return renderMeetingRow(m, showHeader, day)
-              })}
+          function renderHeaderSlot(label: string, visible: boolean, key: string) {
+            return (
+              <div
+                key={key}
+                style={{ height: headerH, visibility: visible ? 'visible' : 'hidden' }}
+                className={
+                  compact
+                    ? 'text-[10px] font-bold uppercase tracking-widest text-white/20 flex items-end pb-1'
+                    : 'text-[10px] font-bold uppercase tracking-widest text-white/20 pl-0.5 flex items-end pb-1'
+                }
+              >
+                {label}
+              </div>
+            )
+          }
 
-              {overflowMeetings.length > 0 && (
-                <button
-                  onClick={() => { setShowUpcoming(true); onExpandChange?.(true) }}
-                  className="w-full py-2 flex items-center justify-center gap-1.5 cursor-pointer hover:bg-white/2 rounded-lg transition-colors mt-1 pt-1"
-                >
-                  <span className="text-[12px] text-white/50 font-medium">
-                    {overflowMeetings.length} more
-                  </span>
-                  <ChevronDown size={12} className="text-white/40" strokeWidth={1.5} />
-                </button>
-              )}
+          // Total inline rows = VISIBLE_COUNT. Two header slots are always reserved
+          // (Today + Tomorrow) so total inline area height is constant. Empty row
+          // slots (when fewer rows than cap) absorb the leftover space at the bottom.
+          const usedRows = todayInline.length + tomorrowInline.length
+          const fillerRows = Math.max(0, VISIBLE_COUNT - usedRows)
+
+          return (
+            <div className={compact ? 'pt-2 space-y-0.5' : 'px-5 pt-1'}>
+              {renderHeaderSlot('Today', todayInline.length > 0, 'today-h')}
+              {todayInline.map((m, i) => renderRowSlot(m, `today-${i}`))}
+              {renderHeaderSlot('Tomorrow', tomorrowInline.length > 0, 'tomorrow-h')}
+              {tomorrowInline.map((m, i) => renderRowSlot(m, `tomorrow-${i}`))}
+              {Array.from({ length: fillerRows }).map((_, i) => renderRowSlot(null, `filler-${i}`))}
+              <div
+                style={{ height: compact ? 36 : 32 }}
+                className="flex items-center justify-center"
+              >
+                {overflowCount > 0 ? (
+                  <button
+                    onClick={() => {
+                      setShowUpcoming(true)
+                      onExpandChange?.(true)
+                    }}
+                    className="w-full h-full flex items-center justify-center gap-1.5 cursor-pointer hover:bg-white/2 rounded-lg transition-colors"
+                  >
+                    <span className="text-[12px] text-white/50 font-medium">
+                      {overflowCount} more
+                    </span>
+                    <ChevronDown size={12} className="text-white/40" strokeWidth={1.5} />
+                  </button>
+                ) : null}
+              </div>
             </div>
           )
         })()}
@@ -331,7 +399,10 @@ export function FeaturedMeetingCard({
       <ScheduleModal
         open={showUpcoming}
         meetings={[meeting, ...laterMeetings]}
-        onClose={() => { setShowUpcoming(false); onExpandChange?.(false) }}
+        onClose={() => {
+          setShowUpcoming(false)
+          onExpandChange?.(false)
+        }}
         onSelectMeeting={onSelectMeeting}
       />
     </div>
@@ -397,7 +468,10 @@ function ScheduleModal({
                         </div>
                       )}
                       <button
-                        onClick={() => { onSelectMeeting(m.id); onClose() }}
+                        onClick={() => {
+                          onSelectMeeting(m.id)
+                          onClose()
+                        }}
                         className="flex items-center gap-3 w-full rounded-lg px-2 py-2.5 hover:bg-white/4 transition-colors cursor-pointer text-left"
                       >
                         {prov ? (

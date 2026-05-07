@@ -188,7 +188,11 @@ export default function HomePage() {
   }, [connectionState, isSidebar, promoteFromSidebar, restoreSidebar])
 
   useEffect(() => {
-    if ((connectionState === 'pin_required' || connectionState === 'pin_optional') && !showJoin && !isMini) {
+    if (
+      (connectionState === 'pin_required' || connectionState === 'pin_optional') &&
+      !showJoin &&
+      !isMini
+    ) {
       setPreflightAlias(null)
       const prov = getMeetingProvider(pendingAlias)
       setJoinProvider(prov ? { id: prov.id, icon: prov.icon, label: prov.label } : null)
@@ -287,14 +291,19 @@ export default function HomePage() {
     setPreflightPin(pin)
   }
 
-  async function handlePreflightJoin({ audioOff, videoOff }: { audioOff: boolean; videoOff: boolean }) {
+  async function handlePreflightJoin({
+    audioOff,
+    videoOff,
+  }: {
+    audioOff: boolean
+    videoOff: boolean
+  }) {
     if (!preflightAlias || isJoining) return
 
     setIsJoining(true)
 
     const nodeDomain = settings.nodeDomain || localStorage.getItem('fuse_node_domain') || ''
-    const displayName =
-      settings.displayName || localStorage.getItem('fuse_display_name') || 'Guest'
+    const displayName = settings.displayName || localStorage.getItem('fuse_display_name') || 'Guest'
 
     // Release preview before acquiring the call stream — concurrent getUserMedia
     // on the same camera can cause Windows to substitute a different device.
@@ -337,8 +346,7 @@ export default function HomePage() {
     const nodeDomain = settings.nodeDomain || localStorage.getItem('fuse_node_domain') || ''
     if (!nodeDomain) return
 
-    const displayName =
-      settings.displayName || localStorage.getItem('fuse_display_name') || 'Guest'
+    const displayName = settings.displayName || localStorage.getItem('fuse_display_name') || 'Guest'
 
     if (previewStream) {
       previewStream.getTracks().forEach((t) => t.stop())
@@ -429,7 +437,9 @@ export default function HomePage() {
   const [recentsExpanded, setRecentsExpanded] = useState(false)
   const [miniIdx, setMiniIdx] = useState(0)
   const [miniPin, setMiniPin] = useState('')
-  useEffect(() => { setMiniIdx(0) }, [meetings.length])
+  useEffect(() => {
+    setMiniIdx(0)
+  }, [meetings.length])
   const [userSelected, setUserSelected] = useState(false)
   useEffect(() => {
     setFeaturedIdx(0)
@@ -486,54 +496,50 @@ export default function HomePage() {
         >
           <div style={{ height: !isElectron && pip.isActive ? '1vh' : '1vh' }} />
 
-          {featuredMeeting && (
-            <FeaturedMeetingCard
-              meeting={featuredMeeting}
-              laterMeetings={laterMeetings}
-              countdown={featuredCountdown}
-              canJoin={canJoinMeeting(featuredMeeting)}
-              isBusy={isBusy}
-              cardBg={cosmeticTheme.cardBg}
-              compact={isSidebar}
-              expanded={calendarExpanded}
-              onExpandChange={(v) => {
-                setCalendarExpanded(v)
-                if (v) setRecentsExpanded(false)
-              }}
-              onJoin={handleCalendarJoin}
-              onSelectMeeting={(meetingId) => {
-                const idx = meetings.findIndex((m) => m.id === meetingId)
-                if (idx >= 0) {
-                  setFeaturedIdx(idx)
-                  setUserSelected(true)
-                }
-              }}
-            />
-          )}
-
-          {meetings.length === 0 && (
-            <>
-              {settings.otjClientId && settings.otjClientSecret ? (
-                loadingMeetings ? (
-                  <MeetingsSkeleton />
-                ) : (
-                  <div className="mt-8 min-h-[148px] flex items-center justify-center text-center">
-                    <p className="text-sm text-white/20">No upcoming meetings</p>
-                  </div>
-                )
+          <div>
+            {featuredMeeting ? (
+              <FeaturedMeetingCard
+                meeting={featuredMeeting}
+                laterMeetings={laterMeetings}
+                countdown={featuredCountdown}
+                canJoin={canJoinMeeting(featuredMeeting)}
+                isBusy={isBusy}
+                cardBg={cosmeticTheme.cardBg}
+                compact={isSidebar}
+                expanded={calendarExpanded}
+                onExpandChange={(v) => {
+                  setCalendarExpanded(v)
+                  if (v) setRecentsExpanded(false)
+                }}
+                onJoin={handleCalendarJoin}
+                onSelectMeeting={(meetingId) => {
+                  const idx = meetings.findIndex((m) => m.id === meetingId)
+                  if (idx >= 0) {
+                    setFeaturedIdx(idx)
+                    setUserSelected(true)
+                  }
+                }}
+              />
+            ) : settings.otjClientId && settings.otjClientSecret ? (
+              loadingMeetings ? (
+                <MeetingsSkeleton />
               ) : (
-                <div className="mt-8 min-h-[148px] flex flex-col items-center justify-center text-center space-y-2">
-                  <p className="text-sm text-white/20">Calendar not configured</p>
-                  <button
-                    onClick={() => setShowSettings(true)}
-                    className="text-xs text-white/30 hover:text-white/50 transition-colors underline underline-offset-2"
-                  >
-                    Set up One Touch Join in Settings
-                  </button>
+                <div className="mt-8 min-h-[148px] flex items-center justify-center text-center">
+                  <p className="text-sm text-white/20">No upcoming meetings</p>
                 </div>
-              )}
-            </>
-          )}
+              )
+            ) : (
+              <div className="mt-8 min-h-[148px] flex flex-col items-center justify-center text-center space-y-2">
+                <p className="text-sm text-white/20">Calendar not configured</p>
+                <button
+                  onClick={() => setShowSettings(true)}
+                  className="text-xs text-white/30 hover:text-white/50 transition-colors underline underline-offset-2"
+                >
+                  Set up One Touch Join in Settings
+                </button>
+              </div>
+            )}
+          </div>
 
           {error && <p className="text-rose-400 text-xs text-center mt-4">{error}</p>}
 
@@ -573,7 +579,6 @@ export default function HomePage() {
 
         <div className="pb-6" />
       </div>
-
 
       <JoinModal
         open={showJoin}
@@ -738,138 +743,178 @@ export default function HomePage() {
         <GradientBackground theme={cosmeticTheme} />
 
         <div className="relative z-10 flex flex-col flex-1 min-h-0">
-        {/* Drag region */}
-        <div className="h-10 shrink-0 flex items-end justify-center pb-0.5" style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}>
-          <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-white/50">
-            My Meetings
-          </span>
-          <button
-            onClick={toggleMini}
-            className="absolute top-1.5 right-2 w-6 h-6 rounded-md flex items-center justify-center text-white/30 hover:text-white/70 hover:bg-white/10 transition-colors z-10"
-            style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
-            title="Exit mini mode"
+          {/* Drag region */}
+          <div
+            className="h-10 shrink-0 flex items-end justify-center pb-0.5"
+            style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}
           >
-            <Maximize2 size={11} />
-          </button>
-        </div>
+            <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-white/50">
+              My Meetings
+            </span>
+            <button
+              onClick={toggleMini}
+              className="absolute top-1.5 right-2 w-6 h-6 rounded-md flex items-center justify-center text-white/30 hover:text-white/70 hover:bg-white/10 transition-colors z-10"
+              style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
+              title="Exit mini mode"
+            >
+              <Maximize2 size={11} />
+            </button>
+          </div>
 
-        {/* Connecting / PIN state */}
-        {(preflightAlias && connectionState === 'connecting') || (isMini && (connectionState === 'pin_required' || connectionState === 'pin_optional')) ? (
-          connectionState === 'pin_required' || connectionState === 'pin_optional' ? (
-            <div className="flex-1 flex flex-col items-center justify-center gap-2 px-4 -mt-4" style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
-              <Lock size={14} className="text-white/30" />
-              <span className="text-[10px] text-white/40">PIN Required</span>
-              <form onSubmit={(e) => { e.preventDefault(); if (miniPin.trim()) { connectWithPin(miniPin.trim()); setMiniPin('') } }} className="w-full px-2">
-                <input
-                  type="password"
-                  value={miniPin}
-                  onChange={(e) => setMiniPin(e.target.value)}
-                  placeholder="Enter PIN"
-                  autoFocus
-                  className="w-full px-3 py-1.5 rounded-lg bg-white/6 border border-white/10 text-white text-[12px] text-center placeholder-white/20 focus:outline-none focus:border-white/30"
-                />
-              </form>
-              <div className="flex items-center gap-3">
+          {/* Connecting / PIN state */}
+          {(preflightAlias && connectionState === 'connecting') ||
+          (isMini && (connectionState === 'pin_required' || connectionState === 'pin_optional')) ? (
+            connectionState === 'pin_required' || connectionState === 'pin_optional' ? (
+              <div
+                className="flex-1 flex flex-col items-center justify-center gap-2 px-4 -mt-4"
+                style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
+              >
+                <Lock size={14} className="text-white/30" />
+                <span className="text-[10px] text-white/40">PIN Required</span>
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault()
+                    if (miniPin.trim()) {
+                      connectWithPin(miniPin.trim())
+                      setMiniPin('')
+                    }
+                  }}
+                  className="w-full px-2"
+                >
+                  <input
+                    type="password"
+                    value={miniPin}
+                    onChange={(e) => setMiniPin(e.target.value)}
+                    placeholder="Enter PIN"
+                    autoFocus
+                    className="w-full px-3 py-1.5 rounded-lg bg-white/6 border border-white/10 text-white text-[12px] text-center placeholder-white/20 focus:outline-none focus:border-white/30"
+                  />
+                </form>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => {
+                      disconnect()
+                      setPendingAlias(null)
+                      setPreflightAlias(null)
+                      setMiniPin('')
+                    }}
+                    className="text-[10px] text-white/30 hover:text-white/60 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (miniPin.trim()) {
+                        connectWithPin(miniPin.trim())
+                        setMiniPin('')
+                      }
+                    }}
+                    disabled={!miniPin.trim()}
+                    className="px-3 py-1 rounded-md text-[10px] font-semibold text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 hover:bg-emerald-400/20 transition-colors disabled:opacity-30"
+                  >
+                    Join
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex-1 flex flex-col items-center justify-center gap-3 px-4 -mt-4">
+                <div className="w-6 h-6 border-2 border-white/10 border-t-white/50 rounded-full animate-spin" />
+                <span className="text-[11px] text-white/50 truncate max-w-full">Connecting...</span>
                 <button
-                  onClick={() => { disconnect(); setPendingAlias(null); setPreflightAlias(null); setMiniPin('') }}
+                  onClick={() => {
+                    disconnect()
+                    setPendingAlias(null)
+                    setPreflightAlias(null)
+                    setPreflightPin(undefined)
+                  }}
                   className="text-[10px] text-white/30 hover:text-white/60 transition-colors"
                 >
                   Cancel
                 </button>
-                <button
-                  onClick={() => { if (miniPin.trim()) { connectWithPin(miniPin.trim()); setMiniPin('') } }}
-                  disabled={!miniPin.trim()}
-                  className="px-3 py-1 rounded-md text-[10px] font-semibold text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 hover:bg-emerald-400/20 transition-colors disabled:opacity-30"
-                >
-                  Join
-                </button>
               </div>
-            </div>
+            )
           ) : (
-            <div className="flex-1 flex flex-col items-center justify-center gap-3 px-4 -mt-4">
-              <div className="w-6 h-6 border-2 border-white/10 border-t-white/50 rounded-full animate-spin" />
-              <span className="text-[11px] text-white/50 truncate max-w-full">Connecting...</span>
-              <button
-                onClick={() => {
-                  disconnect()
-                  setPendingAlias(null)
-                  setPreflightAlias(null)
-                  setPreflightPin(undefined)
-                }}
-                className="text-[10px] text-white/30 hover:text-white/60 transition-colors"
+            <>
+              <div
+                className="flex-1 flex flex-col items-center justify-center px-2 -mt-4"
+                style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
               >
-                Cancel
-              </button>
-            </div>
-          )
-        ) : (
-          <>
-          <div className="flex-1 flex flex-col items-center justify-center px-2 -mt-4" style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
-            <div className="flex items-center w-full">
-            {/* Prev arrow */}
-            {miniIdx > 0 ? (
-              <button
-                onClick={() => setMiniIdx(miniIdx - 1)}
-                className="w-12 h-12 shrink-0 rounded-full flex items-center justify-center text-white/35 hover:text-white/70 hover:bg-white/6 transition-colors"
-              >
-                <ChevronLeft size={28} />
-              </button>
-            ) : (
-              <div className="w-12 shrink-0" />
-            )}
-
-            {/* Meeting info */}
-            {(() => {
-              const m = meetings[miniIdx]
-              if (!m) return <div className="flex-1 text-center"><span className="text-[16px] text-white/25">No upcoming meetings</span></div>
-              const countdown = getMeetingCountdown(m)
-              const miniProvider = getMeetingProvider(m.alias)
-              return (
-                <div className="flex-1 flex flex-col items-center justify-center gap-2 min-w-0 px-1">
-                  <span className="text-[14px] text-white/30 truncate max-w-full">
-                    {countdown || (m.isNow ? 'Live now' : '')}
-                  </span>
-                  {miniProvider && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={miniProvider.icon} alt={miniProvider.label} width={36} height={36} className="opacity-70" />
-                  )}
-                  <span className="text-[16px] font-medium text-white/85 truncate max-w-full text-center leading-tight">
-                    {m.title}
-                  </span>
-                  {canJoinMeeting(m) && m.alias && (
+                <div className="flex items-center w-full">
+                  {/* Prev arrow */}
+                  {miniIdx > 0 ? (
                     <button
-                      onClick={() => {
-                        if (isMini) {
-                          handleMiniJoin(m.alias!)
-                        } else {
-                          handleJoin(m.alias!)
-                        }
-                      }}
-                      disabled={isBusy}
-                      className="mt-1 px-6 py-2.5 rounded-lg text-[14px] font-semibold text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 hover:bg-emerald-400/20 transition-colors disabled:opacity-40"
+                      onClick={() => setMiniIdx(miniIdx - 1)}
+                      className="w-12 h-12 shrink-0 rounded-full flex items-center justify-center text-white/35 hover:text-white/70 hover:bg-white/6 transition-colors"
                     >
-                      Join
+                      <ChevronLeft size={28} />
                     </button>
+                  ) : (
+                    <div className="w-12 shrink-0" />
+                  )}
+
+                  {/* Meeting info */}
+                  {(() => {
+                    const m = meetings[miniIdx]
+                    if (!m)
+                      return (
+                        <div className="flex-1 text-center">
+                          <span className="text-[16px] text-white/25">No upcoming meetings</span>
+                        </div>
+                      )
+                    const countdown = getMeetingCountdown(m)
+                    const miniProvider = getMeetingProvider(m.alias)
+                    return (
+                      <div className="flex-1 flex flex-col items-center justify-center gap-2 min-w-0 px-1">
+                        <span className="text-[14px] text-white/30 truncate max-w-full">
+                          {countdown || (m.isNow ? 'Live now' : '')}
+                        </span>
+                        {miniProvider && (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={miniProvider.icon}
+                            alt={miniProvider.label}
+                            width={36}
+                            height={36}
+                            className="opacity-70"
+                          />
+                        )}
+                        <span className="text-[16px] font-medium text-white/85 truncate max-w-full text-center leading-tight">
+                          {m.title}
+                        </span>
+                        {canJoinMeeting(m) && m.alias && (
+                          <button
+                            onClick={() => {
+                              if (isMini) {
+                                handleMiniJoin(m.alias!)
+                              } else {
+                                handleJoin(m.alias!)
+                              }
+                            }}
+                            disabled={isBusy}
+                            className="mt-1 px-6 py-2.5 rounded-lg text-[14px] font-semibold text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 hover:bg-emerald-400/20 transition-colors disabled:opacity-40"
+                          >
+                            Join
+                          </button>
+                        )}
+                      </div>
+                    )
+                  })()}
+
+                  {/* Next arrow */}
+                  {miniIdx < meetings.length - 1 ? (
+                    <button
+                      onClick={() => setMiniIdx(miniIdx + 1)}
+                      className="w-12 h-12 shrink-0 rounded-full flex items-center justify-center text-white/35 hover:text-white/70 hover:bg-white/6 transition-colors"
+                    >
+                      <ChevronRight size={28} />
+                    </button>
+                  ) : (
+                    <div className="w-12 shrink-0" />
                   )}
                 </div>
-              )
-            })()}
-
-            {/* Next arrow */}
-            {miniIdx < meetings.length - 1 ? (
-              <button
-                onClick={() => setMiniIdx(miniIdx + 1)}
-                className="w-12 h-12 shrink-0 rounded-full flex items-center justify-center text-white/35 hover:text-white/70 hover:bg-white/6 transition-colors"
-              >
-                <ChevronRight size={28} />
-              </button>
-            ) : (
-              <div className="w-12 shrink-0" />
-            )}
-            </div>
-          </div>
-          </>
-        )}
+              </div>
+            </>
+          )}
         </div>
       </div>
     )

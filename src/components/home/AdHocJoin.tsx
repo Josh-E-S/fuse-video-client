@@ -48,36 +48,42 @@ export function AdHocJoin({
   }, [expanded])
 
   return (
-    <div className={`flex flex-col items-center ${compact ? 'gap-2.5 mt-10' : 'gap-4 mt-10'}`}>
+    <div className={`flex flex-col items-center mt-10 ${compact ? 'gap-2.5' : 'gap-4'}`}>
       {providers.length > 0 && (
         <>
-      <span className="text-[11px] font-semibold tracking-[0.08em] uppercase text-white/50">
-        Quick Join
-      </span>
-      <div className={compact ? 'grid grid-cols-2 gap-x-6 gap-y-4 place-items-center w-full max-w-[200px]' : 'flex items-center gap-6'}>
-        {providers.map((p) => (
-          <button
-            key={p.id}
-            onClick={() => onProviderClick(p)}
-            disabled={isBusy}
-            className="group flex flex-col items-center gap-2.5 disabled:opacity-40 disabled:cursor-not-allowed"
+          <span className="text-[11px] font-semibold tracking-[0.08em] uppercase text-white/50">
+            Quick Join
+          </span>
+          <div
+            className={
+              compact
+                ? 'grid grid-cols-2 gap-x-6 gap-y-4 place-items-center w-full max-w-[200px]'
+                : 'flex items-center gap-6'
+            }
           >
-            <div
-              className="w-[60px] h-[60px] rounded-2xl flex items-center justify-center transition-all group-hover:scale-105 group-active:scale-95 glass-button"
-              style={{ background: cardBg }}
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={p.icon}
-                alt={p.label}
-                width={32}
-                height={32}
-                className="opacity-90 group-hover:opacity-100 transition-opacity"
-              />
-            </div>
-          </button>
-        ))}
-      </div>
+            {providers.map((p) => (
+              <button
+                key={p.id}
+                onClick={() => onProviderClick(p)}
+                disabled={isBusy}
+                className="group flex flex-col items-center gap-2.5 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <div
+                  className="w-[60px] h-[60px] rounded-2xl flex items-center justify-center transition-all group-hover:scale-105 group-active:scale-95 glass-button"
+                  style={{ background: cardBg }}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={p.icon}
+                    alt={p.label}
+                    width={32}
+                    height={32}
+                    className="opacity-90 group-hover:opacity-100 transition-opacity"
+                  />
+                </div>
+              </button>
+            ))}
+          </div>
         </>
       )}
 
@@ -105,7 +111,10 @@ export function AdHocJoin({
                 style={{ background: 'color-mix(in srgb, var(--theme-accent) 40%, transparent)' }}
               />
               <button
-                onClick={() => { setShowRecents(true); onExpandChange?.(true) }}
+                onClick={() => {
+                  setShowRecents(true)
+                  onExpandChange?.(true)
+                }}
                 className="flex items-center px-3 py-3 transition-all active:scale-[0.97]"
                 style={{ color: 'var(--theme-accent)' }}
               >
@@ -126,8 +135,15 @@ export function AdHocJoin({
         open={showRecents}
         recentCalls={recentCalls}
         isBusy={isBusy}
-        onClose={() => { setShowRecents(false); onExpandChange?.(false) }}
-        onRecentCallClick={(alias) => { setShowRecents(false); onExpandChange?.(false); onRecentCallClick(alias) }}
+        onClose={() => {
+          setShowRecents(false)
+          onExpandChange?.(false)
+        }}
+        onRecentCallClick={(alias) => {
+          setShowRecents(false)
+          onExpandChange?.(false)
+          onRecentCallClick(alias)
+        }}
       />
     </div>
   )
@@ -180,8 +196,7 @@ function RecentsModal({
             </div>
             <div className="px-3 pb-4 max-h-[50vh] overflow-y-auto [scrollbar-width:none]">
               {recentCalls.slice(0, 15).map((call) => {
-                const prov =
-                  getProviderById(call.providerId) || getMeetingProvider(call.alias)
+                const prov = getProviderById(call.providerId) || getMeetingProvider(call.alias)
                 return (
                   <button
                     key={call.alias}
