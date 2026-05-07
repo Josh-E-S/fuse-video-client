@@ -1,11 +1,22 @@
 'use client'
 
+// Manages the Chromium Document Picture-in-Picture popup window. Provides
+// open/close + state, and copies the parent document's stylesheets into the
+// popup so the rendered React tree looks the same in both windows.
+//
+// Document PiP is Chromium-only (and not available in some Electron versions),
+// so isSupported gates the UI. The popup is owned by the OS — closing it from
+// the user side fires pagehide; we listen so our isActive flag stays in sync.
+
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react'
 import { log } from '@/utils/logger'
 
 const PIP_WIDTH = 430
 const PIP_HEIGHT = 900
 
+// Without this, the popup document has no CSS — Tailwind classes don't apply,
+// the React tree renders unstyled. Cloning stylesheet nodes (rather than
+// linking) keeps everything self-contained inside the popup.
 function copyStyles(source: Document, target: Document) {
   source.head.querySelectorAll('link[rel="stylesheet"], style').forEach((node) => {
     target.head.appendChild(node.cloneNode(true))
@@ -24,12 +35,10 @@ const PipContext = createContext<PipContextValue | null>(null)
 
 export function PipProvider({ children }: { children: React.ReactNode }) {
   const [pipWindow, setPipWindow] = useState<Window | null>(null)
-  const [isSupported, setIsSupported] = useState(false)
+  const [isSupported] = useState(() =>
+    typeof window !== 'undefined' && 'documentPictureInPicture' in window,
+  )
   const pipRef = useRef<Window | null>(null)
-
-  useEffect(() => {
-    setIsSupported('documentPictureInPicture' in window)
-  }, [])
 
   useEffect(() => {
     pipRef.current = pipWindow
@@ -69,7 +78,7 @@ export function PipProvider({ children }: { children: React.ReactNode }) {
       })
 
       setPipWindow(pip)
-    } catch (err) {
+    } catch {
       log.pip.warn('PiP request failed: user cancelled or API not available')
     }
   }, [])

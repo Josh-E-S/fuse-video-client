@@ -1,5 +1,14 @@
 'use client'
 
+// React-side state for an active Pexip call. Wraps pexrtcConnectionManager
+// (the SDK adapter) so the rest of the app can read connection state, streams,
+// and participants from a single hook.
+//
+// Performance note: this provider exposes ~25 values; any change re-renders
+// every consumer. At demo scale this is fine. For a real product, splitting
+// into multiple contexts (or using a selector-based store like Zustand) would
+// limit churn — see docs/file-audit.md follow-ups.
+
 import React, { createContext, useContext, useState, useCallback, useRef } from 'react'
 import { pexRTCConnectionManager, ConnectionConfig } from '@/services/pexrtcConnectionManager'
 import { ConnectionState, ChatMessage, Participant } from '@/types/pexrtc'
@@ -183,7 +192,7 @@ export function PexipProvider({ children }: { children: React.ReactNode }) {
   const muteAudio = useCallback((mute: boolean) => {
     try {
       pexRTCConnectionManager.muteAudio(mute)
-    } catch (err) {
+    } catch {
       log.pexrtc.warn('muteAudio: not connected yet, state is tracked for when we join')
     }
     setIsAudioMuted(mute)
@@ -192,7 +201,7 @@ export function PexipProvider({ children }: { children: React.ReactNode }) {
   const muteVideo = useCallback((mute: boolean) => {
     try {
       pexRTCConnectionManager.muteVideo(mute)
-    } catch (err) {
+    } catch {
       log.pexrtc.warn('muteVideo: not connected yet, state is tracked for when we join')
     }
     setIsVideoMuted(mute)
@@ -211,7 +220,7 @@ export function PexipProvider({ children }: { children: React.ReactNode }) {
           timestamp: Date.now(),
         },
       ])
-    } catch (err) {
+    } catch {
       log.pexrtc.warn('sendChatMessage: not connected')
     }
   }, [])
@@ -234,6 +243,9 @@ export function PexipProvider({ children }: { children: React.ReactNode }) {
 
   const startScreenShare = useCallback(async () => {
     try {
+      // getDisplayMedia must be called from a user gesture, so it lives in
+      // the React layer (this callback fires from a button click). The
+      // connection manager just receives the resulting stream.
       const stream = await navigator.mediaDevices.getDisplayMedia({
         video: true,
         audio: false,
@@ -247,7 +259,7 @@ export function PexipProvider({ children }: { children: React.ReactNode }) {
       })
 
       await pexRTCConnectionManager.startScreenShare(stream)
-    } catch (err) {
+    } catch {
       log.pexrtc.warn('startScreenShare: user cancelled the picker or not available')
     }
   }, [])
@@ -255,7 +267,7 @@ export function PexipProvider({ children }: { children: React.ReactNode }) {
   const stopScreenShare = useCallback(() => {
     try {
       pexRTCConnectionManager.stopScreenShare()
-    } catch (err) {
+    } catch {
       log.pexrtc.warn('stopScreenShare: not connected')
     }
   }, [])
@@ -263,7 +275,7 @@ export function PexipProvider({ children }: { children: React.ReactNode }) {
   const switchMediaDevices = useCallback(async (audioId?: string, videoId?: string) => {
     try {
       await pexRTCConnectionManager.switchMediaDevices(audioId, videoId)
-    } catch (err) {
+    } catch {
       log.pexrtc.warn('switchMediaDevices: device switch failed, possibly permissions denied')
     }
   }, [])

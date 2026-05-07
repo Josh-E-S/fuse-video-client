@@ -1,5 +1,17 @@
 'use client'
 
+// Owns Pexip registration so the user can receive incoming calls without
+// having to dial out first. Five intertwined responsibilities:
+//   1. Credentials persistence (localStorage)
+//   2. Registration network call (request_token / release_token)
+//   3. Heartbeat refresh every 90s (server-side token expiry)
+//   4. Server-Sent Events listener (incoming call notifications)
+//   5. Recovery on resume/online/visibility (suspend kills the SSE socket)
+//
+// They live together because token + alias are the shared state across all
+// five. Splitting would mean threading the token through hooks; not worth it
+// at this size.
+
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react'
 import { log } from '@/utils/logger'
 import { getElectronBridge } from '@/hooks/useElectron'
@@ -52,21 +64,19 @@ export function RegistrationProvider({ children }: { children: React.ReactNode }
     statusRef.current = status
   }, [status])
 
-  const [nodeDomain, setNodeDomain] = useState<string>(
-    process.env.NEXT_PUBLIC_DEFAULT_NODE_DOMAIN || '',
-  )
+  // Initial value: localStorage override if present, else env-default, else empty.
+  // Computed in the initializer (not an effect) so we never render with the
+  // wrong value and avoid a post-mount re-render.
+  const [nodeDomain, setNodeDomain] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem(STORAGE_KEYS.node)
+      if (saved) return saved
+    }
+    return process.env.NEXT_PUBLIC_DEFAULT_NODE_DOMAIN || ''
+  })
 
   const nodeDomainRef = useRef(nodeDomain)
-
-  // Sync client-only values (like localStorage node domain override) after hydration
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const savedNode = localStorage.getItem(STORAGE_KEYS.node)
-      if (savedNode) {
-        setNodeDomain(savedNode)
-        nodeDomainRef.current = savedNode
-      }
-    }
     nodeDomainRef.current = nodeDomain
   }, [nodeDomain])
 
@@ -130,7 +140,7 @@ export function RegistrationProvider({ children }: { children: React.ReactNode }
           remoteDisplayName: data.remote_display_name || data.display_name || 'Unknown Caller',
           token: data.token || '',
         })
-      } catch (err) {
+      } catch {
         log.registration.debug('Ignoring unparseable SSE event')
       }
     })
@@ -236,6 +246,10 @@ export function RegistrationProvider({ children }: { children: React.ReactNode }
         setError(message)
       }
     },
+    // startEventSource/startHeartbeat are stable inner functions; including
+    // them as deps would re-create register on every render and cascade into
+    // the auto-register effect.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [getStoredCredentials],
   )
 
@@ -254,7 +268,7 @@ export function RegistrationProvider({ children }: { children: React.ReactNode }
             body: JSON.stringify({}),
           },
         )
-      } catch (err) {
+      } catch {
         log.registration.warn('Failed to release registration token during unregister')
       }
     }
@@ -276,12 +290,15 @@ export function RegistrationProvider({ children }: { children: React.ReactNode }
     setIncomingCall(null)
   }, [])
 
-  // Auto-register on mount if credentials exist
+  // Auto-register on mount if credentials exist. register() kicks off an
+  // async network request that eventually calls setStatus — this is the
+  // legitimate "sync external system" use of an effect, even though the lint
+  // rule treats any setState-from-effect chain as suspicious.
   useEffect(() => {
-    // Wait until nodeDomain has a chance to hydrate and sync from localStorage
     if (!nodeDomainRef.current) return
     const creds = getStoredCredentials()
     if (creds) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       register()
     }
     return () => {
