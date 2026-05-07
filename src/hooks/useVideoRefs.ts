@@ -1,5 +1,12 @@
 'use client'
 
+// Wires three <video> elements (remote, local, presentation) to their
+// MediaStreams. Returns both classic refs and callback ref setters because
+// video elements unmount/remount during layout transitions (collapsed →
+// expanded → mini): a classic ref alone would lose the srcObject binding
+// during the swap. The callback refs run synchronously on mount/unmount so
+// we can reattach the stream before the user sees a blank frame.
+
 import { useCallback, useEffect, useRef } from 'react'
 
 interface UseVideoRefsOptions {
@@ -19,6 +26,9 @@ export function useVideoRefs({
   const localVideoRef = useRef<HTMLVideoElement>(null)
   const presentationVideoRef = useRef<HTMLVideoElement>(null)
 
+  // Cast to MutableRefObject because TS exposes RefObject.current as readonly
+  // when created via useRef<HTMLVideoElement>(null). The cast is purely a
+  // type-system workaround; refs are always mutable at runtime.
   const setRemoteVideoRef = useCallback(
     (el: HTMLVideoElement | null) => {
       ;(remoteVideoRef as React.MutableRefObject<HTMLVideoElement | null>).current = el
@@ -32,8 +42,11 @@ export function useVideoRefs({
   const setLocalVideoRef = useCallback(
     (el: HTMLVideoElement | null) => {
       const ref = localVideoRef as React.MutableRefObject<HTMLVideoElement | null>
-      // Ignore null calls from elements that aren't the currently-attached one
-      // (can happen during layout transitions when old and new trees briefly coexist).
+      // During a layout swap the old <video> unmounts (calls back with null)
+      // *after* the new one has mounted (already updated ref.current). Without
+      // this guard, the late null call clobbers the new element's reference
+      // and the local self-view goes blank for a frame. isConnected tells us
+      // whether the ref still points to a live DOM node.
       if (el === null && ref.current && ref.current.isConnected) return
       ref.current = el
       if (el && localStream && el.srcObject !== localStream) {

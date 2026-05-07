@@ -1,5 +1,13 @@
 'use client'
 
+// React side of the Electron IPC bridge. The ElectronBridge interface here is
+// the TypeScript mirror of electron/preload.js — keep them in sync.
+//
+// useElectron() exposes window-mode flags (expanded/mini/sidebar) and toggles
+// that route through the main process. Returns false-ish defaults when running
+// outside Electron (e.g. plain browser tab) so the same components work in
+// both environments without conditional code paths.
+
 import { useState, useEffect, useCallback } from 'react'
 
 interface ElectronBridge {
@@ -45,28 +53,22 @@ export function getElectronBridge(): ElectronBridge | null {
 }
 
 export function useElectron() {
-  const [isElectron, setIsElectron] = useState(false)
+  // isElectron is sync (just a window check), so compute it once at mount
+  // instead of via a post-mount setState.
+  const [isElectron] = useState(() => getElectronBridge() !== null)
   const [isExpanded, setIsExpanded] = useState(false)
   const [isMini, setIsMini] = useState(false)
   const [isSidebar, setIsSidebar] = useState(false)
 
+  // Window-mode flags do require an async hop to main, so they hydrate via
+  // an effect. Initial false is a safe default — the flags update before the
+  // user can interact with the controls that read them.
   useEffect(() => {
     const bridge = getElectronBridge()
-    if (bridge) {
-      setIsElectron(true)
-      bridge
-        .getExpanded()
-        .then(setIsExpanded)
-        .catch(() => {})
-      bridge
-        .getMini()
-        .then(setIsMini)
-        .catch(() => {})
-      bridge
-        .getSidebar?.()
-        .then(setIsSidebar)
-        .catch(() => {})
-    }
+    if (!bridge) return
+    bridge.getExpanded().then(setIsExpanded).catch(() => {})
+    bridge.getMini().then(setIsMini).catch(() => {})
+    bridge.getSidebar?.().then(setIsSidebar).catch(() => {})
   }, [])
 
   const toggleExpand = useCallback(async () => {

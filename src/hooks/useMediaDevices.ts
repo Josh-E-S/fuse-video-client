@@ -1,5 +1,17 @@
 'use client'
 
+// useMediaDevices: powers the preflight/settings preview. Acquires camera+mic
+// (with audio-only fallback if the camera fails), enumerates devices, and
+// runs a Web Audio analyser to drive the mic-level meter. Cleans up streams
+// and the audio context on unmount or when `active` flips false.
+//
+// Cleanup lives in two places by design: the early-return branch when active
+// is already false, and the effect's return cleanup when it was set up. They
+// do the same work but the early branch never had a setup phase to undo.
+//
+// useSpeakerTest: separate hook for the speaker test in settings — plays a
+// ringtone on a chosen output device via setSinkId.
+
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { log } from '@/utils/logger'
 
@@ -22,8 +34,12 @@ export function useMediaDevices({ active, audioInputId, videoInputId }: UseMedia
 
   useEffect(() => {
     if (!active) {
+      // Tear down any leftover stream/audio context. setState here is correct
+      // — the prop change triggers cleanup with real side effects (track stop,
+      // audio context close), so we can't compute this as a derived value.
       if (previewStream) {
         previewStream.getTracks().forEach((t) => t.stop())
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setPreviewStream(null)
       }
       setCameraError(false)
@@ -53,14 +69,14 @@ export function useMediaDevices({ active, audioInputId, videoInputId }: UseMedia
           audio: audioConstraint,
           video: videoConstraint,
         })
-      } catch (err) {
+      } catch {
         log.media.warn('getUserMedia with video failed, trying audio-only fallback')
         try {
           stream = await navigator.mediaDevices.getUserMedia({
             audio: audioConstraint,
             video: false,
           })
-        } catch (err) {
+        } catch {
           log.media.warn('Audio-only getUserMedia fallback also failed')
         }
       }
@@ -135,6 +151,10 @@ export function useMediaDevices({ active, audioInputId, videoInputId }: UseMedia
       setPreviewStream(null)
       setMicLevel(0)
     }
+    // previewStream is intentionally omitted: the effect *sets* it, so
+    // including it would re-fire the effect every time we acquire a stream
+    // and create an infinite acquire/cleanup loop.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active, audioInputId, videoInputId])
 
   return {
