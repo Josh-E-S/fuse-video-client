@@ -2,9 +2,11 @@ import { describe, it, expect, vi, afterEach } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
 import { useElectron } from '@/hooks/useElectron'
 
+type WindowWithElectron = Window & { electron?: unknown }
+
 describe('useElectron', () => {
   afterEach(() => {
-    delete (window as any).electron
+    delete (window as WindowWithElectron).electron
   })
 
   it('returns isElectron false when no bridge exists', () => {
@@ -14,7 +16,7 @@ describe('useElectron', () => {
   })
 
   it('returns isElectron true when bridge exists', async () => {
-    ;(window as any).electron = {
+    ;(window as WindowWithElectron).electron = {
       isElectron: true,
       toggleExpand: vi.fn().mockResolvedValue(true),
       getExpanded: vi.fn().mockResolvedValue(false),
@@ -31,7 +33,7 @@ describe('useElectron', () => {
   })
 
   it('toggleExpand updates isExpanded', async () => {
-    ;(window as any).electron = {
+    ;(window as WindowWithElectron).electron = {
       isElectron: true,
       toggleExpand: vi.fn().mockResolvedValue(true),
       getExpanded: vi.fn().mockResolvedValue(false),

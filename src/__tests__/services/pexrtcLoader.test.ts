@@ -1,10 +1,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
+type MutablePexRTCWindow = { PexRTC?: unknown }
+
 let loader: typeof import('@/services/pexrtcLoader').pexRTCLoader
 
 beforeEach(async () => {
   vi.resetModules()
-  delete (window as any).PexRTC
+  delete (window as unknown as MutablePexRTCWindow).PexRTC
   const mod = await import('@/services/pexrtcLoader')
   loader = mod.pexRTCLoader
   loader.reset()
@@ -25,7 +27,9 @@ describe('PexRTCLoader', () => {
 
   it('createInstance returns instance when PexRTC is available', () => {
     const mockInstance = { makeCall: vi.fn() }
-    ;(window as any).PexRTC = class { makeCall = mockInstance.makeCall }
+    ;(window as unknown as MutablePexRTCWindow).PexRTC = class {
+      makeCall = mockInstance.makeCall
+    }
 
     const script = document.createElement('script')
     script.src = 'https://node.example.com/static/webrtc/js/pexrtc.js'
@@ -58,7 +62,7 @@ describe('PexRTCLoader', () => {
   })
 
   it('reset clears loaded state', async () => {
-    ;(window as any).PexRTC = vi.fn()
+    ;(window as unknown as MutablePexRTCWindow).PexRTC = vi.fn()
 
     const promise = loader.loadPexRTC('node.example.com', { timeout: 500 })
     const scripts = document.head.querySelectorAll('script')
