@@ -1,5 +1,10 @@
 'use client'
 
+// Standalone scribe flow: own mic, no meeting. Pipes 16 kHz PCM to the
+// transcription engine over the Electron bridge and accumulates entries.
+// In-meeting transcription is handled separately in useLocalTranscription
+// because it has to mix the local mic with the remote conference audio.
+
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { log } from '@/utils/logger'
 import { getElectronBridge } from '@/hooks/useElectron'
@@ -165,6 +170,7 @@ export function useScribe(audioInputId?: string) {
   useEffect(() => {
     return () => {
       const bridge = getElectronBridge()
+      // Engine may not be running on unmount (e.g. user never started); swallow.
       bridge?.transcriptionStop().catch(() => {})
       teardown()
     }

@@ -1,5 +1,11 @@
 'use client'
 
+// In-meeting transcription: mixes the local mic and the remote conference
+// audio into a single 16 kHz PCM stream and ships it to the engine. The
+// engine in this path doesn't separate speakers, so every entry is tagged
+// 'remote' / "Meeting" rather than per-talker. useScribe is the standalone
+// equivalent (no remote mix; fixed 'local' label).
+
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { getElectronBridge } from '@/hooks/useElectron'
 import { log } from '@/utils/logger'
@@ -196,6 +202,7 @@ export function useLocalTranscription(options: UseLocalTranscriptionOptions = {}
   }, [])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (autoConnect && isAvailable) connect()
     return () => {
       if (activeRef.current) disconnect()

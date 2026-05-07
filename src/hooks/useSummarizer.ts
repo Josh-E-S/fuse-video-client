@@ -1,5 +1,10 @@
 'use client'
 
+// Wrapper over the local summarizer worker (Qwen3) running in Electron.
+// `generationRef` is a cancellation token — when `clear()` is called mid-run
+// the still-resolving promise sees a stale generation and writes nothing.
+// Without it, a late result can clobber a fresh "preparing" state.
+
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { getElectronBridge } from '@/hooks/useElectron'
 import type { TranscriptEntry } from '@/hooks/useLocalTranscription'

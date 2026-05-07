@@ -1,5 +1,9 @@
 'use client'
 
+// Single source of truth for "is the AI model present on disk?" — used by
+// Settings and the scribe entry point to gate UI. Re-checks on window focus
+// because the user may finish a download in another tab/window.
+
 import { useState, useEffect, useCallback } from 'react'
 import { getElectronBridge } from '@/hooks/useElectron'
 
@@ -33,6 +37,7 @@ export function useModelStatus() {
   }, [])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     refresh()
     const onFocus = () => refresh()
     window.addEventListener('focus', onFocus)
