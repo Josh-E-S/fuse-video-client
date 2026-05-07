@@ -1,3 +1,7 @@
+// Client for Pexip's One-Touch Join portal. Hits our own /api/meetings route
+// (which proxies the Pexip API server-side so the client_id/secret never reach
+// the browser) and transforms the wire shape into the renderer's display shape.
+
 import type { OTJMeeting, OTJMeetingsResponse, CalendarMeeting } from '@/types/meetings'
 
 class PexipOTJService {

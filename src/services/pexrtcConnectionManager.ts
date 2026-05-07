@@ -1,3 +1,15 @@
+// Single source of truth for an active Pexip call. Wraps the PexRTC SDK with
+// promise-based connect, PIN handling, event-handler wiring, and cleanup.
+// Singleton because the SDK only supports one call at a time.
+//
+// Two non-obvious tricks worth knowing:
+//   1. We acquire user media in the renderer and pass it in via
+//      user_media_stream so PexRTC doesn't run its own getUserMedia (its
+//      defaults force lower resolution and don't honor our deviceId logic).
+//   2. We reach into the SDK's private `pc` field (the underlying
+//      RTCPeerConnection) for HD-upgrade and device-switching. The SDK
+//      doesn't expose track replacement; the cast is intentional.
+
 import { pexRTCLoader } from './pexrtcLoader'
 import { PexRTCInstance, ChatMessage, Participant } from '@/types/pexrtc'
 import { log } from '@/utils/logger'
@@ -78,6 +90,10 @@ class PexRTCConnectionManager {
 
     if (this.isConnected) {
       await this.disconnect('New connection requested')
+      // Empirically required: PexRTC's internal cleanup (peer connection close,
+      // socket teardown) finishes after disconnect() resolves. Connecting
+      // immediately after races that cleanup and the new call comes up missing
+      // streams. 100ms is the smallest delay that's been reliable in testing.
       await new Promise((resolve) => setTimeout(resolve, 100))
     }
 
@@ -105,6 +121,8 @@ class PexRTCConnectionManager {
         this.pexrtc.oneTimeToken = config.registrationToken
       }
 
+      // 4 Mbps in/out — PexRTC will adapt downward to network conditions but
+      // won't go above what we set here. 4 Mbps gives 1080p headroom.
       this.pexrtc.bandwidth_in = 4096
       this.pexrtc.bandwidth_out = 4096
 
@@ -200,14 +218,14 @@ class PexRTCConnectionManager {
       if (this.currentConfig?.audioOff) {
         try {
           this.pexrtc!.muteAudio(true)
-        } catch (err) {
+        } catch {
           log.pexrtc.warn('Failed to apply initial audio mute after connect')
         }
       }
       if (this.currentConfig?.videoOff) {
         try {
           this.pexrtc!.muteVideo(true)
-        } catch (err) {
+        } catch {
           log.pexrtc.warn('Failed to apply initial video mute after connect')
         }
       }
@@ -289,7 +307,7 @@ class PexRTCConnectionManager {
       if (this.pexrtc) {
         try {
           this.pexrtc.disconnect(reason)
-        } catch (err) {
+        } catch {
           log.pexrtc.warn('Error during disconnect')
         }
       }
@@ -302,7 +320,7 @@ class PexRTCConnectionManager {
     if (this.pexrtc) {
       try {
         this.pexrtc.disconnect()
-      } catch (err) {
+      } catch {
         log.pexrtc.warn('Error during force disconnect')
       }
     }
@@ -403,17 +421,19 @@ class PexRTCConnectionManager {
         audio: audioConstraint,
         video: videoConstraint,
       })
-    } catch (err) {
+    } catch {
       // Video acquisition failed, try audio-only
       try {
         stream = await navigator.mediaDevices.getUserMedia({ audio: audioConstraint, video: false })
-      } catch (err) {
+      } catch {
         log.pexrtc.warn('switchMediaDevices: both audio+video and audio-only getUserMedia failed')
       }
     }
 
     if (stream) {
-      // Replace tracks directly on the peer connection to preserve our HD constraints
+      // Reach past the SDK to swap tracks directly on the underlying RTCPeerConnection.
+      // PexRTC's renegotiate() works but drops back to its default constraints,
+      // losing our HD settings. Replacing the track in-place avoids that.
       const pc = (this.pexrtc as unknown as Record<string, unknown>).pc as RTCPeerConnection | undefined
       if (pc) {
         const senders = pc.getSenders()
@@ -448,6 +468,12 @@ class PexRTCConnectionManager {
     if (videoDeviceId) this.pexrtc.video_source = videoDeviceId
   }
 
+  // Two-step HD acquisition. PexRTC negotiates the call at lower res by default,
+  // and forcing 1080p constraints up-front sometimes makes the initial setup
+  // slower or causes Pexip to reject the call. We let PexRTC connect at its
+  // chosen resolution, then immediately swap in a 1080p track via track
+  // replacement (no SDP renegotiation needed). User sees a brief low-res
+  // moment, then HD — better than a slow connect or a failure.
   private async upgradeToHD(): Promise<void> {
     if (!this.pexrtc || !this.isConnected) return
 
@@ -478,7 +504,7 @@ class PexRTCConnectionManager {
           this.pexrtc.call.localStream.addTrack(hdTrack)
         }
       }
-    } catch (err) {
+    } catch {
       log.pexrtc.warn('HD video upgrade failed, keeping existing track')
     }
   }
@@ -509,7 +535,7 @@ class PexRTCConnectionManager {
     if (!this.pexrtc || !this.isConnected) return null
     try {
       return this.pexrtc.getMediaStatistics() as unknown as Record<string, unknown>
-    } catch (err) {
+    } catch {
       log.pexrtc.warn('Failed to get media statistics')
       return null
     }

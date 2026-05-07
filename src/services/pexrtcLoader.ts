@@ -1,3 +1,15 @@
+// Loads the Pexip PexRTC SDK at runtime. Pexip ships their SDK as a script
+// served from the customer's own conferencing node, so we can't bundle it —
+// the URL is only known after the user configures their node domain.
+//
+// Singleton with retry/timeout so a transient network blip during boot
+// doesn't permanently break the call path. The SDK attaches to window.PexRTC
+// as a global; createInstance() returns a typed wrapper.
+//
+// Future hardening (deferred): no SRI hash on the script tag. A compromised
+// Pexip CDN could ship arbitrary JS. Acceptable risk for a single-tenant
+// demo that talks to a known node, but worth noting before broad release.
+
 import { PexRTCInstance } from '@/types/pexrtc'
 
 interface LoaderOptions {
