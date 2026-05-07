@@ -101,7 +101,7 @@ export function FeaturedMeetingCard({
     const text = lines.join('\n')
     try {
       await navigator.clipboard.writeText(text)
-    } catch (err) {
+    } catch {
       log.ui.debug('Clipboard API unavailable, falling back to execCommand')
       const ta = document.createElement('textarea')
       ta.value = text

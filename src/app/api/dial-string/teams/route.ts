@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
   let body: unknown
   try {
     body = await request.json()
-  } catch (err) {
+  } catch {
     log.api.warn('Teams dial-string: invalid JSON body in request')
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
   }

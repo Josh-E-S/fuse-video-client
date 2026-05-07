@@ -280,7 +280,7 @@ export function SetupWizard({ open, onComplete, onRegister }: SetupWizardProps) 
       } else {
         await update('warn', `Status ${res.status}`)
       }
-    } catch (err) {
+    } catch {
       if (nodeDomain) {
         log.ui.warn('Setup check: cannot reach Pexip node')
         await update('fail', 'Cannot reach node')
@@ -302,7 +302,7 @@ export function SetupWizard({ open, onComplete, onRegister }: SetupWizardProps) 
           nodeDomain,
         )
         await update('pass', 'Registered')
-      } catch (err) {
+      } catch {
         log.ui.warn('Setup check: registration failed')
         await update('fail', 'Registration failed')
       }
@@ -329,7 +329,7 @@ export function SetupWizard({ open, onComplete, onRegister }: SetupWizardProps) 
         } else {
           await update('fail', 'Auth failed')
         }
-      } catch (err) {
+      } catch {
         log.ui.warn('Setup check: OTJ calendar connection error')
         await update('fail', 'Connection error')
       }
@@ -342,7 +342,7 @@ export function SetupWizard({ open, onComplete, onRegister }: SetupWizardProps) 
       const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false })
       stream.getTracks().forEach((t) => t.stop())
       await update('pass', 'Camera accessible')
-    } catch (err) {
+    } catch {
       log.ui.warn('Setup check: no camera access')
       await update('fail', 'No camera access')
     }
@@ -354,7 +354,7 @@ export function SetupWizard({ open, onComplete, onRegister }: SetupWizardProps) 
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false })
       stream.getTracks().forEach((t) => t.stop())
       await update('pass', 'Microphone accessible')
-    } catch (err) {
+    } catch {
       log.ui.warn('Setup check: no microphone access')
       await update('fail', 'No microphone access')
     }

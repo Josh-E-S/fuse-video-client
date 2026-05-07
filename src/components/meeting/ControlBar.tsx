@@ -254,7 +254,7 @@ export function ControlBar({
             label: d.label || `Camera ${d.deviceId.slice(0, 8)}`,
           })),
       )
-    } catch (err) {
+    } catch {
       log.media.warn('Device enumeration failed, permissions may not be granted')
     }
   }, [])
