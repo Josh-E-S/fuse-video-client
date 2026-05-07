@@ -59,7 +59,6 @@ export default function MeetingPage() {
     isPresenting,
     chatMessages,
     participants,
-    currentMeetingId,
     disconnect,
     muteAudio,
     muteVideo,
@@ -289,14 +288,7 @@ export default function MeetingPage() {
           style={{ right: dockTab ? 336 : 0 }}
         />
       )}
-      <BackgroundEngine
-        active={!isAudioMuted && !isVideoMuted}
-        isLate={false}
-        isCancelling={false}
-        isAudioOnly={!isAudioMuted && isVideoMuted}
-        waveRgb={theme.waveRgb}
-        accentColor={theme.accentColor}
-      />
+      <BackgroundEngine waveRgb={theme.waveRgb} accentColor={theme.accentColor} />
 
       <div className="relative z-10 flex h-screen">
       <div className={`flex flex-col flex-1 min-w-0 px-3 pb-2 ${isElectron ? 'pt-12' : 'pt-2'}`}>
@@ -422,7 +414,6 @@ export default function MeetingPage() {
                 setTranscriptionConsentRequest('toggle')
               }
             }}
-            onSettings={() => setShowSettings(true)}
             onLeave={handleLeave}
           />
         </div>

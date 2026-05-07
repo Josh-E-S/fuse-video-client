@@ -16,7 +16,6 @@ interface FeaturedMeetingCardProps {
   countdown: string | null
   canJoin: boolean
   isBusy: boolean
-  cardBg: string
   expanded?: boolean
   compact?: boolean
   onExpandChange?: (expanded: boolean) => void
@@ -30,7 +29,6 @@ export function FeaturedMeetingCard({
   countdown,
   canJoin,
   isBusy,
-  cardBg,
   expanded,
   compact,
   onExpandChange,

@@ -4,10 +4,6 @@ import { useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 
 interface BackgroundEngineProps {
-  active: boolean
-  isLate: boolean
-  isCancelling: boolean
-  isAudioOnly: boolean
   waveRgb: string
   accentColor: string
 }
@@ -20,10 +16,6 @@ function hexToRgba(hex: string, alpha: number): string {
 }
 
 export function BackgroundEngine({
-  active,
-  isLate,
-  isCancelling,
-  isAudioOnly,
   waveRgb,
   accentColor,
 }: BackgroundEngineProps) {

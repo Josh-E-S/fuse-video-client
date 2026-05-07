@@ -54,7 +54,7 @@ function MeetingsSkeleton() {
 export default function HomePage() {
   const router = useRouter()
   const { theme: cosmeticTheme, themeId, setTheme, applyThemeToDocument } = useTheme()
-  const { settings, saveSettings } = useSettings()
+  const { settings } = useSettings()
   const quickJoin = useQuickJoin()
   const setup = useSetupRequired()
   const {
@@ -474,7 +474,6 @@ export default function HomePage() {
 
       <div className="relative z-10 flex flex-col min-h-screen w-full">
         <TopBar
-          displayName={displayName}
           userInitials={userInitials}
           regStatus={regStatus}
           isElectron={isElectron}
@@ -504,7 +503,6 @@ export default function HomePage() {
                 countdown={featuredCountdown}
                 canJoin={canJoinMeeting(featuredMeeting)}
                 isBusy={isBusy}
-                cardBg={cosmeticTheme.cardBg}
                 compact={isSidebar}
                 expanded={calendarExpanded}
                 onExpandChange={(v) => {

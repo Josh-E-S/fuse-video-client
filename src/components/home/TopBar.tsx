@@ -5,7 +5,6 @@ import { Settings, Pin, Maximize2, Minimize2, PictureInPicture2, PanelLeft } fro
 import type { RegistrationStatus } from '@/contexts/RegistrationContext'
 
 interface TopBarProps {
-  displayName: string
   userInitials: string
   regStatus: RegistrationStatus
   isElectron: boolean
@@ -21,7 +20,6 @@ interface TopBarProps {
 }
 
 export function TopBar({
-  displayName,
   userInitials,
   regStatus,
   isElectron,

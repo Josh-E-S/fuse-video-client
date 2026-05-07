@@ -46,7 +46,6 @@ interface ControlBarProps {
   onTogglePip?: () => void
   onToggleShare?: () => void
   onToggleTranscription?: () => void
-  onSettings?: () => void
   onLeave: () => void
 }
 
@@ -150,7 +149,6 @@ function SplitButton({
   icon,
   title,
   colorClass,
-  caretSide,
   devices,
   selectedDeviceId,
   onDeviceSelect,
@@ -161,7 +159,6 @@ function SplitButton({
   icon: React.ReactNode
   title: string
   colorClass: string
-  caretSide: 'right'
   devices: DeviceInfo[]
   selectedDeviceId: string
   onDeviceSelect: (id: string) => void
@@ -227,7 +224,6 @@ export function ControlBar({
   onTogglePip,
   onToggleShare,
   onToggleTranscription,
-  onSettings,
   onLeave,
 }: ControlBarProps) {
   const { isElectron } = useElectron()
@@ -280,7 +276,6 @@ export function ControlBar({
             icon={isMuted ? <MicOff size={17} /> : <Mic size={17} />}
             title={isMuted ? 'Unmute' : 'Mute'}
             colorClass={micColor}
-            caretSide="right"
             devices={audioDevices}
             selectedDeviceId={audioInputId}
             onDeviceSelect={(id) => onAudioInputChange?.(id)}
@@ -294,7 +289,6 @@ export function ControlBar({
             icon={isVideoOff ? <VideoOff size={17} /> : <Video size={17} />}
             title={isVideoOff ? 'Start video' : 'Stop video'}
             colorClass={camColor}
-            caretSide="right"
             devices={videoDevices}
             selectedDeviceId={videoInputId}
             onDeviceSelect={(id) => onVideoInputChange?.(id)}
@@ -362,7 +356,6 @@ export function ControlBar({
           icon={isMuted ? <MicOff size={19} /> : <Mic size={19} />}
           title={isMuted ? 'Unmute' : 'Mute'}
           colorClass={micColor}
-          caretSide="right"
           devices={audioDevices}
           selectedDeviceId={audioInputId}
           onDeviceSelect={(id) => onAudioInputChange?.(id)}
@@ -375,7 +368,6 @@ export function ControlBar({
           icon={isVideoOff ? <VideoOff size={19} /> : <Video size={19} />}
           title={isVideoOff ? 'Start video' : 'Stop video'}
           colorClass={camColor}
-          caretSide="right"
           devices={videoDevices}
           selectedDeviceId={videoInputId}
           onDeviceSelect={(id) => onVideoInputChange?.(id)}
